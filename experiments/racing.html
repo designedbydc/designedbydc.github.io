@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Endless Racing Game</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="600"></canvas>
+    <audio id="raceSound" src="audio/running.mp3" loop></audio>
+    <audio id="crashSound" src="audio/crash.mp3"></audio>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const raceSound = document.getElementById('raceSound');
+        const crashSound = document.getElementById('crashSound');
+
+        const car = {
+            x: canvas.width / 2 - 30,
+            y: canvas.height - 120,
+            width: 60,
+            height: 100,
+            speed: 5
+        };
+
+        const obstacles = [];
+        let score = 0;
+        let gameTime = 0;
+        let isGameOver = false;
+
+        function drawCar() {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(car.x, car.y, car.width, car.height);
+        }
+
+        function drawObstacle(obstacle) {
+            ctx.fillStyle = 'red';
+            ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        }
+
+        function createObstacle() {
+            const obstacle = {
+                x: Math.random() * (canvas.width - 60),
+                y: -100,
+                width: 60,
+                height: 100,
+                speed: 3
+            };
+            obstacles.push(obstacle);
+        }
+
+        function moveObstacles() {
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                obstacles[i].y += obstacles[i].speed;
+                if (obstacles[i].y > canvas.height) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        function checkCollision() {
+            for (const obstacle of obstacles) {
+                if (
+                    car.x < obstacle.x + obstacle.width &&
+                    car.x + car.width > obstacle.x &&
+                    car.y < obstacle.y + obstacle.height &&
+                    car.y + car.height > obstacle.y
+                ) {
+                    isGameOver = true;
+                    raceSound.pause();
+                    crashSound.play();
+                }
+            }
+        }
+
+        function drawGameOver() {
+            ctx.fillStyle = 'black';
+            ctx.font = '30px Arial';
+            ctx.fillText('Game Over', canvas.width / 2 - 70, canvas.height / 2 - 30);
+            ctx.font = '20px Arial';
+            ctx.fillText(`Score: ${score}`, canvas.width / 2 - 40, canvas.height / 2 + 10);
+            ctx.font = '16px Arial';
+            ctx.fillText('Press Space to Restart', canvas.width / 2 - 80, canvas.height / 2 + 40);
+        }
+
+        function gameLoop() {
+            if (isGameOver) {
+                drawGameOver();
+                return;
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawCar();
+            moveObstacles();
+            obstacles.forEach(drawObstacle);
+            checkCollision();
+
+            score += 1;
+            gameTime += 1/60;
+            if (gameTime >= 100) {
+                isGameOver = true;
+                raceSound.pause();
+            }
+
+            if (Math.random() < 0.02) {
+                createObstacle();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        function resetGame() {
+            obstacles.length = 0;
+            gameTime = 0;
+            isGameOver = false;
+            score = 0;
+            car.x = canvas.width / 2 - 25;
+            car.y = canvas.height - 100;
+            raceSound.currentTime = 0;
+            raceSound.play();
+            gameLoop();
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (isGameOver) {
+                if (e.code === 'Space') {
+                    resetGame();
+                }
+                return;
+            }
+
+            switch (e.key) {
+                case 'ArrowLeft':
+                    car.x = Math.max(0, car.x - car.speed);
+                    break;
+                case 'ArrowRight':
+                    car.x = Math.min(canvas.width - car.width, car.x + car.speed);
+                    break;
+                case 'ArrowUp':
+                    car.y = Math.max(0, car.y - car.speed);
+                    break;
+                case 'ArrowDown':
+                    car.y = Math.min(canvas.height - car.height, car.y + car.speed);
+                    break;
+            }
+        });
+
+        raceSound.play();
+        gameLoop();
+    </script>
+</body>
+</html>

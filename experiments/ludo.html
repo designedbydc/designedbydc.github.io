@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUDO Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        #game-board {
+            width: 90vmin;
+            height: 90vmin;
+            background-color: #fff;
+            border: 2px solid #000;
+            display: grid;
+            grid-template-columns: repeat(15, 1fr);
+            grid-template-rows: repeat(15, 1fr);
+        }
+        .cell {
+            border: 1px solid #ccc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .safe { background-color: #e9ecef; }
+        .red-home { background-color: #ff6b6b; }
+        .green-home { background-color: #51cf66; }
+        .yellow-home { background-color: #fcc419; }
+        .blue-home { background-color: #339af0; }
+        .red-path { background-color: #ffc9c9; }
+        .green-path { background-color: #b2f2bb; }
+        .yellow-path { background-color: #ffec99; }
+        .blue-path { background-color: #a5d8ff; }
+        .center { background-color: #ffffff; }
+        .piece {
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            border: 2px solid #000;
+        }
+        .red { background-color: #ff6b6b; }
+        .green { background-color: #51cf66; }
+        .yellow { background-color: #fcc419; }
+        .blue { background-color: #339af0; }
+        #dice {
+            font-size: 24px;
+            margin-top: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div id="game-board"></div>
+        <button id="dice">Roll Dice</button>
+    </div>
+
+    <script>
+        const board = document.getElementById('game-board');
+        const diceButton = document.getElementById('dice');
+        const colors = ['red', 'green', 'yellow', 'blue'];
+        let currentPlayer = 0;
+
+        const playerPaths = {
+            red: [76, 77, 78, 79, 80, 81, 67, 53, 39, 25, 11, 10, 9, 8, 7, 6, 5, 19, 33, 47, 61, 75, 89, 103, 117, 131, 145, 159, 173, 174, 175, 176, 177, 178, 179, 165, 151, 137, 123, 109, 95, 96, 97, 98, 99, 100, 101, 102, 88, 74, 60, 46, 32, 18, 17, 16, 15, 14, 13, 12, 26, 40, 54, 68, 82],
+            green: [96, 97, 98, 99, 100, 101, 102, 88, 74, 60, 46, 32, 18, 17, 16, 15, 14, 13, 12, 26, 40, 54, 68, 82, 96, 110, 124, 138, 152, 166, 180, 179, 178, 177, 176, 175, 174, 173, 159, 145, 131, 117, 103, 89, 75, 76, 77, 78, 79, 80, 81, 67, 53, 39, 25, 11, 10, 9, 8, 7, 6, 5, 19, 33, 47, 61, 75],
+            yellow: [173, 174, 175, 176, 177, 178, 179, 165, 151, 137, 123, 109, 95, 96, 97, 98, 99, 100, 101, 102, 88, 74, 60, 46, 32, 18, 17, 16, 15, 14, 13, 12, 26, 40, 54, 68, 82, 96, 110, 124, 138, 152, 166, 180, 179, 178, 177, 176, 175, 174, 173, 159, 145, 131, 117, 103, 89, 75, 76, 77, 78, 79, 80, 81, 67, 53, 39, 25, 11, 10, 9, 8, 7, 6, 5, 19, 33, 47, 61, 75],
+            blue: [110, 124, 138, 152, 166, 180, 179, 178, 177, 176, 175, 174, 173, 159, 145, 131, 117, 103, 89, 75, 76, 77, 78, 79, 80, 81, 67, 53, 39, 25, 11, 10, 9, 8, 7, 6, 5, 19, 33, 47, 61, 75, 89, 103, 117, 131, 145, 159, 173, 174, 175, 176, 177, 178, 179, 165, 151, 137, 123, 109, 95, 96, 97, 98, 99, 100, 101, 102, 88, 74, 60, 46, 32, 18, 17, 16, 15, 14, 13, 12, 26, 40, 54, 68, 82, 96]
+        };
+
+        const playerStartPositions = {
+            red: [1, 2, 16, 17],
+            green: [13, 14, 28, 29],
+            yellow: [211, 212, 226, 227],
+            blue: [223, 224, 238, 239]
+        };
+
+        const playerPositions = {
+            red: [-1, -1, -1, -1],
+            green: [-1, -1, -1, -1],
+            yellow: [-1, -1, -1, -1],
+            blue: [-1, -1, -1, -1]
+        };
+
+        function createBoard() {
+            for (let i = 0; i < 15; i++) {
+                for (let j = 0; j < 15; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    
+                    // Color the board
+                    if ((i < 6 && j < 6) || (i < 6 && j > 8) || (i > 8 && j < 6) || (i > 8 && j > 8)) {
+                        // Home areas
+                        if (i < 6 && j < 6) cell.classList.add('red-home');
+                        else if (i < 6 && j > 8) cell.classList.add('green-home');
+                        else if (i > 8 && j < 6) cell.classList.add('yellow-home');
+                        else cell.classList.add('blue-home');
+                    } else if (i === 7 && j === 7) {
+                        // Center
+                        cell.classList.add('center');
+                    } else {
+                        // Paths and safe cells
+                        if (i === 6 || i === 8) {
+                            if (j < 6) cell.classList.add('red-path');
+                            else if (j > 8) cell.classList.add('green-path');
+                        } else if (j === 6 || j === 8) {
+                            if (i < 6) cell.classList.add('yellow-path');
+                            else if (i > 8) cell.classList.add('blue-path');
+                        } else if (i === 7) {
+                            if (j < 7) cell.classList.add('red-path');
+                            else if (j > 7) cell.classList.add('green-path');
+                        } else if (j === 7) {
+                            if (i < 7) cell.classList.add('yellow-path');
+                            else if (i > 7) cell.classList.add('blue-path');
+                        }
+                        
+                        // Safe cells
+                        if ((i === 6 && j === 2) || (i === 2 && j === 6) || 
+                            (i === 8 && j === 12) || (i === 12 && j === 8) ||
+                            (i === 6 && j === 8) || (i === 8 && j === 6)) {
+                            cell.classList.add('safe');
+                        }
+                    }
+                    
+                    board.appendChild(cell);
+                }
+            }
+        }
+
+        function initializePieces() {
+            colors.forEach(color => {
+                playerStartPositions[color].forEach((startPos, index) => {
+                    const startCell = board.children[startPos];
+                    const piece = document.createElement('div');
+                    piece.classList.add('piece', color);
+                    piece.dataset.pieceIndex = index;
+                    startCell.appendChild(piece);
+                });
+            });
+        }
+
+        function movePiece(color, pieceIndex, steps) {
+            const currentPosition = playerPositions[color][pieceIndex];
+            let newPosition;
+
+            if (currentPosition === -1 && steps === 6) {
+                // Move out of start
+                newPosition = 0;
+            } else if (currentPosition === -1) {
+                // Can't move if not out and didn't roll a 6
+                return false;
+            } else {
+                newPosition = Math.min(currentPosition + steps, playerPaths[color].length - 1);
+            }
+
+            // Remove piece from old position
+            const oldCellIndex = currentPosition === -1 ? playerStartPositions[color][pieceIndex] : playerPaths[color][currentPosition];
+            const oldCell = board.children[oldCellIndex];
+            const oldPiece = oldCell.querySelector('.piece');
+            if (oldPiece) oldCell.removeChild(oldPiece);
+
+            // Add piece to new position
+            const newCellIndex = playerPaths[color][newPosition];
+            const newCell = board.children[newCellIndex];
+            const piece = document.createElement('div');
+            piece.classList.add('piece', color);
+            piece.dataset.pieceIndex = pieceIndex;
+            newCell.appendChild(piece);
+
+            playerPositions[color][pieceIndex] = newPosition;
+            return true;
+        }
+
+        function rollDice() {
+            const roll = Math.floor(Math.random() * 6) + 1;
+            diceButton.textContent = `Player ${colors[currentPlayer]}: ${roll}`;
+
+            const currentColor = colors[currentPlayer];
+            let moved = false;
+
+            if (roll === 6) {
+                // Try to move a piece out of start
+                const startPieceIndex = playerPositions[currentColor].findIndex(pos => pos === -1);
+                if (startPieceIndex !== -1) {
+                    moved = movePiece(currentColor, startPieceIndex, roll);
+                }
+            }
+
+            if (!moved) {
+                // Try to move any piece on the board
+                for (let i = 0; i < 4; i++) {
+                    if (playerPositions[currentColor][i] !== -1) {
+                        if (movePiece(currentColor, i, roll)) {
+                            moved = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (!moved) {
+                console.log("No valid moves available");
+            }
+
+            currentPlayer = (currentPlayer + 1) % 4;
+        }
+
+        createBoard();
+        initializePieces();
+        diceButton.addEventListener('click', rollDice);
+    </script>
+</body>
+</html>

@@ -45,7 +45,7 @@
             --grid: 10rem;
             width: 100%;
             height: 100%;
-            position: absolute;
+            position: fixed;
             top: 0;
             left: 0;
             transform-style: preserve-3d;
@@ -107,6 +107,77 @@
             z-index: 10;
         }
 
+        .show-experiments {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-family: 'Share Tech Mono', monospace;
+            background: transparent;
+            color: #00c3ff;
+            border: 2px solid #00c3ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+            margin-top: 20px;
+            filter: drop-shadow(0px 0px 5px #00c3ff);
+        }
+
+        .show-experiments:hover {
+            background: #00c3ff22;
+        }
+
+        .experiments-container {
+            min-height: 100vh;
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            top: 100vh;
+            left: 0;
+            background: transparent;
+            padding: 50px 0;
+            z-index: 10;
+        }
+
+        .experiments-table {
+            margin-top: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            border-radius: 10px;
+            border: 1px solid #00c3ff22;
+        }
+
+        .experiments-table th,
+        .experiments-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #00c3ff44;
+        }
+
+        .experiments-table th {
+            color: #00c3ff;
+            font-size: 1.1rem;
+        }
+
+        .experiments-table td {
+            color: green;
+        }
+
+        .experiments-table a {
+            color: #00c3ff;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .experiments-table a:hover {
+            filter: drop-shadow(0px 0px 5px #00c3ff);
+        }
+
+        .experiments-section {
+            scroll-margin-top: 50px;
+        }
+
     </style>
 </head>
 <body>
@@ -120,5 +191,43 @@
     <p>Invent ・ Design ・ Create</p>
     <br>
     <p><a href="https://x.com/NextPercent" target="_blank">@NextPercent</a></p>
+    
+    <button class="show-experiments" onclick="document.getElementById('experiments').scrollIntoView({behavior: 'smooth'})">
+        Show Experiments
+    </button>
+
+    <div class="experiments-container">
+        <table id="experiments" class="experiments-table experiments-section">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>2025-02-12</td>
+                    <td>Pacman Multiplayer</td>
+                    <td><a href="experiments/pacman.html" target="_blank">Play →</a></td>
+                </tr>
+                <tr>
+                    <td>2024</td>
+                    <td>Racing Game</td>
+                    <td><a href="experiments/racing.html" target="_blank">Play →</a></td>
+                </tr>
+                <tr>
+                    <td>2024</td>
+                    <td>Ludo Board Game</td>
+                    <td><a href="experiments/ludo.html" target="_blank">Play →</a></td>
+                </tr>
+                <tr>
+                    <td>2024</td>
+                    <td>Todo App</td>
+                    <td><a href="experiments/todo.html" target="_blank">Try →</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 </body>
 </html>
