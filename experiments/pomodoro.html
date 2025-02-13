@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <style>
+        /* Theme Variables */
+        :root[data-theme="modern-light"] {
+            --bg-color: #f5f5f7;
+            --container-bg: rgba(255, 255, 255, 0.8);
+            --text-color: #1d1d1f;
+            --primary-btn-bg: #0066CC;
+            --primary-btn-color: white;
+            --secondary-btn-bg: rgba(0, 0, 0, 0.05);
+            --secondary-btn-color: #1d1d1f;
+            --border-radius: 12px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --backdrop-filter: blur(20px);
+            --quote-color: #666666;
+        }
+
+        :root[data-theme="matrix-green"] {
+            --bg-color: #000000;
+            --container-bg: rgba(0, 20, 0, 0.9);
+            --text-color: #00ff00;
+            --primary-btn-bg: #00cc00;
+            --primary-btn-color: #000000;
+            --secondary-btn-bg: rgba(0, 255, 0, 0.2);
+            --secondary-btn-color: #00ff00;
+            --border-radius: 0;
+            --shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+            --backdrop-filter: none;
+            --quote-color: #00cc00;
+        }
+
+        :root[data-theme="cyber-punk"] {
+            --bg-color: #120458;
+            --container-bg: rgba(18, 4, 88, 0.7);
+            --text-color: #FF2A6D;
+            --primary-btn-bg: #05D9E8;
+            --primary-btn-color: #120458;
+            --secondary-btn-bg: rgba(255, 42, 109, 0.2);
+            --secondary-btn-color: #FF2A6D;
+            --border-radius: 8px;
+            --shadow: 0 0 20px rgba(255, 42, 109, 0.3);
+            --backdrop-filter: blur(10px);
+            --quote-color: #FF2A6D;
+        }
+
+        :root[data-theme="sunset-warm"] {
+            --bg-color: #FF8C42;
+            --container-bg: rgba(255, 140, 66, 0.8);
+            --text-color: #1A1A1A;
+            --primary-btn-bg: #FF3C38;
+            --primary-btn-color: #FFFFFF;
+            --secondary-btn-bg: rgba(255, 60, 56, 0.2);
+            --secondary-btn-color: #1A1A1A;
+            --border-radius: 6px;
+            --shadow: 0 8px 32px rgba(255, 60, 56, 0.3);
+            --backdrop-filter: blur(5px);
+            --quote-color: #1A1A1A;
+        }
+
+        :root[data-theme="modern-dark"] {
+            --bg-color: #000000;
+            --container-bg: rgba(28, 28, 30, 0.9);
+            --text-color: #ffffff;
+            --primary-btn-bg: #0070e0;
+            --primary-btn-color: #ffffff;
+            --secondary-btn-bg: rgba(99, 99, 102, 0.4);
+            --secondary-btn-color: #ffffff;
+            --border-radius: 16px;
+            --shadow: 0 0 40px rgba(10, 132, 255, 0.1);
+            --backdrop-filter: blur(30px);
+            --quote-color: #a0a0a0;
+        }
+
+        :root[data-theme="arctic-frost"] {
+            --bg-color: #E3FDFD;
+            --container-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #16213E;
+            --primary-btn-bg: #71C9CE;
+            --primary-btn-color: #ffffff;
+            --secondary-btn-bg: rgba(113, 201, 206, 0.2);
+            --secondary-btn-color: #16213E;
+            --border-radius: 20px;
+            --shadow: 0 8px 32px rgba(113, 201, 206, 0.2);
+            --backdrop-filter: blur(15px);
+            --quote-color: #16213E;
+        }
+
+        :root[data-theme="royal-purple"] {
+            --bg-color: #2C003E;
+            --container-bg: rgba(44, 0, 62, 0.8);
+            --text-color: #FFC2E2;
+            --primary-btn-bg: #FF90B3;
+            --primary-btn-color: #2C003E;
+            --secondary-btn-bg: rgba(255, 144, 179, 0.2);
+            --secondary-btn-color: #FFC2E2;
+            --border-radius: 0;
+            --shadow: 0 0 20px rgba(255, 144, 179, 0.3);
+            --backdrop-filter: none;
+            --quote-color: #FF90B3;
+        }
+
+        /* Add after the theme variables */
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Theme-specific gradient backgrounds */
+        body[data-theme="modern-light"] {
+            background: linear-gradient(-45deg, #f5f5f7, #e8e8e8, #d1d1d6, #f5f5f7);
+            background-size: 400% 400%;
+        }
+
+        body[data-theme="modern-dark"] {
+            background: linear-gradient(-45deg, #000000, #1c1c1e, #2c2c2e, #000000);
+            background-size: 400% 400%;
+        }
+
+        body[data-theme="cyber-punk"] {
+            background: linear-gradient(-45deg, #120458, #FF2A6D, #05D9E8, #120458);
+            background-size: 400% 400%;
+        }
+
+        body[data-theme="matrix-green"] {
+            background: linear-gradient(-45deg, #000000, #003300, #006600, #000000);
+            background-size: 400% 400%;
+        }
+
+        body[data-theme="sunset-warm"] {
+            background: linear-gradient(-45deg, #FF8C42, #FF3C38, #A23E48, #FF8C42);
+            background-size: 400% 400%;
+        }
+
+        body[data-theme="arctic-frost"] {
+            background: linear-gradient(-45deg, #E3FDFD, #CBF1F5, #A6E3E9, #E3FDFD);
+            background-size: 400% 400%;
+        }
+
+        body[data-theme="royal-purple"] {
+            background: linear-gradient(-45deg, #2C003E, #FF90B3, #FFC2E2, #2C003E);
+            background-size: 400% 400%;
+        }
+
+        body.animating {
+            animation: gradientAnimation 15s ease infinite;
+        }
+
+        /* Update existing body styles */
+        body {
+            background-color: var(--bg-color); /* Fallback */
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            color: var(--text-color);
+            transition: background-color 0.3s ease;
+        }
+
+        .container {
+            text-align: center;
+            background: var(--container-bg);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            backdrop-filter: var(--backdrop-filter);
+            -webkit-backdrop-filter: var(--backdrop-filter);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        .timer {
+            font-size: 6rem;
+            font-weight: 700;
+            margin: 2rem 0;
+            color: var(--text-color);
+            letter-spacing: -2px;
+        }
+
+        .controls button {
+            font-size: 1.2rem;
+            margin: 0.5rem;
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+        }
+
+        #startBtn {
+            background-color: var(--primary-btn-bg);
+            color: var(--primary-btn-color);
+        }
+
+        #resetBtn {
+            background: var(--secondary-btn-bg);
+            color: var(--secondary-btn-color);
+        }
+
+        #startBtn:hover {
+            background-color: #0066D6;
+            transform: translateY(-1px);
+        }
+
+        #resetBtn:hover {
+            background: rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .quote {
+            margin-top: 2rem;
+            padding: 1rem;
+            font-style: italic;
+            max-width: 600px;
+            color: var(--quote-color);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .mode-selector {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .mode-selector button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            background: var(--secondary-btn-bg);
+            color: var(--secondary-btn-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        /* Special handling for dark themes */
+        [data-theme="matrix-green"] .mode-selector button:not(.active),
+        [data-theme="cyber-punk"] .mode-selector button:not(.active),
+        [data-theme="modern-dark"] .mode-selector button:not(.active),
+        [data-theme="royal-purple"] .mode-selector button:not(.active),
+        [data-theme="sunset-warm"] .mode-selector button:not(.active) {
+            color: #ffffff;
+        }
+
+        .mode-selector button.active {
+            background: var(--primary-btn-bg);
+            color: var(--primary-btn-color);
+        }
+
+        /* Settings Panel Styles */
+        .settings-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            background: var(--secondary-btn-bg);
+            color: var(--secondary-btn-color);
+            transition: all 0.3s ease;
+        }
+
+        .settings-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: var(--container-bg);
+            padding: 2rem;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+            backdrop-filter: var(--backdrop-filter);
+        }
+
+        .settings-panel.open {
+            transform: translateX(0);
+        }
+
+        .settings-panel h2 {
+            margin-top: 0;
+            color: var(--text-color);
+        }
+
+        .settings-panel .close-btn {
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+
+        .setting-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .setting-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-color);
+        }
+
+        .setting-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: var(--border-radius);
+            background: var(--container-bg);
+            color: var(--text-color);
+        }
+
+        .theme-group {
+            margin-top: 1.5rem;
+            padding-top: 1rem;
+        }
+
+        .theme-group h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1rem;
+        }
+
+        .theme-group button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: var(--border-radius);
+            background: var(--secondary-btn-bg);
+            color: var(--secondary-btn-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 4px;
+            min-width: 100px;
+        }
+
+        .theme-group button.active {
+            background: var(--primary-btn-bg);
+            color: var(--primary-btn-color);
+        }
+
+        .theme-group button[onclick*="modern-light"] {
+            background: #f5f5f7;
+            color: #1d1d1f;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .theme-group button[onclick*="modern-dark"] {
+            background: #1c1c1e;
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .theme-group button[onclick*="cyber-punk"] {
+            background: #120458;
+            color: #FF2A6D;
+            border: 1px solid #05D9E8;
+        }
+        
+        .theme-group button[onclick*="sunset-warm"] {
+            background: #FF8C42;
+            color: #1A1A1A;
+            border: 1px solid #FF3C38;
+        }
+        
+        .theme-group button[onclick*="matrix-green"] {
+            background: #000000;
+            color: #00ff00;
+            border: 1px solid #00cc00;
+        }
+        
+        .theme-group button[onclick*="arctic-frost"] {
+            background: #E3FDFD;
+            color: #2B2B2B;
+            border: 1px solid #71C9CE;
+        }
+        
+        .theme-group button[onclick*="royal-purple"] {
+            background: #2C003E;
+            color: #FFC2E2;
+            border: 1px solid #FF90B3;
+        }
+
+        .shortcuts {
+            margin-top: 2rem;
+            padding: 1rem;
+            border-top: 1px solid rgba(var(--text-color), 0.1);
+            font-size: 0.9rem;
+        }
+        
+        .shortcuts p {
+            margin: 0 0 0.5rem 0;
+            font-weight: 500;
+        }
+        
+        .shortcuts ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: center;
+        }
+        
+        .shortcuts li {
+            background: var(--secondary-btn-bg);
+            padding: 0.3rem 0.8rem;
+            border-radius: var(--border-radius);
+            color: var(--secondary-btn-color);
+        }
+
+        /* Update settings panel save button */
+        .save-settings-btn {
+            margin-top: 1.5rem;
+            background: var(--primary-btn-bg);
+            color: var(--primary-btn-color);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+        
+        .save-settings-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <button class="settings-btn" onclick="toggleSettings()">⚙️</button>
+    
+    <div class="settings-panel" id="settingsPanel">
+        <button class="close-btn" onclick="toggleSettings()">×</button>
+        <h2>Timer Settings</h2>
+        <div class="setting-group">
+            <label for="workDuration">Work Duration (minutes)</label>
+            <input type="number" id="workDuration" min="1" max="60" value="25">
+        </div>
+        <div class="setting-group">
+            <label for="shortBreakDuration">Short Break (minutes)</label>
+            <input type="number" id="shortBreakDuration" min="1" max="30" value="5">
+        </div>
+        <div class="setting-group">
+            <label for="longBreakDuration">Long Break (minutes)</label>
+            <input type="number" id="longBreakDuration" min="1" max="60" value="15">
+        </div>
+        <div class="theme-group">
+            <h3>Theme</h3>
+            <button onclick="setTheme('modern-light')" class="active">Modern Light</button>
+            <button onclick="setTheme('modern-dark')">Modern Dark</button>
+            <button onclick="setTheme('cyber-punk')">Cyberpunk</button>
+            <button onclick="setTheme('sunset-warm')">Sunset</button>
+            <button onclick="setTheme('matrix-green')">Matrix</button>
+            <button onclick="setTheme('arctic-frost')">Arctic</button>
+            <button onclick="setTheme('royal-purple')">Royal</button>
+        </div>
+        <button class="save-settings-btn" onclick="saveSettings()">Save Settings</button>
+    </div>
+
+    <div class="container">
+        <h1>Pomodoro Timer</h1>
+        
+        <div class="mode-selector">
+            <button onclick="setMode('work')" class="active">Work (1)</button>
+            <button onclick="setMode('shortBreak')">Short Break (2)</button>
+            <button onclick="setMode('longBreak')">Long Break (3)</button>
+        </div>
+
+        <div class="timer" id="timer">25:00</div>
+        
+        <div class="controls">
+            <button id="startBtn" onclick="toggleTimer()">Start (Space)</button>
+            <button id="resetBtn" onclick="resetTimer()">Reset (R)</button>
+        </div>
+
+        <div class="quote" id="quote"></div>
+    </div>
+
+    <script>
+        const quotes = [
+            "The only way to do great work is to love what you do. - Steve Jobs",
+            "Success is not final, failure is not fatal: it is the courage to continue that counts. - Winston Churchill",
+            "Don't watch the clock; do what it does. Keep going. - Sam Levenson",
+            "The future depends on what you do today. - Mahatma Gandhi",
+            "It always seems impossible until it's done. - Nelson Mandela",
+            "Quality is not an act, it is a habit. - Aristotle",
+            "The only limit to our realization of tomorrow will be our doubts of today. - Franklin D. Roosevelt",
+            "Your time is limited, don't waste it living someone else's life. - Steve Jobs",
+            "The way to get started is to quit talking and begin doing. - Walt Disney",
+            "Success is walking from failure to failure with no loss of enthusiasm. - Winston Churchill"
+        ];
+
+        let timeLeft;
+        let timerId = null;
+        let isRunning = false;
+        
+        const modes = {
+            work: parseInt(localStorage.getItem('workDuration') || 25) * 60,
+            shortBreak: parseInt(localStorage.getItem('shortBreakDuration') || 5) * 60,
+            longBreak: parseInt(localStorage.getItem('longBreakDuration') || 15) * 60
+        };
+        
+        let currentMode = 'work';
+        
+        function setMode(mode) {
+            currentMode = mode;
+            timeLeft = modes[mode];
+            updateTimer();
+            resetTimer();
+            
+            // Update active button
+            document.querySelectorAll('.mode-selector button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function toggleTimer() {
+            const startBtn = document.getElementById('startBtn');
+            if (!isRunning) {
+                // Starting timer
+                if (timeLeft === undefined) timeLeft = modes[currentMode];
+                timerId = setInterval(() => {
+                    timeLeft--;
+                    updateTimer();
+                    
+                    if (timeLeft === 0) {
+                        clearInterval(timerId);
+                        isRunning = false;
+                        startBtn.textContent = 'Start (Space)';
+                        document.body.classList.remove('animating');
+                        showRandomQuote();
+                        playNotification();
+                    }
+                }, 1000);
+                startBtn.textContent = 'Pause (Space)';
+                document.body.classList.add('animating');
+            } else {
+                // Pausing timer
+                clearInterval(timerId);
+                startBtn.textContent = 'Start (Space)';
+                document.body.classList.remove('animating');
+            }
+            isRunning = !isRunning;
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            timeLeft = modes[currentMode];
+            updateTimer();
+            isRunning = false;
+            startBtn.textContent = 'Start (Space)';
+            document.getElementById('quote').textContent = '';
+        }
+
+        function showRandomQuote() {
+            const quoteElement = document.getElementById('quote');
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            quoteElement.textContent = randomQuote;
+        }
+
+        function playNotification() {
+            const audio = new Audio('data:audio/wav;base64,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qJrx4KOQjahZxWbcZgztj2c49nKmkId44S71j0c8eV9yDK6uPRzx5X18eDvjvQ6yKo9ZSS6l//8elePK/Lf//IInrOF/FvDoADYAGBMGb7FtErm5MXMlmPAJQVgWta7Zx2go+8xJ0UiCb8LHHdftWyLJE0QIAIsI+UbXu67dZMjmgDGCGl1H+vpF4NSDckSIkk7Vd+sxEhBQMRU8j/12UIRhzSaUdQ+rQU5kGeFxm+hb1oh6pWWmv3uvmReDl0UnvtapVaIzo1jZbf/pD6ElLqSX+rUmOQNpJFa/r+sa4e/pBlAABoAAAAA3CUgShLdGIxsY7AUABPRrgCABdDuQ5GC7DqPQCgbbJUAoRSUj+NIEig0YfyWUho1VBBBA//uQZB4ABZx5zfMakeAAAAmwAAAAF5F3P0w9GtAAACfAAAAAwLhMDmAYWMgVEG1U0FIGCBgXBXAtfMH10000EEEEEECUBYln03TTTdNBDZopopYvrTTdNa325mImNg3TTPV9q3pmY0xoO6bv3r00y+IDGid/9aaaZTGMuj9mpu9Mpio1dXrr5HERTZSmqU36A3CumzN/9Robv/Xx4v9ijkSRSNLQhAWumap82WRSBUqXStV/YcS+XVLnSS+WLDroqArFkMEsAS+eWmrUzrO0oEmE40RlMZ5+ODIkAyKAGUwZ3mVKmcamcJnMW26MRPgUw6j+LkhyHGVGYjSUUKNpuJUQoOIAyDvEyG8S5yfK6dhZc0Tx1KI/gviKL6qvvFs1+bWtaz58uUNnryq6kt5RzOCkPWlVqVX2a/EEBUdU1KrXLf40GoiiFXK///qpoiDXrOgqDR38JB0bw7SoL+ZB9o1RCkQjQ2CBYZKd/+VJxZRRZlqSkKiws0WFxUyCwsKiMy7hUVFhIaCrNQsKkTIsLivwKKigsj8XYlwt/WKi2N4d//uQRCSAAjURNIHpMZBGYiaQPSYyAAABLAAAAAAAACWAAAAApUF/Mg+0aohSIRobBAsMlO//Kk4soosy1JSFRYWaLC4qZBYWFRGZdwqKiwkNBVmoWFSJkWFxX4FFRQWR+LsS4W/rFRb/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////VEFHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAU291bmRib3kuZGUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMjAwNGh0dHA6Ly93d3cuc291bmRib3kuZGUAAAAAAAAAACU=');
+            audio.play();
+        }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            document.body.setAttribute('data-theme', theme);
+            
+            // Update active button
+            document.querySelectorAll('.theme-group button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(theme.split('-').pop())) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // Save theme preference
+            localStorage.setItem('pomodoro-theme', theme);
+        }
+
+        // Load saved theme preference
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('pomodoro-theme') || 'apple-modern';
+            setTheme(savedTheme);
+            initializeSettings();
+        });
+
+        // Initialize timer
+        timeLeft = modes.work;
+        updateTimer();
+
+        // Initialize settings inputs with saved values
+        function initializeSettings() {
+            document.getElementById('workDuration').value = Math.floor(modes.work / 60);
+            document.getElementById('shortBreakDuration').value = Math.floor(modes.shortBreak / 60);
+            document.getElementById('longBreakDuration').value = Math.floor(modes.longBreak / 60);
+        }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel');
+            panel.classList.toggle('open');
+        }
+
+        function saveSettings() {
+            // Get new values
+            const workDuration = document.getElementById('workDuration').value;
+            const shortBreakDuration = document.getElementById('shortBreakDuration').value;
+            const longBreakDuration = document.getElementById('longBreakDuration').value;
+
+            // Save to localStorage
+            localStorage.setItem('workDuration', workDuration);
+            localStorage.setItem('shortBreakDuration', shortBreakDuration);
+            localStorage.setItem('longBreakDuration', longBreakDuration);
+
+            // Update modes object
+            modes.work = parseInt(workDuration) * 60;
+            modes.shortBreak = parseInt(shortBreakDuration) * 60;
+            modes.longBreak = parseInt(longBreakDuration) * 60;
+
+            // Reset timer with new duration if needed
+            if (!isRunning) {
+                timeLeft = modes[currentMode];
+                updateTimer();
+            }
+
+            // Close settings panel
+            toggleSettings();
+        }
+
+        // Add keyboard event listener
+        document.addEventListener('keydown', (e) => {
+            // Ignore keyboard shortcuts when typing in input fields
+            if (e.target.tagName === 'INPUT') return;
+            
+            switch(e.key.toLowerCase()) {
+                case ' ':  // Space key
+                    e.preventDefault(); // Prevent page scroll
+                    toggleTimer();
+                    break;
+                case 'r':
+                    resetTimer();
+                    break;
+                case '1':
+                    setMode('work');
+                    break;
+                case '2':
+                    setMode('shortBreak');
+                    break;
+                case '3':
+                    setMode('longBreak');
+                    break;
+            }
+        });
+    </script>
+</body>
+</html>
