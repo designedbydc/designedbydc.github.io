@@ -11,13 +11,33 @@
             overflow: hidden;
             background-color: #000;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            flex-direction: column;
             font-family: 'Share Tech Mono', 'Cascadia Code', Menlo, Monaco, 'Courier New', monospace;
             color: green;
             text-align: center;
-            position: relative;
+            opacity: 0; /* Start hidden for fade-in effect */
+            transition: opacity 1s ease; /* Fade-in transition */
+        }
+
+        /* Loader styles */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000; /* Ensure loader is on top */
+        }
+
+        .loader span {
+            color: #00c3ff;
+            font-size: 2rem;
         }
 
         h1 {
@@ -127,17 +147,19 @@
         }
 
         .experiments-container {
-            min-height: 100vh;
             width: 100%;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: flex-start;
             align-items: center;
-            position: absolute;
-            top: 100vh;
-            left: 0;
             background: transparent;
-            padding: 50px 0;
+            padding: 20px 0;
             z-index: 10;
+        }
+
+        h2 {
+            margin-top: 20px;
+            color: #00c3ff;
         }
 
         .experiments-table {
@@ -177,26 +199,26 @@
         .experiments-section {
             scroll-margin-top: 50px;
         }
-
     </style>
 </head>
 <body>
+    <div class="loader">
+        <span>Loading...</span>
+    </div>
+
     <div class="grid-container">
         <div class="plane">
             <div class="grid"></div>
         </div>
     </div>
 
-    <h1>Reset 2k25...</h1>
-    <p>Invent ・ Design ・ Create</p>
+    <h1>Dhanish Chhajer</h1>
+    <p>( Design + Build + Invest ) <sup>AI</sup></p>
     <br>
-    <p><a href="https://x.com/NextPercent" target="_blank">@NextPercent</a></p>
-    
-    <button class="show-experiments" onclick="document.getElementById('experiments').scrollIntoView({behavior: 'smooth'})">
-        Show Experiments
-    </button>
+    <p>Twitter: <a href="https://x.com/NextPercent" target="_blank">@NextPercent</a></p>
 
     <div class="experiments-container">
+        <h2>Recent AI Experiments</h2>
         <table id="experiments" class="experiments-table experiments-section">
             <thead>
                 <tr>
@@ -207,32 +229,35 @@
             </thead>
             <tbody>
                 <tr>
-                    <td>2025-02-13</td>
+                    <td>13th Feb 2025</td>
                     <td>Pomodoro Timer</td>
                     <td><a href="experiments/pomodoro.html" target="_blank">Try →</a></td>
                 </tr>
                 <tr>
-                    <td>2025-02-12</td>
+                    <td>12th Feb 2025</td>
                     <td>Pacman Multiplayer</td>
                     <td><a href="experiments/pacman.html" target="_blank">Play →</a></td>
                 </tr>
                 <tr>
-                    <td>2024</td>
-                    <td>Racing Game</td>
-                    <td><a href="experiments/racing.html" target="_blank">Play →</a></td>
-                </tr>
-                <tr>
-                    <td>2024</td>
-                    <td>Ludo Board Game</td>
-                    <td><a href="experiments/ludo.html" target="_blank">Play →</a></td>
-                </tr>
-                <tr>
-                    <td>2024</td>
+                    <td>Sometime in 2024</td>
                     <td>Todo App</td>
                     <td><a href="experiments/todo.html" target="_blank">Try →</a></td>
                 </tr>
             </tbody>
         </table>
     </div>
+
+    <script>
+        // Function to handle smooth scrolling
+        function smoothScroll() {
+            document.getElementById('experiments').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Fade in effect after page load
+        window.onload = function() {
+            document.body.style.opacity = 1; // Fade in the body
+            document.querySelector('.loader').style.display = 'none'; // Hide the loader
+        };
+    </script>
 </body>
 </html>
