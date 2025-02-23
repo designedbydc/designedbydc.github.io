@@ -3,6 +3,11 @@
     "name": "Floating Video Player",
     "version": "1.0",
     "description": "A Chrome extension for a floating video player.",
+    "icons": {
+        "16": "images/icon@1x.png",
+        "48": "images/icon@2x.png",
+        "128": "images/icon@3x.png"
+    },
     "permissions": [
       "activeTab",
       "scripting"

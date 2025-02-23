@@ -198,6 +198,19 @@
 
         // Cleanup on page unload
         window.addEventListener('unload', () => observer.disconnect());
+
+        // Add a keydown event listener for the shortcut
+        document.addEventListener('keydown', (event) => {
+            // Prevent default action if the key is 'P'
+            if (event.key === 'p' || event.key === 'P') {
+                event.preventDefault(); // Prevent any default action
+                const video = document.querySelector(CONFIG.SELECTORS.VIDEO);
+                if (video) {
+                    createClickHandler(video)(); // Trigger the PiP function
+                    video.focus(); // Focus the video element
+                }
+            }
+        });
     }
 
     // Start the script
