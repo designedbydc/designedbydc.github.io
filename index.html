@@ -7,8 +7,7 @@
     <link href="./index_files/css2" rel="stylesheet">
     <style>
         body {
-            height: 100vh;
-            overflow: hidden;
+            overflow: auto;
             background-color: #000;
             display: flex;
             flex-direction: column;
@@ -155,6 +154,7 @@
             background: transparent;
             padding: 20px 0;
             z-index: 10;
+            margin-top: 80px; /* Added margin above experiments container */
         }
 
         h2 {
@@ -199,6 +199,11 @@
         .experiments-section {
             scroll-margin-top: 50px;
         }
+
+        /* New class for logo padding */
+        .logo-container {
+            padding-top: 100px; /* Add 50px padding above the logo */
+        }
     </style>
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
@@ -216,7 +221,9 @@
         </div>
     </div>
 
-    <img src="img/logo.png" width="189px" height="103px" alt="designedbydc logo" />
+    <div class="logo-container">
+        <img src="img/logo.png" width="189px" height="103px" alt="designedbydc logo" />
+    </div>
     <p>( Design + Develop + Invest ) <sup>AI</sup></p>
     <br>
     <p>Twitter: <a href="https://x.com/NextPercent" target="_blank">@NextPercent</a></p>
