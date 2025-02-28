@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Speed Control",
+  "version": "1.0",
+  "description": "Adds speed control buttons (1x, 1.5x, 2x) to YouTube player",
+  "permissions": [
+    "activeTab"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.youtube.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+  "icons": {
+    "48": "icon48.png"
+  }
+}
