@@ -34,7 +34,7 @@ function addSpeedControl(rightControls) {
     speeds.indexOf(video.playbackRate) : 0;
   
   // Set initial text
-  button.textContent = `${speeds[currentIndex]}x`;
+  button.textContent = `${video.playbackRate}x`;
 
   // Click handler to cycle through speeds
   button.addEventListener('click', () => {
@@ -42,6 +42,18 @@ function addSpeedControl(rightControls) {
     const newSpeed = speeds[currentIndex];
     video.playbackRate = newSpeed;
     button.textContent = `${newSpeed}x`;
+  });
+
+  // Add event listener to track YouTube's native speed changes
+  video.addEventListener('ratechange', () => {
+    // Update button text to match current playback rate
+    button.textContent = `${video.playbackRate}x`;
+    
+    // Update currentIndex if the new speed is in our speeds array
+    const newIndex = speeds.indexOf(video.playbackRate);
+    if (newIndex !== -1) {
+      currentIndex = newIndex;
+    }
   });
 
   try {

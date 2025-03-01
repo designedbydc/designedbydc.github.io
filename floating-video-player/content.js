@@ -25,20 +25,15 @@
         }
     };
 
-    // SVG icon for the PiP button (matches YouTube's style)
-    const PIP_ICON = `
-        <svg height="100%" version="1.1" viewBox="0 0 36 36" width="100%">
-            <path d="M25,17 L17,17 L17,23 L25,23 L25,17 L25,17 Z M29,25 L15,25 L15,15 L29,15 L29,25 L29,25 Z M12,7 L33,7 L33,27 L12,27 L12,7 L12,7 Z" 
-                  fill="#fff"/>
-        </svg>`;
-
     /**
      * Utility function to create an SVG element safely
      * @returns {SVGElement}
      */
-    function createSVGElement() {
+    async function createSVGElement() {
+        const response = await fetch(chrome.runtime.getURL('images/pip-icon.svg'));
+        const svgText = await response.text();
         const div = document.createElement('div');
-        div.innerHTML = PIP_ICON.trim();
+        div.innerHTML = svgText.trim();
         return div.firstChild;
     }
 
@@ -69,35 +64,25 @@
      * Set button attributes and styling
      * @param {HTMLButtonElement} button 
      */
-    function setupButton(button) {
+    async function setupButton(button) {
         // Set attributes
         button.className = 'ytp-button pip-button';
         button.setAttribute('title', 'Picture-in-Picture');
         button.setAttribute('aria-label', 'Picture-in-Picture');
         button.setAttribute('data-tooltip-target-id', 'ytp-pip-button');
 
-        // Set styles
-        Object.assign(button.style, {
-            width: CONFIG.BUTTON.WIDTH,
-            height: CONFIG.BUTTON.HEIGHT,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            verticalAlign: 'top',
-            opacity: '1',
-            visibility: 'visible',
-            position: 'relative',
-            zIndex: '1000',
-            background: 'transparent',
-            border: 'none',
-            margin: '0',
-            padding: CONFIG.BUTTON.PADDING,
-            cursor: 'pointer',
-            outline: 'none'
-        });
-
-        // Add SVG icon
-        button.appendChild(createSVGElement());
+        try {
+            // Add SVG icon
+            const svgIcon = await createSVGElement();
+            if (!svgIcon) {
+                throw new Error('SVG icon could not be created');
+            }
+            button.appendChild(svgIcon);
+        } catch (error) {
+            console.error('Error adding SVG icon:', error);
+            // Fallback to text if SVG fails
+            button.textContent = 'PiP';
+        }
     }
 
     /**
@@ -125,11 +110,11 @@
     /**
      * Create and return a configured PiP button
      * @param {HTMLVideoElement} video 
-     * @returns {HTMLButtonElement}
+     * @returns {Promise<HTMLButtonElement>}
      */
-    function createPiPButton(video) {
+    async function createPiPButton(video) {
         const button = document.createElement('button');
-        setupButton(button);
+        await setupButton(button);
         button.addEventListener('click', createClickHandler(video));
         return button;
     }
@@ -141,21 +126,36 @@
         const { SELECTORS, RETRY } = CONFIG;
         let attempts = 0;
 
-        const checkForControls = setInterval(() => {
+        // First check if button already exists to avoid duplicates
+        if (document.querySelector(SELECTORS.PIP_BUTTON)) {
+            console.log('PiP button already exists, not adding another one');
+            return;
+        }
+
+        const checkForControls = setInterval(async () => {
             attempts++;
             const rightControls = document.querySelector(SELECTORS.RIGHT_CONTROLS);
             const video = document.querySelector(SELECTORS.VIDEO);
             
+            // Double-check that the button doesn't already exist before adding
             if (rightControls && video && !document.querySelector(SELECTORS.PIP_BUTTON)) {
                 clearInterval(checkForControls);
                 
-                const pipButton = createPiPButton(video);
-                const fullscreenButton = rightControls.querySelector(SELECTORS.FULLSCREEN_BUTTON);
-                
-                if (fullscreenButton) {
-                    rightControls.insertBefore(pipButton, fullscreenButton);
-                } else {
-                    rightControls.appendChild(pipButton);
+                try {
+                    const pipButton = await createPiPButton(video);
+                    const fullscreenButton = rightControls.querySelector(SELECTORS.FULLSCREEN_BUTTON);
+                    
+                    // Final check before insertion to prevent race conditions
+                    if (!document.querySelector(SELECTORS.PIP_BUTTON)) {
+                        if (fullscreenButton) {
+                            rightControls.insertBefore(pipButton, fullscreenButton);
+                        } else {
+                            rightControls.appendChild(pipButton);
+                        }
+                        console.log('PiP button added successfully');
+                    }
+                } catch (err) {
+                    console.error('Error creating PiP button:', err);
                 }
             } else if (attempts >= RETRY.MAX_ATTEMPTS) {
                 clearInterval(checkForControls);
@@ -180,16 +180,19 @@
             document.addEventListener('DOMContentLoaded', addPiPButtonToYouTube);
         }
 
+        // Use debounce to prevent multiple rapid calls to addPiPButtonToYouTube
+        const debouncedAddButton = debounce(() => {
+            const { SELECTORS } = CONFIG;
+            if (!document.querySelector(SELECTORS.PIP_BUTTON) && 
+                document.querySelector(SELECTORS.RIGHT_CONTROLS)) {
+                addPiPButtonToYouTube();
+            }
+        }, CONFIG.RETRY.DEBOUNCE_DELAY);
+
         // Handle dynamic page updates
-        const observer = new MutationObserver(
-            debounce(() => {
-                const { SELECTORS } = CONFIG;
-                if (!document.querySelector(SELECTORS.PIP_BUTTON) && 
-                    document.querySelector(SELECTORS.RIGHT_CONTROLS)) {
-                    addPiPButtonToYouTube();
-                }
-            }, CONFIG.RETRY.DEBOUNCE_DELAY)
-        );
+        const observer = new MutationObserver(() => {
+            debouncedAddButton();
+        });
 
         observer.observe(document.body, { 
             childList: true, 

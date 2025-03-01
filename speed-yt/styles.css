@@ -12,13 +12,10 @@
   padding-top: 0;
   padding-bottom: 0;
 
-  /* Shift the button further upward */
-  margin-top: -40px;
-
   /* Match display and alignment */
   display: inline-block;
-  vertical-align: middle;
-  text-align: center;
+  vertical-align: top;
+  text-align: center !important;
 
   /* Match visual styling */
   background-color: rgba(0, 0, 0, 0);
@@ -31,8 +28,11 @@
   outline: none;
   user-select: none;
 
-  /* Increase font size by 20% over the inherited value (from previous change) */
-  font-size: 150%;
+  /* Use fixed font size instead of percentage to prevent scaling issues in fullscreen */
+  font-size: 14px;
+  line-height: 48px;
+  text-align: center !important;
+  vertical-align: top;
 
   /* Match text shadow from parent for consistency */
   text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
@@ -40,6 +40,25 @@
   /* Match transitions */
   transition: opacity 0.1s cubic-bezier(0.4, 0, 1, 1);
 }
+
+:fullscreen .speed-btn {
+  font-size: 100%; 
+  line-height: 48px; 
+  margin-top: 4px;
+}
+
+:-webkit-full-screen .speed-btn {
+  font-size: 100%; 
+  line-height: 48px; 
+  margin-top: 4px;
+}
+
+:-moz-full-screen .speed-btn {
+  font-size: 100%; 
+  line-height: 48px; 
+  margin-top: 4px;
+}
+*/
 
 .speed-btn:hover {
   opacity: 1;
