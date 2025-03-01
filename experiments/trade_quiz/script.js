@@ -1,7 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Your OpenAI API key (replace with your actual key)
-    const OPENAI_API_KEY = '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'; // Replace this with your actual API key
-    
     // DOM Elements
     const difficultyContainer = document.getElementById('difficulty-container');
     const startQuizBtn = document.getElementById('start-quiz-btn');
@@ -173,28 +170,18 @@ document.addEventListener('DOMContentLoaded', () => {
             ${askedQuestions.length > 0 ? 'IMPORTANT: Do not generate any of these questions that have already been asked: ' + 
             askedQuestions.slice(-10).map(q => '"' + q.question + '"').join(', ') : ''}`;
             
-            // Call OpenAI API
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            // Call our API route instead of OpenAI directly
+            const response = await fetch('/api/openai', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    model: 'gpt-3.5-turbo',
-                    messages: [
-                        {
-                            role: 'user',
-                            content: prompt
-                        }
-                    ],
-                    temperature: 0.7
-                })
+                body: JSON.stringify({ prompt })
             });
             
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.error?.message || 'Failed to fetch question from OpenAI');
+                throw new Error(errorData.error || 'Failed to fetch question from API');
             }
             
             const data = await response.json();
@@ -227,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 showQuestion(currentQuestion);
             } catch (e) {
-                throw new Error('Failed to parse question data from OpenAI');
+                throw new Error('Failed to parse question data from API');
             }
         } catch (error) {
             showError(`API Error: ${error.message}. Please try again later or contact support.`);
