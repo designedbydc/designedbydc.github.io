@@ -16,7 +16,8 @@ export default async function handler(req, res) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+        'OpenAI-Beta': 'assistants=v1'  // Add this header for project API keys
       },
       body: JSON.stringify({
         model: 'gpt-3.5-turbo',
@@ -32,6 +33,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);  // Log the full error for debugging
       return res.status(response.status).json({ 
         error: errorData.error?.message || 'Failed to fetch from OpenAI' 
       });
