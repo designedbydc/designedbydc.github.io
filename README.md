@@ -34,6 +34,14 @@ A Chrome extension that adds enhanced playback speed controls to YouTube videos.
 
 ## Web Experiments
 
+### Stock Market Trade Quiz
+An interactive quiz to test and improve your stock trading skills with real market scenarios.
+- [Try it](https://designedbydc.com/experiments/trade_quiz/)
+- Features:
+  - Realistic market scenarios
+  - Performance tracking
+  - Dark/Light mode toggle
+
 ### Pomodoro Timer
 A customizable Pomodoro timer application with multiple themes.
 - [Try it](https://designedbydc.com/experiments/pomodoro.html)
@@ -53,8 +61,10 @@ A simple, clean to-do list application.
 
 - HTML5
 - CSS3 (with animations and 3D transforms)
-- Vanilla JavaScript
+- JavaScript (Vanilla JS)
+- TailwindCSS
 - Chrome Extension API
+- Various Web APIs
 
 ## Installation
 
