@@ -18,9 +18,16 @@ export default async function handler(req, res) {
     const maskedKey = `${apiKey.substring(0, 8)}...${apiKey.substring(apiKey.length - 4)}`;
     
     // Initialize the OpenAI SDK - the SDK automatically handles organization ID for project-based keys
-    const openai = new OpenAI({
+    const openaiConfig = {
       apiKey: process.env.OPENAI_API_KEY
-    });
+    };
+    
+    // Add organization ID if it exists
+    if (process.env.OPENAI_ORG_ID) {
+      openaiConfig.organization = process.env.OPENAI_ORG_ID;
+    }
+    
+    const openai = new OpenAI(openaiConfig);
     
     // Test the API key by listing models
     try {

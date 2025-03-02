@@ -35,9 +35,16 @@ export default async function handler(req, res) {
     
     // Initialize the OpenAI SDK with API key only
     // The SDK automatically handles organization ID for project-based keys
-    const openai = new OpenAI({
+    const openaiConfig = {
       apiKey: process.env.OPENAI_API_KEY
-    });
+    };
+    
+    // Add organization ID if it exists
+    if (process.env.OPENAI_ORG_ID) {
+      openaiConfig.organization = process.env.OPENAI_ORG_ID;
+    }
+    
+    const openai = new OpenAI(openaiConfig);
     
     // Call OpenAI API using the SDK
     try {
