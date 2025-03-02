@@ -48,6 +48,11 @@ export default async function handler(req, res) {
     
     // Call OpenAI API using the SDK
     try {
+      // Set a timeout for the API call
+      const timeoutMs = 30000; // 30 seconds
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+      
       const completion = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
@@ -57,7 +62,12 @@ export default async function handler(req, res) {
           }
         ],
         temperature: 0.7
+      }, {
+        signal: controller.signal
       });
+      
+      // Clear the timeout
+      clearTimeout(timeoutId);
       
       return res.status(200).json({
         choices: [
@@ -71,12 +81,21 @@ export default async function handler(req, res) {
     } catch (apiError) {
       console.error('OpenAI API error:', apiError);
       
+      // Check if the error is a JSON parsing error
+      const isJsonParseError = apiError.message && (
+        apiError.message.includes('Unexpected token') || 
+        apiError.message.includes('is not valid JSON')
+      );
+      
       // Provide detailed error information
       return res.status(400).json({ 
         error: apiError.message || 'Failed to fetch from OpenAI',
-        errorType: apiError.type || 'unknown_error',
+        errorType: apiError.type || (isJsonParseError ? 'json_parse_error' : 'unknown_error'),
         errorCode: apiError.code || 'unknown_code',
-        suggestion: 'Please check your OpenAI API key and billing setup. You may need to create a new API key in the OpenAI dashboard.'
+        suggestion: isJsonParseError 
+          ? 'The OpenAI API returned an invalid response. This might be due to temporary server issues. Please try again in a few minutes.'
+          : 'Please check your OpenAI API key and billing setup. You may need to create a new API key in the OpenAI dashboard.',
+        rawError: apiError.toString()
       });
     }
   } catch (error) {

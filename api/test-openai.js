@@ -48,6 +48,12 @@ export default async function handler(req, res) {
     } catch (apiError) {
       console.error('OpenAI API test error:', apiError);
       
+      // Check if the error is a JSON parsing error
+      const isJsonParseError = apiError.message && (
+        apiError.message.includes('Unexpected token') || 
+        apiError.message.includes('is not valid JSON')
+      );
+      
       return res.status(200).json({
         success: false,
         keyType: isProjectKey ? 'Project key' : 'Standard key',
@@ -56,9 +62,12 @@ export default async function handler(req, res) {
         environment: process.env.NODE_ENV || 'unknown',
         method: 'OpenAI SDK',
         error: apiError.message || 'Failed to fetch from OpenAI',
-        errorType: apiError.type || 'unknown_error',
+        errorType: apiError.type || (isJsonParseError ? 'json_parse_error' : 'unknown_error'),
         errorCode: apiError.code || 'unknown_code',
-        suggestion: 'Please check your OpenAI API key and billing setup. You may need to create a new API key in the OpenAI dashboard.'
+        suggestion: isJsonParseError 
+          ? 'The OpenAI API returned an invalid response. This might be due to temporary server issues. Please try again in a few minutes.'
+          : 'Please check your OpenAI API key and billing setup. You may need to create a new API key in the OpenAI dashboard.',
+        rawError: apiError.toString()
       });
     }
   } catch (error) {
