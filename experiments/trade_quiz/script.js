@@ -17,6 +17,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const backgroundMusic = document.getElementById('background-music');
     const thinkingMusicContainer = document.getElementById('thinking-music-container');
     
+    // Add new DOM elements
+    const resumeQuizContainer = document.getElementById('resume-quiz-container');
+    const resumeQuizBtn = document.getElementById('resume-quiz-btn');
+    const resumeLevel = document.getElementById('resume-level');
+    const resumeScore = document.getElementById('resume-score');
+    const bestScoresPreview = document.getElementById('best-scores-preview');
+    const bestScoresList = document.getElementById('best-scores-list');
+    
     // Level configuration
     const LEVELS = [
         { 
@@ -151,11 +159,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Track retry attempts to prevent infinite loops
     let retryAttempts = 0;
     const MAX_RETRY_ATTEMPTS = 3;
-    const MAX_STORED_QUESTIONS = 500; // Maximum number of questions to store in history
+    const MAX_STORED_QUESTIONS = 500;
 
-    // Track earned badges
+    // Track earned badges and best scores
     let earnedBadges = JSON.parse(localStorage.getItem('earnedBadges') || '[]');
-    
+    let bestScores = JSON.parse(localStorage.getItem('bestScores') || '{}');
+    let lastQuizState = JSON.parse(localStorage.getItem('lastQuizState') || null);
+
     // Apply dark mode to all elements by default
     applyDarkMode();
 
@@ -165,25 +175,35 @@ document.addEventListener('DOMContentLoaded', () => {
         difficultyContainer.classList.add('hidden');
         quizMainContainer.classList.remove('hidden');
         
-        // Start the quiz
-        initQuiz();
+        // Start fresh quiz
+        initQuiz(false);
     });
 
     // Initialize the quiz
-    function initQuiz() {
+    function initQuiz(isResume = false) {
         // Clean up any YouTube player
         cleanupYouTubePlayer();
         cleanupThinkingMusicPlayer();
         
-        currentQuestionIndex = 0;
-        currentLevel = 0;
-        questionsCompletedInLevel = 0;
-        score = 0;
+        if (isResume && lastQuizState) {
+            // Restore the last quiz state
+            currentLevel = lastQuizState.currentLevel;
+            questionsCompletedInLevel = lastQuizState.questionsCompletedInLevel;
+            currentQuestionIndex = lastQuizState.currentQuestionIndex;
+            score = lastQuizState.score;
+        } else {
+            // Start fresh
+            currentLevel = 0;
+            questionsCompletedInLevel = 0;
+            currentQuestionIndex = 0;
+            score = 0;
+        }
+        
         missedQuestions = [];
         userPerformance = [];
         consecutiveCorrectAnswers = 0;
         
-        // Load asked questions from localStorage instead of resetting
+        // Load asked questions from localStorage
         askedQuestions = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
         
         // Reset retry attempts
@@ -199,7 +219,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Apply initial theme
         applyLevelTheme(currentLevel);
         
-        // Get the first question
+        // Get the next question
         getNextQuestion();
     }
     
@@ -291,6 +311,19 @@ document.addEventListener('DOMContentLoaded', () => {
         // Award badge for completed level
         awardBadge(currentLevel);
         
+        // Trigger confetti effect
+        triggerConfetti();
+        
+        // Show achievement toast with sharing
+        showAchievementToast(
+            LEVELS[currentLevel].name, 
+            `You've mastered the ${LEVELS[currentLevel].name} level!`,
+            LEVELS[currentLevel].badge
+        );
+        
+        // Generate and show certificate
+        showCertificate(currentLevel);
+        
         feedbackText.innerHTML = `
             <div class="text-center">
                 <h3 class="text-2xl font-bold mb-4">🎉 Level Complete! 🎉</h3>
@@ -302,12 +335,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button id="continue-btn" class="secondary-btn dark-mode py-3 px-8 transition duration-300">
                     Continue Journey
                 </button>
+                <button id="view-progress" class="text-sm text-gray-500 hover:text-gray-700 mt-4 block w-full">
+                    View Progress
+                </button>
             </div>
         `;
 
-        // Add event listener to the continue button
+        // Add event listeners
         setTimeout(() => {
             const continueBtn = document.getElementById('continue-btn');
+            const viewProgressBtn = document.getElementById('view-progress');
+            
             if (continueBtn) {
                 continueBtn.addEventListener('click', () => {
                     feedbackContainer.classList.add('hidden');
@@ -318,8 +356,158 @@ document.addEventListener('DOMContentLoaded', () => {
                     getNextQuestion();
                 });
             }
+            
+            if (viewProgressBtn) {
+                viewProgressBtn.addEventListener('click', showProgressSummary);
+            }
         }, 100);
+
+        // If all levels are completed, clear the saved state
+        if (currentLevel === LEVELS.length - 1) {
+            localStorage.removeItem('lastQuizState');
+        }
     }
+
+    // Confetti effect
+    function triggerConfetti() {
+        const count = 200;
+        const defaults = {
+            origin: { y: 0.7 }
+        };
+
+        function fire(particleRatio, opts) {
+            confetti({
+                ...defaults,
+                ...opts,
+                particleCount: Math.floor(count * particleRatio)
+            });
+        }
+
+        fire(0.25, {
+            spread: 26,
+            startVelocity: 55,
+        });
+
+        fire(0.2, {
+            spread: 60,
+        });
+
+        fire(0.35, {
+            spread: 100,
+            decay: 0.91,
+            scalar: 0.8
+        });
+
+        fire(0.1, {
+            spread: 120,
+            startVelocity: 25,
+            decay: 0.92,
+            scalar: 1.2
+        });
+
+        fire(0.1, {
+            spread: 120,
+            startVelocity: 45,
+        });
+    }
+
+    // Show achievement toast
+    function showAchievementToast(title, description, icon = '🏆') {
+        const toast = document.getElementById('achievement-toast');
+        const achievementTitle = document.getElementById('achievement-title');
+        const achievementDescription = document.getElementById('achievement-description');
+        const achievementIcon = document.getElementById('achievement-icon');
+
+        achievementTitle.textContent = title;
+        achievementDescription.textContent = description;
+        achievementIcon.textContent = icon;
+
+        toast.classList.remove('hidden');
+        toast.classList.add('animate-slide-in');
+
+        setTimeout(() => {
+            toast.classList.remove('animate-slide-in');
+            toast.classList.add('animate-slide-out');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+                toast.classList.remove('animate-slide-out');
+            }, 300);
+        }, 3000);
+    }
+
+    // Show progress summary with best scores
+    function showProgressSummary() {
+        const summary = document.getElementById('progress-summary');
+        const stats = document.getElementById('progress-stats');
+        
+        // Calculate current statistics
+        const totalQuestions = currentQuestionIndex + 1;
+        const accuracy = Math.round((score / totalQuestions) * 100);
+        const completedLevels = earnedBadges.length;
+        
+        // Get best score for current level
+        const currentLevelName = LEVELS[currentLevel].name;
+        const bestScore = bestScores[currentLevelName];
+        
+        stats.innerHTML = `
+            <div class="space-y-6">
+                <div class="space-y-3">
+                    <h4 class="font-bold text-lg mb-2">Current Session</h4>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Total Questions:</span>
+                        <span class="font-bold">${totalQuestions}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Correct Answers:</span>
+                        <span class="font-bold">${score}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Accuracy:</span>
+                        <span class="font-bold">${accuracy}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Levels Completed:</span>
+                        <span class="font-bold">${completedLevels}/10</span>
+                    </div>
+                </div>
+                
+                ${bestScore ? `
+                    <div class="space-y-3 pt-4 border-t">
+                        <h4 class="font-bold text-lg mb-2">Best Score - ${currentLevelName}</h4>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Score:</span>
+                            <span class="font-bold">${bestScore.score}/${bestScore.questionsAnswered}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Best Accuracy:</span>
+                            <span class="font-bold">${bestScore.accuracy}%</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600">Achieved:</span>
+                            <span class="font-bold">${new Date(bestScore.date).toLocaleDateString()}</span>
+                        </div>
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        summary.classList.remove('hidden');
+        
+        // Add close button event listener
+        document.getElementById('close-progress').addEventListener('click', () => {
+            summary.classList.add('hidden');
+        });
+    }
+
+    // Add keyboard navigation
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            const summary = document.getElementById('progress-summary');
+            if (!summary.classList.contains('hidden')) {
+                summary.classList.add('hidden');
+            }
+        }
+    });
 
     // Get next question from OpenAI
     async function getNextQuestion() {
@@ -539,6 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         feedbackContainer.classList.add('fade-in');
+        
     }
 
     // Show/hide loading spinner
@@ -643,5 +832,179 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
             initBadges();
         }
+    }
+
+    // Check for saved quiz state and show resume option
+    function checkForResumeState() {
+        if (lastQuizState) {
+            const level = LEVELS[lastQuizState.currentLevel];
+            resumeLevel.textContent = `Level: ${level.name}`;
+            resumeScore.textContent = `Score: ${lastQuizState.score}`;
+            resumeQuizContainer.classList.remove('hidden');
+        } else {
+            resumeQuizContainer.classList.add('hidden');
+        }
+    }
+
+    // Display best scores in the preview section
+    function displayBestScores() {
+        if (Object.keys(bestScores).length === 0) {
+            bestScoresPreview.classList.add('hidden');
+            return;
+        }
+
+        bestScoresPreview.classList.remove('hidden');
+        bestScoresList.innerHTML = '';
+
+        // Sort levels by their order in LEVELS array
+        const sortedLevels = Object.keys(bestScores).sort((a, b) => {
+            const indexA = LEVELS.findIndex(level => level.name === a);
+            const indexB = LEVELS.findIndex(level => level.name === b);
+            return indexA - indexB;
+        });
+
+        // Display top 4 best scores
+        sortedLevels.slice(0, 4).forEach(levelName => {
+            const score = bestScores[levelName];
+            const scoreElement = document.createElement('div');
+            scoreElement.className = 'flex justify-between items-center text-gray-600 dark:text-gray-400';
+            scoreElement.innerHTML = `
+                <span>${levelName}:</span>
+                <span class="font-medium">${score.accuracy}%</span>
+            `;
+            bestScoresList.appendChild(scoreElement);
+        });
+
+        if (sortedLevels.length > 4) {
+            const moreElement = document.createElement('div');
+            moreElement.className = 'text-center text-gray-500 dark:text-gray-400 mt-2';
+            moreElement.textContent = `+${sortedLevels.length - 4} more levels`;
+            bestScoresList.appendChild(moreElement);
+        }
+    }
+
+    // Add resume quiz button handler
+    if (resumeQuizBtn) {
+        resumeQuizBtn.addEventListener('click', () => {
+            difficultyContainer.classList.add('hidden');
+            quizMainContainer.classList.remove('hidden');
+            initQuiz(true);
+        });
+    }
+
+    // Check for resume state and display best scores when page loads
+    checkForResumeState();
+    displayBestScores();
+
+    // Update the window beforeunload event to save state
+    window.addEventListener('beforeunload', () => {
+        if (currentQuestionIndex > 0) {
+            saveQuizState();
+        }
+    });
+
+    // Social sharing functionality
+    function shareAchievement(platform, achievement) {
+        const text = `I just earned the ${achievement.title} badge in the Stock Market Trade Quiz! 🎯`;
+        const url = window.location.href;
+        
+        let shareUrl;
+        switch (platform) {
+            case 'twitter':
+                shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
+                break;
+            case 'linkedin':
+                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent(text)}`;
+                break;
+            case 'whatsapp':
+                shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
+                break;
+        }
+        
+        if (shareUrl) {
+            window.open(shareUrl, '_blank', 'width=600,height=400');
+        }
+    }
+
+    // Add share button event listeners
+    document.querySelectorAll('.share-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const platform = btn.dataset.platform;
+            const achievement = {
+                title: document.getElementById('achievement-title').textContent,
+                description: document.getElementById('achievement-description').textContent
+            };
+            shareAchievement(platform, achievement);
+        });
+    });
+
+    // Certificate generation and handling
+    function showCertificate(level) {
+        const modal = document.getElementById('certificate-modal');
+        const levelInfo = LEVELS[level];
+        const accuracy = Math.round((score / (currentQuestionIndex + 1)) * 100);
+        
+        // Update certificate content
+        document.getElementById('certificate-level').textContent = levelInfo.name;
+        document.getElementById('certificate-badge').textContent = levelInfo.badge;
+        document.getElementById('certificate-date').textContent = new Date().toLocaleDateString();
+        document.getElementById('certificate-accuracy').textContent = `${accuracy}%`;
+        
+        // Show modal
+        modal.classList.remove('hidden');
+        
+        // Add event listeners for certificate actions
+        setupCertificateListeners(levelInfo, accuracy);
+    }
+
+    function setupCertificateListeners(levelInfo, accuracy) {
+        const modal = document.getElementById('certificate-modal');
+        const closeBtn = document.getElementById('close-certificate');
+        const downloadBtn = document.getElementById('download-certificate');
+        const shareBtn = document.getElementById('share-certificate');
+        
+        closeBtn.onclick = () => modal.classList.add('hidden');
+        
+        downloadBtn.onclick = () => {
+            // Use html2canvas to capture the certificate
+            html2canvas(document.getElementById('certificate-content')).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `${levelInfo.name.replace(/\s+/g, '_')}_Certificate.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        };
+        
+        shareBtn.onclick = () => {
+            const text = `I've completed the ${levelInfo.name} level in the Stock Market Trade Quiz with ${accuracy}% accuracy! 🎓`;
+            const url = window.location.href;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Trading Achievement',
+                    text: text,
+                    url: url
+                }).catch(console.error);
+            } else {
+                // Fallback to clipboard copy
+                navigator.clipboard.writeText(`${text}\n${url}`).then(() => {
+                    alert('Certificate sharing link copied to clipboard!');
+                }).catch(console.error);
+            }
+        };
+        
+        // Close modal on outside click
+        modal.onclick = (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+            }
+        };
+        
+        // Close on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+            }
+        });
     }
 }); 

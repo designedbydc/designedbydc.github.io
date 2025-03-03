@@ -459,4 +459,81 @@ iframe {
 .secondary-btn,
 #continue-btn {
     min-height: 44px; /* Minimum touch target size */
+}
+
+/* Achievement toast animations */
+@keyframes slide-in {
+    0% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-out {
+    0% {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.animate-slide-in {
+    animation: slide-in 0.3s ease-out forwards;
+}
+
+.animate-slide-out {
+    animation: slide-out 0.3s ease-in forwards;
+}
+
+/* Progress summary styles */
+#progress-summary {
+    backdrop-filter: blur(4px);
+}
+
+#progress-summary .bg-white {
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Achievement toast responsive styles */
+@media (max-width: 639px) {
+    #achievement-toast {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+    }
+    
+    #achievement-toast > div {
+        margin: 0 auto;
+    }
+}
+
+/* Progress stats responsive styles */
+@media (max-width: 639px) {
+    #progress-stats {
+        font-size: 0.875rem;
+    }
+}
+
+/* Improved focus styles for accessibility */
+button:focus-visible {
+    outline: 2px solid var(--color-purple);
+    outline-offset: 2px;
+}
+
+/* Dark mode adjustments for new elements */
+.dark-mode #progress-summary .bg-white {
+    background-color: var(--color-dark-purple);
+    color: var(--color-light);
+}
+
+.dark-mode #progress-stats .text-gray-600 {
+    color: var(--color-pink);
 } 
