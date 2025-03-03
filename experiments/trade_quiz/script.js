@@ -152,6 +152,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let userPerformance = [];
     let currentQuestion = null;
     let consecutiveCorrectAnswers = 0;
+    let timerInterval = null;
+    let timeLeft = 45;
     
     // Track all previously asked questions to prevent repetition - now using localStorage
     let askedQuestions = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
@@ -661,9 +663,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 'w-full', 'text-left', 'p-4', 'rounded-2xl', 
                 'transition-colors', 'duration-200', 
                 'border', 'border-gray-200', 'dark:border-gray-700',
-                'bg-white', 'dark:bg-gray-800',
+                'bg-white/10', 'dark:bg-gray-800/10',
                 'text-gray-900', 'dark:text-white',
-                'hover:bg-gray-100', 'dark:hover:bg-gray-700',
+                'hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20',
                 'focus:outline-none', 'focus:ring-2', 'focus:ring-purple-500'
             );
             
@@ -673,10 +675,96 @@ document.addEventListener('DOMContentLoaded', () => {
         
         feedbackContainer.classList.add('hidden');
         quizContainer.classList.add('fade-in');
+
+        // Start timer for first 6 questions
+        if (currentQuestionIndex < 6) {
+            startTimer();
+        } else {
+            // Hide timer for other questions
+            document.getElementById('timer').parentElement.classList.add('hidden');
+        }
     }
 
-    // Check if the selected answer is correct
+    // Start the timer
+    function startTimer() {
+        // Reset and show timer
+        timeLeft = 45;
+        const timerElement = document.getElementById('timer');
+        timerElement.parentElement.classList.remove('hidden');
+        timerElement.textContent = timeLeft + 's';
+        timerElement.classList.remove('text-red-500');
+
+        // Clear any existing timer
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+
+        // Start new timer
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            timerElement.textContent = timeLeft + 's';
+
+            // Warning when 10 seconds or less remain
+            if (timeLeft <= 10) {
+                timerElement.classList.add('text-red-500');
+            }
+
+            // Time's up
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                handleTimeUp();
+            }
+        }, 1000);
+    }
+
+    // Handle when time runs out
+    function handleTimeUp() {
+        // Disable all option buttons
+        const optionButtons = optionsContainer.querySelectorAll('button');
+        optionButtons.forEach(button => {
+            button.disabled = true;
+            button.classList.add('pointer-events-none');
+        });
+
+        // Show correct answer in green
+        optionButtons[currentQuestion.correctAnswer].classList.remove('hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20', 'text-gray-900', 'dark:text-white', 'bg-white/10', 'dark:bg-gray-800/10');
+        optionButtons[currentQuestion.correctAnswer].classList.add('bg-green-500/90', 'dark:bg-green-600/90', 'text-white');
+
+        // Add explanation
+        const explanationDiv = document.createElement('div');
+        explanationDiv.className = 'mt-6 p-4 rounded-lg bg-white/10 dark:bg-gray-800/10 border border-gray-200 dark:border-gray-700';
+        explanationDiv.innerHTML = `
+            <p class="text-base text-gray-900 dark:text-white">Time's up! The correct answer was: ${currentQuestion.options[currentQuestion.correctAnswer]}</p>
+            <p class="text-base text-gray-900 dark:text-white mt-2">${currentQuestion.explanation}</p>
+            <div class="text-center mt-4">
+                <button id="next-question-btn" class="secondary-btn dark-mode py-2 px-6 bg-purple-600/90 hover:bg-purple-700/90 dark:bg-purple-500/90 dark:hover:bg-purple-600/90 text-white rounded-lg transition-colors duration-200">
+                    Next Question
+                </button>
+            </div>
+        `;
+        optionsContainer.appendChild(explanationDiv);
+
+        // Add event listener to next question button
+        setTimeout(() => {
+            const nextQuestionBtn = document.getElementById('next-question-btn');
+            if (nextQuestionBtn) {
+                nextQuestionBtn.addEventListener('click', () => {
+                    currentQuestionIndex++;
+                    currentQuestionElement.textContent = currentQuestionIndex + 1;
+                    getNextQuestion();
+                });
+            }
+        }, 100);
+    }
+
+    // Modify checkAnswer to clear timer when answer is selected
     function checkAnswer(selectedIndex) {
+        // Clear timer if it's running
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+
         const isCorrect = selectedIndex === currentQuestion.correctAnswer;
         
         // Track user performance
@@ -702,8 +790,8 @@ document.addEventListener('DOMContentLoaded', () => {
             scoreElement.textContent = score;
             
             // Add green background to correct answer with proper dark mode support
-            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'text-gray-900', 'dark:text-white');
-            optionButtons[selectedIndex].classList.add('bg-green-500', 'dark:bg-green-600', 'text-white');
+            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20', 'text-gray-900', 'dark:text-white', 'bg-white/10', 'dark:bg-gray-800/10');
+            optionButtons[selectedIndex].classList.add('bg-green-500/90', 'dark:bg-green-600/90', 'text-white');
             
             // Check for level progression
             checkLevelProgression();
@@ -717,20 +805,20 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             // Add red background to wrong answer
-            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'text-gray-900', 'dark:text-white');
-            optionButtons[selectedIndex].classList.add('bg-red-500', 'dark:bg-red-600', 'text-white');
+            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20', 'text-gray-900', 'dark:text-white', 'bg-white/10', 'dark:bg-gray-800/10');
+            optionButtons[selectedIndex].classList.add('bg-red-500/90', 'dark:bg-red-600/90', 'text-white');
             
             // Add green background to correct answer
-            optionButtons[currentQuestion.correctAnswer].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'text-gray-900', 'dark:text-white');
-            optionButtons[currentQuestion.correctAnswer].classList.add('bg-green-500', 'dark:bg-green-600', 'text-white');
+            optionButtons[currentQuestion.correctAnswer].classList.remove('hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20', 'text-gray-900', 'dark:text-white', 'bg-white/10', 'dark:bg-gray-800/10');
+            optionButtons[currentQuestion.correctAnswer].classList.add('bg-green-500/90', 'dark:bg-green-600/90', 'text-white');
             
             // Add explanation below the options with proper dark mode support
             const explanationDiv = document.createElement('div');
-            explanationDiv.className = 'mt-6 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
+            explanationDiv.className = 'mt-6 p-4 rounded-lg bg-white/10 dark:bg-gray-800/10 border border-gray-200 dark:border-gray-700';
             explanationDiv.innerHTML = `
                 <p class="text-base text-gray-900 dark:text-white">${currentQuestion.explanation}</p>
                 <div class="text-center mt-4">
-                    <button id="next-question-btn" class="secondary-btn dark-mode py-2 px-6 bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white rounded-lg transition-colors duration-200">
+                    <button id="next-question-btn" class="secondary-btn dark-mode py-2 px-6 bg-purple-600/90 hover:bg-purple-700/90 dark:bg-purple-500/90 dark:hover:bg-purple-600/90 text-white rounded-lg transition-colors duration-200">
                         Next Question
                     </button>
                 </div>
