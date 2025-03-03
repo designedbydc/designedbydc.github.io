@@ -1,3 +1,17 @@
+// Import leaderboard and challenge functionality
+import {
+    loadLeaderboard,
+    addToLeaderboard,
+    showLeaderboard,
+    addLeaderboardButton,
+    showChallengeModal,
+    showChallengeInfo,
+    checkForChallenge,
+    isChallengeMode,
+    challengeData,
+    leaderboard
+} from './leaderboard.js';
+
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
     const difficultyContainer = document.getElementById('difficulty-container');
@@ -143,18 +157,15 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeYouTubePlayer = null;
     let activeThinkingMusicPlayer = null;
 
-    // Quiz state
-    let currentLevel = 0; // Index into LEVELS array
-    let questionsCompletedInLevel = 0;
+    // Initialize quiz state
     let currentQuestionIndex = 0;
     let score = 0;
-    let missedQuestions = [];
-    let userPerformance = [];
-    let currentQuestion = null;
-    let consecutiveCorrectAnswers = 0;
-    let timerInterval = null;
-    let timeLeft = 45;
-    
+    let correctAnswers = [];
+    let incorrectAnswers = [];
+    let reviewMode = false;
+    let currentReviewIndex = 0;
+    let animationsEnabled = localStorage.getItem('animationsEnabled') !== 'false';
+
     // Track all previously asked questions to prevent repetition - now using localStorage
     let askedQuestions = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
     
@@ -184,6 +195,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let isReviewMode = false;
     let currentReviewIndex = 0;
 
+    // Add sound effect variables
+    let soundEffectsEnabled = true;
+    const soundEffects = {
+        correct: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3'),
+        incorrect: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3'),
+        levelUp: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3'),
+        timerWarning: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3'),
+        timerEnd: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-failure-drum-roll-651.mp3')
+    };
+    
     // Apply dark mode to all elements by default
     applyDarkMode();
 
@@ -263,6 +284,27 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Get the next question
         getNextQuestion();
+        
+        // Preload sound effects
+        preloadSoundEffects();
+        
+        // Add sound toggle to UI
+        addSoundToggle();
+        
+        // Add animation styles
+        addAnimationStyles();
+        
+        // Add animation toggle to UI
+        addAnimationToggle();
+        
+        // Load leaderboard
+        loadLeaderboard();
+        
+        // Add leaderboard button to UI
+        addLeaderboardButton();
+        
+        // Check for challenge in URL
+        checkForChallenge();
     }
     
     // Clean up YouTube player
@@ -408,6 +450,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (currentLevel === LEVELS.length - 1) {
             localStorage.removeItem('lastQuizState');
         }
+        
+        // Play level up sound
+        playSound('levelUp');
     }
 
     // Confetti effect
@@ -547,48 +592,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Get next question from OpenAI
+    // Update getNextQuestion to add transition animation
     async function getNextQuestion() {
+        // Add fade-out animation to current question if not first question
+        if (currentQuestionIndex > 0) {
+            const quizContainer = document.getElementById('quiz-container');
+            if (animationsEnabled) {
+                quizContainer.classList.add('animate-fade-out');
+                
+                // Wait for animation to complete
+                await new Promise(resolve => setTimeout(resolve, 300));
+                quizContainer.classList.remove('animate-fade-out');
+            }
+        }
+        
         showLoading(true);
         
         try {
-            // Reset retry attempts for each new question request
-            retryAttempts = 0;
-            
-            // Get recently asked questions for the prompt
-            const recentQuestions = askedQuestions.slice(-20).map(q => q.question);
-            
-            // Prepare the prompt for OpenAI
-            const prompt = `Generate a unique multiple-choice question about stock market trading at ${LEVELS[currentLevel].name} level. 
-
-            The question should match the expertise level:
-            - For Gully Investor: Focus on absolute basics and terminology
-            - For higher levels: Gradually increase complexity
-            - For Hedge Fund Maharathi: Include advanced concepts and strategic thinking
-
-            The question MUST be significantly different from these recently asked questions:
-            ${recentQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
-
-            Return the response in JSON format with the following structure:
-            {
-                "question": "The question text",
-                "options": ["Option A", "Option B", "Option C", "Option D"],
-                "correctAnswer": 0, // Index of the correct answer (0-3)
-                "explanation": "Detailed explanation of why this answer is correct and others are wrong"
+            // Check if we have a cached question
+            if (cachedQuestions && cachedQuestions.length > 0) {
+                const nextQuestion = cachedQuestions.shift();
+                showQuestion(nextQuestion);
+                
+                // If we're running low on cached questions, fetch more in the background
+                if (cachedQuestions.length < 2) {
+                    fetchMoreQuestions();
+                }
+                
+                return;
             }
             
-            Make sure the question is:
-            1. Appropriate for ${LEVELS[currentLevel].name} level
-            2. Completely unique and not similar to any of the recent questions
-            3. Tests a different concept or aspect than the recent questions`;
-            
-            // Call our API route instead of OpenAI directly
+            // Fetch a new question from the API
             const response = await fetch('/api/openai', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ prompt })
+                body: JSON.stringify({
+                    prompt: `Generate a multiple-choice question about stock market trading or investing concepts. The question should be appropriate for someone at level ${currentQuestionIndex + 1} of knowledge (where 1 is beginner and 10 is expert).
+                    
+                    Format the response as a valid JSON object with the following structure:
+                    {
+                        "question": "The question text goes here?",
+                        "options": ["Option A", "Option B", "Option C", "Option D"],
+                        "correctAnswer": 0, // Index of the correct answer (0-3)
+                        "explanation": "Explanation of why the correct answer is correct"
+                    }
+                    
+                    Make sure the question is challenging but fair, and the explanation is educational.`
+                }),
             });
             
             if (!response.ok) {
@@ -650,6 +702,54 @@ document.addEventListener('DOMContentLoaded', () => {
             showLoading(false);
         }
     }
+    
+    // Function to fetch more questions in the background
+    async function fetchMoreQuestions() {
+        if (!cachedQuestions) {
+            cachedQuestions = [];
+        }
+        
+        try {
+            // Fetch a new question from the API
+            const response = await fetch('/api/openai', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    prompt: `Generate a multiple-choice question about stock market trading or investing concepts. The question should be appropriate for someone at level ${currentQuestionIndex + 2} of knowledge (where 1 is beginner and 10 is expert).
+                    
+                    Format the response as a valid JSON object with the following structure:
+                    {
+                        "question": "The question text goes here?",
+                        "options": ["Option A", "Option B", "Option C", "Option D"],
+                        "correctAnswer": 0, // Index of the correct answer (0-3)
+                        "explanation": "Explanation of why the correct answer is correct"
+                    }
+                    
+                    Make sure the question is challenging but fair, and the explanation is educational.`
+                }),
+            });
+            
+            if (!response.ok) {
+                console.error('Failed to fetch cached question');
+                return;
+            }
+            
+            const data = await response.json();
+            const content = data.choices[0].message.content;
+            const question = JSON.parse(content);
+            
+            // Validate the question
+            if (question.question && Array.isArray(question.options) && 
+                question.options.length === 4 && typeof question.correctAnswer === 'number' &&
+                question.explanation) {
+                cachedQuestions.push(question);
+            }
+        } catch (error) {
+            console.error('Error fetching cached question:', error);
+        }
+    }
 
     // Display the current question
     function showQuestion(questionData) {
@@ -657,17 +757,27 @@ document.addEventListener('DOMContentLoaded', () => {
         currentHint = null; // Reset current hint
         
         // Update question display
-        document.getElementById('question').textContent = questionData.question;
+        const questionElement = document.getElementById('question');
+        questionElement.textContent = questionData.question;
         
         // Clear previous options
         const optionsContainer = document.getElementById('options-container');
         optionsContainer.innerHTML = '';
         
+        // Add animation to question
+        if (animationsEnabled) {
+            questionElement.classList.add('animate-fade-in');
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                questionElement.classList.remove('animate-fade-in');
+            }, 500);
+        }
+        
         // Add new options with improved contrast
         questionData.options.forEach((option, index) => {
             const button = document.createElement('button');
             // Improved contrast for option buttons
-            button.className = 'w-full text-left p-4 rounded-xl transition-colors duration-200 bg-white/15 dark:bg-gray-800/20 hover:bg-white/25 dark:hover:bg-gray-800/30 focus:outline-none focus:ring-2 focus:ring-purple-600 text-gray-900 dark:text-white';
+            button.className = 'w-full text-left p-4 rounded-xl transition-colors duration-200 bg-white/15 dark:bg-gray-800/20 hover:bg-white/25 dark:hover:bg-gray-800/30 focus:outline-none focus:ring-2 focus:ring-purple-600 text-gray-900 dark:text-white staggered-item';
             
             // Add keyboard shortcut indicator with improved contrast
             const keyboardNumber = index + 1;
@@ -678,11 +788,15 @@ document.addEventListener('DOMContentLoaded', () => {
             optionsContainer.appendChild(button);
         });
         
+        // Apply staggered animation to options
+        const optionButtons = optionsContainer.querySelectorAll('button');
+        animateStaggered(optionButtons, 'animate-slide-in-right', 100);
+        
         // Add hint button for questions after level 3 (if hints are available)
         if (currentQuestionIndex >= 3 && hintsUsed < MAX_HINTS) {
             // Create hint container
             const hintContainer = document.createElement('div');
-            hintContainer.className = 'mt-4 flex justify-end';
+            hintContainer.className = 'mt-4 flex justify-end staggered-item';
             
             // Create hint button with improved contrast
             const hintButton = document.createElement('button');
@@ -700,12 +814,18 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Add hint container after options
             optionsContainer.parentNode.insertBefore(hintContainer, optionsContainer.nextSibling);
+            
+            // Animate hint button
+            setTimeout(() => {
+                hintContainer.classList.add('animate-fade-in');
+                hintContainer.style.opacity = 1;
+            }, optionButtons.length * 100 + 100);
         }
         
         // Add keyboard shortcut tooltip with improved contrast
         if (!localStorage.getItem('keyboardShortcutTipShown')) {
             const tipContainer = document.createElement('div');
-            tipContainer.className = 'mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-lg flex items-center';
+            tipContainer.className = 'mt-4 p-3 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 text-sm rounded-lg flex items-center staggered-item';
             tipContainer.innerHTML = `
                 <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
@@ -720,6 +840,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Add the tip after the options
             optionsContainer.parentNode.insertBefore(tipContainer, optionsContainer.nextSibling);
+            
+            // Animate tip
+            setTimeout(() => {
+                tipContainer.classList.add('animate-fade-in');
+                tipContainer.style.opacity = 1;
+            }, optionButtons.length * 100 + 200);
             
             // Add event listener to dismiss button
             document.getElementById('dismiss-tip').addEventListener('click', () => {
@@ -783,26 +909,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const timerElement = document.getElementById('timer');
         timerElement.parentElement.classList.remove('hidden');
         timerElement.textContent = timeLeft + 's';
-        timerElement.classList.remove('text-red-500');
-
-        // Clear any existing timer
+        
+        // Clear any existing interval
         if (timerInterval) {
             clearInterval(timerInterval);
         }
-
-        // Start new timer
+        
+        // Start the timer
         timerInterval = setInterval(() => {
             timeLeft--;
-            timerElement.textContent = timeLeft + 's';
-
-            // Warning when 10 seconds or less remain
-            if (timeLeft <= 10) {
-                timerElement.classList.add('text-red-500');
+            
+            // Play warning sound when 10 seconds remain
+            if (timeLeft === 10) {
+                playSound('timerWarning');
             }
-
-            // Time's up
+            
+            // Update timer display
+            timerElement.textContent = timeLeft + 's';
+            
+            // Change color when time is running low
+            if (timeLeft <= 10) {
+                timerElement.classList.add('text-red-600', 'dark:text-red-400');
+            } else {
+                timerElement.classList.remove('text-red-600', 'dark:text-red-400');
+            }
+            
+            // Handle time up
             if (timeLeft <= 0) {
                 clearInterval(timerInterval);
+                timerInterval = null;
                 handleTimeUp();
             }
         }, 1000);
@@ -810,6 +945,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Handle when time runs out
     function handleTimeUp() {
+        // Play timer end sound
+        playSound('timerEnd');
+        
         // Disable all option buttons
         const optionsContainer = document.getElementById('options-container');
         const optionButtons = optionsContainer.querySelectorAll('button');
@@ -879,6 +1017,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const correctIndex = currentQuestion.correctAnswer;
         
         const isCorrect = selectedIndex === correctIndex;
+        
+        // Play sound effect
+        playSound(isCorrect ? 'correct' : 'incorrect');
         
         // Track incorrect questions for review
         if (!isCorrect && !isReviewMode) {
@@ -1614,92 +1755,138 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Function to show quiz completion screen with review option
     function showQuizCompletion() {
-        // Hide quiz container
-        document.getElementById('quiz-container').classList.add('hidden');
+        // Calculate total questions and accuracy
+        const totalQuestions = correctAnswers.length + incorrectAnswers.length;
+        const accuracy = totalQuestions > 0 ? Math.round((correctAnswers.length / totalQuestions) * 100) : 0;
+        
+        // Get player name from localStorage or use default
+        const playerName = localStorage.getItem('traderName') || 'Anonymous';
+        
+        // Add to leaderboard if score is greater than 0
+        if (score > 0) {
+            addToLeaderboard(playerName, score, totalQuestions, accuracy);
+        }
+        
+        // Get player's rank
+        const playerRank = leaderboard.findIndex(entry => entry.playerName === playerName && entry.score === score) + 1;
+        
+        // Create leaderboard message
+        let leaderboardMessage = '';
+        if (playerRank === 1) {
+            leaderboardMessage = '<div class="text-green-600 dark:text-green-400 font-bold mb-4">🏆 Congratulations! You have the top score on the leaderboard!</div>';
+        } else if (playerRank > 0) {
+            leaderboardMessage = `<div class="text-blue-600 dark:text-blue-400 mb-4">Your score ranks #${playerRank} on the leaderboard!</div>`;
+        }
+        
+        // Create challenge result message if in challenge mode
+        let challengeMessage = '';
+        if (isChallengeMode && challengeData) {
+            if (score > challengeData.score) {
+                challengeMessage = `
+                    <div class="bg-green-100 dark:bg-green-900/30 p-4 rounded-lg mb-4">
+                        <p class="font-bold text-green-700 dark:text-green-300">
+                            🎉 You beat ${challengeData.playerName}'s score of ${challengeData.score}!
+                        </p>
+                    </div>
+                `;
+            } else if (score === challengeData.score) {
+                challengeMessage = `
+                    <div class="bg-blue-100 dark:bg-blue-900/30 p-4 rounded-lg mb-4">
+                        <p class="font-bold text-blue-700 dark:text-blue-300">
+                            🤝 You tied with ${challengeData.playerName} with a score of ${challengeData.score}!
+                        </p>
+                    </div>
+                `;
+            } else {
+                challengeMessage = `
+                    <div class="bg-red-100 dark:bg-red-900/30 p-4 rounded-lg mb-4">
+                        <p class="font-bold text-red-700 dark:text-red-300">
+                            😢 You scored ${score}, which is ${challengeData.score - score} points less than ${challengeData.playerName}'s score of ${challengeData.score}.
+                        </p>
+                    </div>
+                `;
+            }
+        }
         
         // Create completion container
         const completionContainer = document.createElement('div');
-        completionContainer.id = 'completion-container';
-        completionContainer.className = 'p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg';
-        
-        // Calculate accuracy
-        const totalQuestions = currentQuestionIndex;
-        const accuracy = Math.round((score / totalQuestions) * 100);
-        
-        // Create completion content
-        let reviewButton = '';
-        if (incorrectQuestions.length > 0) {
-            reviewButton = `
-                <button id="review-incorrect" class="mt-4 w-full py-2 px-4 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors">
-                    Review ${incorrectQuestions.length} Incorrect ${incorrectQuestions.length === 1 ? 'Question' : 'Questions'}
-                </button>
-            `;
-        }
-        
+        completionContainer.className = 'bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg max-w-md mx-auto';
         completionContainer.innerHTML = `
-            <h2 class="text-2xl font-bold text-center mb-6">Quiz Completed!</h2>
+            <h2 class="text-2xl font-bold mb-4 text-center">Quiz Completed!</h2>
+            ${challengeMessage}
+            ${leaderboardMessage}
+            <div class="text-center mb-6">
+                <div class="text-4xl font-bold mb-2">${score}</div>
+                <div class="text-gray-600 dark:text-gray-400">Final Score</div>
+            </div>
             
-            <div class="space-y-4">
-                <div class="p-4 bg-purple-100 dark:bg-purple-900/20 rounded-lg">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-700 dark:text-gray-300">Final Score:</span>
-                        <span class="text-xl font-bold text-purple-700 dark:text-purple-300">${score}</span>
-                    </div>
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-center">
+                    <div class="text-2xl font-bold">${totalQuestions}</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Questions Answered</div>
                 </div>
-                
-                <div class="p-4 bg-blue-100 dark:bg-blue-900/20 rounded-lg">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-700 dark:text-gray-300">Questions Answered:</span>
-                        <span class="font-bold text-blue-700 dark:text-blue-300">${totalQuestions}</span>
-                    </div>
-                </div>
-                
-                <div class="p-4 bg-green-100 dark:bg-green-900/20 rounded-lg">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-700 dark:text-gray-300">Accuracy:</span>
-                        <span class="font-bold text-green-700 dark:text-green-300">${accuracy}%</span>
-                    </div>
-                </div>
-                
-                <div class="p-4 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                    <div class="flex justify-between items-center">
-                        <span class="text-gray-700 dark:text-gray-300">Incorrect Answers:</span>
-                        <span class="font-bold text-red-700 dark:text-red-300">${incorrectQuestions.length}</span>
-                    </div>
+                <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-center">
+                    <div class="text-2xl font-bold">${accuracy}%</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Accuracy</div>
                 </div>
             </div>
             
-            ${reviewButton}
+            ${incorrectAnswers.length > 0 ? `
+                <div class="mb-6">
+                    <div class="text-red-600 dark:text-red-400 mb-2">Incorrect Answers: ${incorrectAnswers.length}</div>
+                </div>
+            ` : ''}
             
-            <button id="restart-quiz" class="mt-4 w-full py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
-                Start New Quiz
-            </button>
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button id="view-leaderboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                    View Leaderboard
+                </button>
+                
+                <button id="challenge-friend" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    Challenge a Friend
+                </button>
+                
+                ${incorrectAnswers.length > 0 ? `
+                    <button id="review-incorrect" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors">
+                        Review Incorrect
+                    </button>
+                ` : ''}
+                
+                <button id="restart-quiz" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    Restart Quiz
+                </button>
+            </div>
         `;
         
-        // Add completion container to the quiz main container
-        document.getElementById('quiz-main-container').appendChild(completionContainer);
+        // Clear quiz container and append completion container
+        quizContainer.innerHTML = '';
+        quizContainer.appendChild(completionContainer);
         
         // Add event listeners
-        if (incorrectQuestions.length > 0) {
-            document.getElementById('review-incorrect').addEventListener('click', startReviewMode);
+        document.getElementById('view-leaderboard').addEventListener('click', showLeaderboard);
+        
+        document.getElementById('challenge-friend').addEventListener('click', () => {
+            showChallengeModal(score, correctAnswers, incorrectAnswers);
+        });
+        
+        if (incorrectAnswers.length > 0) {
+            document.getElementById('review-incorrect').addEventListener('click', () => {
+                reviewMode = true;
+                currentReviewIndex = 0;
+                showReviewQuestion();
+            });
         }
         
         document.getElementById('restart-quiz').addEventListener('click', () => {
-            // Remove completion container
-            completionContainer.remove();
-            
             // Reset quiz state
-            currentQuestionIndex = 0;
             score = 0;
-            consecutiveCorrectAnswers = 0;
-            askedQuestions = [];
-            incorrectQuestions = [];
-            hintsUsed = 0;
-            streakMultiplier = 1;
+            currentQuestionIndex = 0;
+            correctAnswers = [];
+            incorrectAnswers = [];
+            reviewMode = false;
             
             // Show difficulty selection
-            document.getElementById('quiz-main-container').classList.add('hidden');
-            document.getElementById('difficulty-container').classList.remove('hidden');
+            showDifficultySelection();
         });
     }
     
@@ -1856,4 +2043,563 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize keyboard navigation
     setupKeyboardNavigation();
+
+    // Preload sound effects
+    function preloadSoundEffects() {
+        Object.values(soundEffects).forEach(audio => {
+            audio.load();
+            audio.volume = 0.5; // Set default volume
+        });
+    }
+    
+    // Function to play sound effect
+    function playSound(soundName) {
+        if (!soundEffectsEnabled) return;
+        
+        const sound = soundEffects[soundName];
+        if (sound) {
+            // Reset the audio to the beginning if it's already playing
+            sound.pause();
+            sound.currentTime = 0;
+            
+            // Play the sound
+            sound.play().catch(error => {
+                console.warn('Could not play sound effect:', error);
+            });
+        }
+    }
+    
+    // Add sound toggle to the UI
+    function addSoundToggle() {
+        const statsContainer = document.getElementById('stats');
+        
+        const soundToggle = document.createElement('div');
+        soundToggle.className = 'text-gray-700 w-auto flex items-center ml-auto';
+        soundToggle.innerHTML = `
+            <button id="sound-toggle" class="p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500" aria-label="Toggle sound effects">
+                <svg id="sound-on-icon" class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd" />
+                </svg>
+                <svg id="sound-off-icon" class="w-6 h-6 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM12.293 7.293a1 1 0 011.414 0L15 8.586l1.293-1.293a1 1 0 111.414 1.414L16.414 10l1.293 1.293a1 1 0 01-1.414 1.414L15 11.414l-1.293 1.293a1 1 0 01-1.414-1.414L13.586 10l-1.293-1.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        `;
+        
+        statsContainer.appendChild(soundToggle);
+        
+        // Add event listener to toggle sound
+        document.getElementById('sound-toggle').addEventListener('click', toggleSound);
+        
+        // Check if sound preference is saved
+        const savedSoundPreference = localStorage.getItem('soundEffectsEnabled');
+        if (savedSoundPreference !== null) {
+            soundEffectsEnabled = savedSoundPreference === 'true';
+            updateSoundToggleIcon();
+        }
+    }
+    
+    // Function to toggle sound effects
+    function toggleSound() {
+        soundEffectsEnabled = !soundEffectsEnabled;
+        localStorage.setItem('soundEffectsEnabled', soundEffectsEnabled);
+        updateSoundToggleIcon();
+    }
+    
+    // Update sound toggle icon
+    function updateSoundToggleIcon() {
+        const soundOnIcon = document.getElementById('sound-on-icon');
+        const soundOffIcon = document.getElementById('sound-off-icon');
+        
+        if (soundEffectsEnabled) {
+            soundOnIcon.classList.remove('hidden');
+            soundOffIcon.classList.add('hidden');
+        } else {
+            soundOnIcon.classList.add('hidden');
+            soundOffIcon.classList.remove('hidden');
+        }
+    }
+    
+    // Add animation preferences
+    let animationsEnabled = true;
+    
+    // Function to add animation settings
+    function addAnimationToggle() {
+        const statsContainer = document.getElementById('stats');
+        
+        const animationToggle = document.createElement('div');
+        animationToggle.className = 'text-gray-700 w-auto flex items-center ml-2';
+        animationToggle.innerHTML = `
+            <button id="animation-toggle" class="p-1 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500" aria-label="Toggle animations">
+                <svg id="animation-on-icon" class="w-6 h-6 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+                </svg>
+                <svg id="animation-off-icon" class="w-6 h-6 text-gray-600 dark:text-gray-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M13.477 14.89A6 6 0 015.11 6.524l8.367 8.368zm1.414-1.414L6.524 5.11a6 6 0 018.367 8.367zM18 10a8 8 0 11-16 0 8 8 0 0116 0z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        `;
+        
+        statsContainer.appendChild(animationToggle);
+        
+        // Add event listener to toggle animations
+        document.getElementById('animation-toggle').addEventListener('click', toggleAnimations);
+        
+        // Check if animation preference is saved
+        const savedAnimationPreference = localStorage.getItem('animationsEnabled');
+        if (savedAnimationPreference !== null) {
+            animationsEnabled = savedAnimationPreference === 'true';
+            updateAnimationToggleIcon();
+        }
+    }
+    
+    // Function to toggle animations
+    function toggleAnimations() {
+        animationsEnabled = !animationsEnabled;
+        localStorage.setItem('animationsEnabled', animationsEnabled);
+        updateAnimationToggleIcon();
+    }
+    
+    // Update animation toggle icon
+    function updateAnimationToggleIcon() {
+        const animationOnIcon = document.getElementById('animation-on-icon');
+        const animationOffIcon = document.getElementById('animation-off-icon');
+        
+        if (animationsEnabled) {
+            animationOnIcon.classList.remove('hidden');
+            animationOffIcon.classList.add('hidden');
+        } else {
+            animationOnIcon.classList.add('hidden');
+            animationOffIcon.classList.remove('hidden');
+        }
+    }
+    
+    // Add CSS for animations
+    function addAnimationStyles() {
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+            
+            @keyframes fadeOut {
+                from { opacity: 1; transform: translateY(0); }
+                to { opacity: 0; transform: translateY(-10px); }
+            }
+            
+            @keyframes slideInRight {
+                from { opacity: 0; transform: translateX(30px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            
+            @keyframes slideInLeft {
+                from { opacity: 0; transform: translateX(-30px); }
+                to { opacity: 1; transform: translateX(0); }
+            }
+            
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+            
+            .animate-fade-in {
+                animation: fadeIn 0.5s ease-out forwards;
+            }
+            
+            .animate-fade-out {
+                animation: fadeOut 0.3s ease-in forwards;
+            }
+            
+            .animate-slide-in-right {
+                animation: slideInRight 0.4s ease-out forwards;
+            }
+            
+            .animate-slide-in-left {
+                animation: slideInLeft 0.4s ease-out forwards;
+            }
+            
+            .animate-pulse {
+                animation: pulse 0.5s ease-in-out;
+            }
+            
+            .staggered-item {
+                opacity: 0;
+            }
+            
+            .reduced-motion {
+                animation: none !important;
+                transition: none !important;
+            }
+        `;
+        
+        document.head.appendChild(styleElement);
+    }
+    
+    // Function to apply staggered animation to elements
+    function animateStaggered(elements, animationClass, delayBetween = 100) {
+        if (!animationsEnabled) {
+            elements.forEach(el => {
+                el.style.opacity = 1;
+            });
+            return;
+        }
+        
+        elements.forEach((element, index) => {
+            setTimeout(() => {
+                element.classList.add(animationClass);
+                element.style.opacity = 1;
+            }, index * delayBetween);
+        });
+    }
+
+    // Leaderboard variables
+    const MAX_LEADERBOARD_ENTRIES = 10;
+    let leaderboard = [];
+
+    // Challenge variables
+    let isChallengeMode = false;
+    let challengeData = null;
+
+    // Function to load leaderboard from localStorage
+    function loadLeaderboard() {
+        try {
+            const savedLeaderboard = localStorage.getItem('quizLeaderboard');
+            if (savedLeaderboard) {
+                leaderboard = JSON.parse(savedLeaderboard);
+            }
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+            // Reset leaderboard if there's an error
+            leaderboard = [];
+        }
+    }
+
+    // Function to save leaderboard to localStorage
+    function saveLeaderboard() {
+        try {
+            localStorage.setItem('quizLeaderboard', JSON.stringify(leaderboard));
+        } catch (error) {
+            console.error('Error saving leaderboard:', error);
+        }
+    }
+
+    // Function to add an entry to the leaderboard
+    function addToLeaderboard(playerName, score, questionsAnswered, accuracy) {
+        // Create new entry
+        const entry = {
+            playerName: playerName,
+            score: score,
+            questionsAnswered: questionsAnswered,
+            accuracy: accuracy,
+            date: new Date().toISOString()
+        };
+        
+        // Add to leaderboard
+        leaderboard.push(entry);
+        
+        // Sort by score (highest first)
+        leaderboard.sort((a, b) => b.score - a.score);
+        
+        // Trim to max entries
+        if (leaderboard.length > MAX_LEADERBOARD_ENTRIES) {
+            leaderboard = leaderboard.slice(0, MAX_LEADERBOARD_ENTRIES);
+        }
+        
+        // Save to localStorage
+        saveLeaderboard();
+        
+        // Return position (1-based index)
+        return leaderboard.findIndex(item => 
+            item.playerName === entry.playerName && 
+            item.score === entry.score
+        ) + 1;
+    }
+
+    // Function to show leaderboard
+    function showLeaderboard() {
+        // Create modal for leaderboard
+        const modal = document.createElement('div');
+        modal.id = 'leaderboard-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        modal.setAttribute('role', 'dialog');
+        modal.setAttribute('aria-modal', 'true');
+        modal.setAttribute('aria-labelledby', 'leaderboard-title');
+        
+        // Create leaderboard table
+        let tableRows = '';
+        
+        if (leaderboard.length === 0) {
+            tableRows = `
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-gray-500 dark:text-gray-400">
+                        No scores yet. Be the first to complete the quiz!
+                    </td>
+                </tr>
+            `;
+        } else {
+            leaderboard.forEach((entry, index) => {
+                // Format date
+                const date = new Date(entry.date);
+                const formattedDate = date.toLocaleDateString();
+                
+                // Determine row class based on position
+                let rowClass = '';
+                let medal = '';
+                
+                if (index === 0) {
+                    rowClass = 'bg-yellow-100 dark:bg-yellow-900/30';
+                    medal = '🥇';
+                } else if (index === 1) {
+                    rowClass = 'bg-gray-100 dark:bg-gray-700/50';
+                    medal = '🥈';
+                } else if (index === 2) {
+                    rowClass = 'bg-orange-100 dark:bg-orange-900/30';
+                    medal = '🥉';
+                }
+                
+                tableRows += `
+                    <tr class="${rowClass}">
+                        <td class="py-2 px-4 border-b border-gray-200 dark:border-gray-700">
+                            ${index + 1}${medal ? ' ' + medal : ''}
+                        </td>
+                        <td class="py-2 px-4 border-b border-gray-200 dark:border-gray-700">
+                            ${entry.playerName}
+                        </td>
+                        <td class="py-2 px-4 border-b border-gray-200 dark:border-gray-700 text-right">
+                            ${entry.score}
+                        </td>
+                        <td class="py-2 px-4 border-b border-gray-200 dark:border-gray-700 text-right">
+                            ${entry.accuracy}%
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+        
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md mx-4 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="leaderboard-title" class="text-xl font-bold">Leaderboard</h3>
+        modal.setAttribute('aria-labelledby', 'challenge-title');
+        
+        const challengeLink = createChallengeLink();
+        
+        modal.innerHTML = `
+            <div class="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md mx-4 shadow-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 id="challenge-title" class="text-xl font-bold">Challenge a Friend</h3>
+                    <button id="close-challenge" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <p class="mb-4">Share this link with a friend to challenge them to beat your score of <strong>${score}</strong>!</p>
+                
+                <div class="flex mb-4">
+                    <input id="challenge-link" type="text" value="${challengeLink}" readonly class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
+                    <button id="copy-challenge" class="ml-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                        Copy
+                    </button>
+                </div>
+                
+                <div class="space-y-2">
+                    <button id="share-whatsapp" class="w-full py-2 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"></path>
+                        </svg>
+                        Share on WhatsApp
+                    </button>
+                    
+                    <button id="share-twitter" class="w-full py-2 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
+                        </svg>
+                        Share on Twitter
+                    </button>
+                </div>
+                
+                <button id="dismiss-challenge" class="mt-6 w-full py-2 px-4 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
+                    Close
+                </button>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        
+        // Add event listeners
+        document.getElementById('close-challenge').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        document.getElementById('dismiss-challenge').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        // Copy challenge link
+        document.getElementById('copy-challenge').addEventListener('click', () => {
+            const linkInput = document.getElementById('challenge-link');
+            linkInput.select();
+            document.execCommand('copy');
+            
+            // Show copied message
+            const copyButton = document.getElementById('copy-challenge');
+            const originalText = copyButton.textContent;
+            copyButton.textContent = 'Copied!';
+            setTimeout(() => {
+                copyButton.textContent = originalText;
+            }, 2000);
+        });
+        
+        // Share on WhatsApp
+        document.getElementById('share-whatsapp').addEventListener('click', () => {
+            const text = `I scored ${score} points in the Stock Market Quiz! Can you beat my score? Take the challenge: `;
+            const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text + challengeLink)}`;
+            window.open(whatsappUrl, '_blank');
+        });
+        
+        // Share on Twitter
+        document.getElementById('share-twitter').addEventListener('click', () => {
+            const text = `I scored ${score} points in the Stock Market Quiz! Can you beat my score? Take the challenge: `;
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text + challengeLink)}`;
+            window.open(twitterUrl, '_blank');
+        });
+        
+        // Close on Escape key
+        modal.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                modal.remove();
+            }
+        });
+        
+        // Close on outside click
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.remove();
+            }
+        });
+        
+        // Focus the dismiss button
+        document.getElementById('dismiss-challenge').focus();
+    }
+    
+    // Function to show challenge info
+    function showChallengeInfo(challenge) {
+        // Create challenge info container
+        const infoContainer = document.createElement('div');
+        infoContainer.className = 'mb-6 p-4 bg-purple-100 dark:bg-purple-900/30 rounded-lg';
+        
+        // Calculate how long ago the challenge was created
+        const now = new Date().getTime();
+        const challengeTime = challenge.timestamp;
+        const timeDiff = now - challengeTime;
+        const hoursAgo = Math.floor(timeDiff / (1000 * 60 * 60));
+        const daysAgo = Math.floor(hoursAgo / 24);
+        
+        let timeAgo = '';
+        if (daysAgo > 0) {
+            timeAgo = `${daysAgo} day${daysAgo > 1 ? 's' : ''} ago`;
+        } else if (hoursAgo > 0) {
+            timeAgo = `${hoursAgo} hour${hoursAgo > 1 ? 's' : ''} ago`;
+        } else {
+            timeAgo = 'just now';
+        }
+        
+        infoContainer.innerHTML = `
+            <h3 class="text-lg font-bold text-purple-800 dark:text-purple-300 mb-2">Challenge from ${challenge.playerName}</h3>
+            <p class="text-purple-700 dark:text-purple-400">
+                ${challenge.playerName} scored <strong>${challenge.score}</strong> points 
+                by answering <strong>${challenge.questionsAnswered}</strong> questions ${timeAgo}.
+                Can you beat their score?
+            </p>
+        `;
+        
+        // Add to difficulty container
+        const difficultyContainer = document.getElementById('difficulty-container');
+        difficultyContainer.insertBefore(infoContainer, difficultyContainer.firstChild);
+    }
+    
+    // Function to check for challenge in URL
+    function checkForChallenge() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const challengeCode = urlParams.get('challenge');
+        
+        if (challengeCode) {
+            const challenge = parseChallengeCode(challengeCode);
+            if (challenge) {
+                // Store challenge data
+                challengeData = challenge;
+                isChallengeMode = true;
+                
+                // Show challenge info
+                showChallengeInfo(challenge);
+                
+                // Clean URL
+                const url = new URL(window.location.href);
+                url.searchParams.delete('challenge');
+                window.history.replaceState({}, document.title, url.toString());
+            }
+        }
+    }
+
+    // Challenge variables
+    let isChallengeMode = false;
+    let challengeData = null;
+
+    // Function to generate a challenge code
+    function generateChallengeCode(playerName, score, questionsAnswered) {
+        const challenge = {
+            playerName: playerName,
+            score: score,
+            questionsAnswered: questionsAnswered,
+            timestamp: new Date().getTime()
+        };
+        
+        // Convert to base64
+        return btoa(JSON.stringify(challenge));
+    }
+
+    // Function to parse a challenge code
+    function parseChallengeCode(code) {
+        try {
+            // Decode from base64
+            const decoded = atob(code);
+            const challenge = JSON.parse(decoded);
+            
+            // Validate challenge data
+            if (!challenge.playerName || 
+                typeof challenge.score !== 'number' || 
+                typeof challenge.questionsAnswered !== 'number' ||
+                !challenge.timestamp) {
+                console.error('Invalid challenge data:', challenge);
+                return null;
+            }
+            
+            return challenge;
+        } catch (error) {
+            console.error('Error parsing challenge code:', error);
+            return null;
+        }
+    }
+
+    // Function to create a challenge link
+    function createChallengeLink() {
+        // Get player name from localStorage or use default
+        const playerName = localStorage.getItem('playerName') || 'Anonymous';
+        
+        // Calculate total questions
+        const totalQuestions = correctAnswers.length + incorrectAnswers.length;
+        
+        // Generate challenge code
+        const challengeCode = generateChallengeCode(playerName, score, totalQuestions);
+        
+        // Create URL with challenge code
+        const url = new URL(window.location.href);
+        url.searchParams.set('challenge', challengeCode);
+        
+        return url.toString();
+    }
 }); 

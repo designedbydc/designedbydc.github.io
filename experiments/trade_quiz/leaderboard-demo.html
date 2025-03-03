@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard and Challenge Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-3xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2">Stock Market Quiz</h1>
+            <p class="text-gray-600 dark:text-gray-400">Leaderboard and Challenge System Demo</p>
+        </header>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Quiz Completion</h2>
+            <div class="text-center mb-6">
+                <div class="text-4xl font-bold mb-2">250</div>
+                <div class="text-gray-600 dark:text-gray-400">Final Score</div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-center">
+                    <div class="text-2xl font-bold">10</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Questions Answered</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg text-center">
+                    <div class="text-2xl font-bold">80%</div>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Accuracy</div>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button id="view-leaderboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                    View Leaderboard
+                </button>
+                
+                <button id="challenge-friend" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    Challenge a Friend
+                </button>
+                
+                <button id="restart-quiz" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                    Restart Quiz
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+            <h2 class="text-xl font-bold mb-4">Try It Out</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="player-name" class="block mb-2">Your Name:</label>
+                    <input type="text" id="player-name" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700" value="Player 1">
+                </div>
+                
+                <div>
+                    <label for="score" class="block mb-2">Score:</label>
+                    <input type="number" id="score" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700" value="250">
+                </div>
+                
+                <div>
+                    <label for="questions" class="block mb-2">Questions Answered:</label>
+                    <input type="number" id="questions" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700" value="10">
+                </div>
+                
+                <div>
+                    <label for="accuracy" class="block mb-2">Accuracy (%):</label>
+                    <input type="number" id="accuracy" class="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700" value="80">
+                </div>
+                
+                <div class="flex gap-2">
+                    <button id="add-to-leaderboard" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
+                        Add to Leaderboard
+                    </button>
+                    
+                    <button id="generate-challenge" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                        Generate Challenge Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import {
+            loadLeaderboard,
+            addToLeaderboard,
+            showLeaderboard,
+            addLeaderboardButton,
+            showChallengeModal,
+            showChallengeInfo,
+            checkForChallenge,
+            isChallengeMode,
+            challengeData,
+            leaderboard
+        } from './leaderboard.js';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Load leaderboard
+            loadLeaderboard();
+            
+            // Check for challenge in URL
+            checkForChallenge();
+            
+            // Add leaderboard button
+            addLeaderboardButton();
+            
+            // Add event listeners
+            document.getElementById('view-leaderboard').addEventListener('click', showLeaderboard);
+            
+            document.getElementById('challenge-friend').addEventListener('click', () => {
+                const score = 250;
+                const correctAnswers = new Array(8);
+                const incorrectAnswers = new Array(2);
+                showChallengeModal(score, correctAnswers, incorrectAnswers);
+            });
+            
+            document.getElementById('add-to-leaderboard').addEventListener('click', () => {
+                const playerName = document.getElementById('player-name').value || 'Anonymous';
+                const score = parseInt(document.getElementById('score').value) || 0;
+                const questions = parseInt(document.getElementById('questions').value) || 0;
+                const accuracy = parseInt(document.getElementById('accuracy').value) || 0;
+                
+                const position = addToLeaderboard(playerName, score, questions, accuracy);
+                alert(`Added to leaderboard at position #${position}`);
+            });
+            
+            document.getElementById('generate-challenge').addEventListener('click', () => {
+                const playerName = document.getElementById('player-name').value || 'Anonymous';
+                const score = parseInt(document.getElementById('score').value) || 0;
+                const questions = parseInt(document.getElementById('questions').value) || 0;
+                
+                // Store in localStorage for the challenge modal
+                localStorage.setItem('playerName', playerName);
+                
+                // Create mock arrays for the challenge modal
+                const correctAnswers = new Array(Math.round(questions * (parseInt(document.getElementById('accuracy').value) || 0) / 100));
+                const incorrectAnswers = new Array(questions - correctAnswers.length);
+                
+                showChallengeModal(score, correctAnswers, incorrectAnswers);
+            });
+        });
+    </script>
+</body>
+</html> 
