@@ -12,45 +12,45 @@
 <body class="min-h-screen font-sans dark-mode">
     <!-- Theme toggle moved to top right corner -->
     <div class="theme-toggle-container">
-        <span class="text-sm text-gray-600">Light</span>
+        <span class="text-sm text-gray-600 hidden sm:inline">Light</span>
         <label class="toggle-switch">
             <input type="checkbox" id="theme-toggle" checked>
             <span class="toggle-slider"></span>
         </label>
-        <span class="text-sm text-gray-600">Dark</span>
+        <span class="text-sm text-gray-600 hidden sm:inline">Dark</span>
     </div>
 
-    <div class="container mx-auto px-6 py-10 max-w-3xl">
+    <div class="container mx-auto px-4 sm:px-6 py-6 sm:py-10 max-w-3xl">
         <!-- Badges Display -->
-        <div id="badges-container" class="mb-8 p-4 rounded-xl grid grid-cols-5 gap-4 hidden">
+        <div id="badges-container" class="mb-6 sm:mb-8 p-3 sm:p-4 rounded-xl grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4 hidden">
             <!-- Badges will be inserted here -->
         </div>
 
-        <header class="text-center mb-12">
-            <h1 class="text-4xl font-semibold mb-3" style="color: var(--color-purple);">Stock Market Quiz</h1>
-            <p class="text-gray-500 text-lg mb-6">Test your knowledge of stock market trading concepts</p>
+        <header class="text-center mb-8 sm:mb-12">
+            <h1 class="text-3xl sm:text-4xl font-semibold mb-2 sm:mb-3" style="color: var(--color-purple);">Stock Market Quiz</h1>
+            <p class="text-gray-500 text-base sm:text-lg mb-4 sm:mb-6">Test your knowledge of stock market trading concepts</p>
         </header>
 
         <!-- Hidden difficulty container, now only used for starting the quiz -->
-        <div id="difficulty-container" class="theme-card dark-mode p-8 mb-8">
-            <h2 class="text-2xl font-semibold mb-6">Ready to Test Your Knowledge?</h2>
+        <div id="difficulty-container" class="theme-card dark-mode p-6 sm:p-8 mb-6 sm:mb-8">
+            <h2 class="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Ready to Test Your Knowledge?</h2>
             <div class="text-center">
-                <button id="start-quiz-btn" class="secondary-btn dark-mode py-4 px-12 transition duration-300">
+                <button id="start-quiz-btn" class="secondary-btn dark-mode py-3 sm:py-4 px-8 sm:px-12 transition duration-300 text-base sm:text-lg">
                     Start Quiz
                 </button>
             </div>
-            <p class="text-gray-500 mt-6 text-sm text-center">Master all levels from Gully Investor to Hedge Fund Maharathi!</p>
+            <p class="text-gray-500 mt-4 sm:mt-6 text-sm text-center">Master all levels from Gully Investor to Hedge Fund Maharathi!</p>
             
             <!-- Level Preview -->
-            <div class="mt-8 p-4 rounded-xl bg-opacity-50 bg-gray-100 dark:bg-gray-800">
-                <h3 class="text-lg font-semibold mb-3">Your Journey Awaits</h3>
-                <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
+            <div class="mt-6 sm:mt-8 p-4 rounded-xl bg-opacity-50 bg-gray-100 dark:bg-gray-800">
+                <h3 class="text-base sm:text-lg font-semibold mb-3">Your Journey Awaits</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+                    <div class="space-y-2">
                         <p>🎯 10 Exciting Levels</p>
                         <p>🏆 Earn Unique Badges</p>
                         <p>📈 Track Progress</p>
                     </div>
-                    <div>
+                    <div class="space-y-2">
                         <p>🌟 Level-specific Themes</p>
                         <p>🎮 Adaptive Difficulty</p>
                         <p>🏅 Achievement System</p>
@@ -59,45 +59,48 @@
             </div>
         </div>
 
-        <div id="quiz-main-container" class="hidden theme-card dark-mode p-8 mb-8">
+        <div id="quiz-main-container" class="hidden theme-card dark-mode p-6 sm:p-8 mb-6 sm:mb-8">
             <!-- Level Progress Bar -->
             <div id="level-progress" class="mb-4 relative h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div id="progress-bar" class="absolute top-0 left-0 h-full transition-all duration-500 ease-out"></div>
             </div>
 
-            <div id="stats" class="flex justify-between mb-8 border-b border-gray-200 pb-4">
-                <div class="text-gray-700">
-                    <span class="font-medium">Question:</span> <span id="current-question" class="font-semibold">1</span>
+            <div id="stats" class="flex flex-wrap sm:flex-nowrap justify-between mb-6 sm:mb-8 border-b border-gray-200 pb-4 gap-2 sm:gap-0">
+                <div class="text-gray-700 w-1/2 sm:w-auto">
+                    <span class="font-medium text-sm sm:text-base">Question:</span> 
+                    <span id="current-question" class="font-semibold text-sm sm:text-base">1</span>
                 </div>
-                <div class="text-gray-700">
-                    <span class="font-medium">Score:</span> <span id="score" class="font-semibold">0</span>
+                <div class="text-gray-700 w-1/2 sm:w-auto text-right sm:text-left">
+                    <span class="font-medium text-sm sm:text-base">Score:</span> 
+                    <span id="score" class="font-semibold text-sm sm:text-base">0</span>
                 </div>
-                <div class="text-gray-700">
-                    <span class="font-medium">Level:</span> <span id="current-difficulty" class="font-semibold">Beginner</span>
+                <div class="text-gray-700 w-full sm:w-auto text-center sm:text-left mt-2 sm:mt-0">
+                    <span class="font-medium text-sm sm:text-base">Level:</span> 
+                    <span id="current-difficulty" class="font-semibold text-sm sm:text-base">Beginner</span>
                 </div>
             </div>
 
-            <div id="loading-container" class="hidden text-center py-10">
+            <div id="loading-container" class="hidden text-center py-8 sm:py-10">
                 <div class="loader"></div>
-                <p class="text-gray-500 mt-4">Generating your next question...</p>
+                <p class="text-gray-500 mt-4 text-sm sm:text-base">Generating your next question...</p>
             </div>
 
             <div id="quiz-container">
-                <div id="question-container" class="mb-8">
-                    <h2 id="question" class="text-xl font-medium text-gray-800 mb-6"></h2>
-                    <div id="options-container" class="space-y-4">
+                <div id="question-container" class="mb-6 sm:mb-8">
+                    <h2 id="question" class="text-lg sm:text-xl font-medium text-gray-800 mb-4 sm:mb-6"></h2>
+                    <div id="options-container" class="space-y-3 sm:space-y-4">
                         <!-- Options will be inserted here -->
                     </div>
                 </div>
 
-                <div id="feedback-container" class="hidden mb-8 p-6 rounded-2xl">
-                    <p id="feedback-text" class="text-lg"></p>
+                <div id="feedback-container" class="hidden mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl">
+                    <p id="feedback-text" class="text-base sm:text-lg"></p>
                 </div>
             </div>
         </div>
 
-        <div id="error-container" class="hidden bg-red-50 text-red-600 p-6 rounded-2xl mb-8">
-            <p id="error-message"></p>
+        <div id="error-container" class="hidden bg-red-50 text-red-600 p-4 sm:p-6 rounded-2xl mb-6 sm:mb-8">
+            <p id="error-message" class="text-sm sm:text-base"></p>
         </div>
     </div>
 
