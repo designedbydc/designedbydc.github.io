@@ -662,7 +662,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'transition-colors', 'duration-200', 
                 'border', 'border-gray-200', 'dark:border-gray-700',
                 'bg-white', 'dark:bg-gray-800',
-                'text-gray-900', 'dark:text-gray-100',
+                'text-gray-900', 'dark:text-white',
                 'hover:bg-gray-100', 'dark:hover:bg-gray-700',
                 'focus:outline-none', 'focus:ring-2', 'focus:ring-purple-500'
             );
@@ -702,14 +702,13 @@ document.addEventListener('DOMContentLoaded', () => {
             scoreElement.textContent = score;
             
             // Add green background to correct answer with proper dark mode support
-            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700');
+            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'text-gray-900', 'dark:text-white');
             optionButtons[selectedIndex].classList.add('bg-green-500', 'dark:bg-green-600', 'text-white');
             
             // Check for level progression
             checkLevelProgression();
             
             if (questionsCompletedInLevel < LEVELS[currentLevel].questionsRequired) {
-                // Move to the next question after a delay for correct answers
                 setTimeout(() => {
                     currentQuestionIndex++;
                     currentQuestionElement.textContent = currentQuestionIndex + 1;
@@ -718,18 +717,18 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             // Add red background to wrong answer
-            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700');
+            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'text-gray-900', 'dark:text-white');
             optionButtons[selectedIndex].classList.add('bg-red-500', 'dark:bg-red-600', 'text-white');
             
             // Add green background to correct answer
-            optionButtons[currentQuestion.correctAnswer].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700');
+            optionButtons[currentQuestion.correctAnswer].classList.remove('hover:bg-gray-100', 'dark:hover:bg-gray-700', 'text-gray-900', 'dark:text-white');
             optionButtons[currentQuestion.correctAnswer].classList.add('bg-green-500', 'dark:bg-green-600', 'text-white');
             
             // Add explanation below the options with proper dark mode support
             const explanationDiv = document.createElement('div');
             explanationDiv.className = 'mt-6 p-4 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700';
             explanationDiv.innerHTML = `
-                <p class="text-base text-gray-900 dark:text-gray-100">${currentQuestion.explanation}</p>
+                <p class="text-base text-gray-900 dark:text-white">${currentQuestion.explanation}</p>
                 <div class="text-center mt-4">
                     <button id="next-question-btn" class="secondary-btn dark-mode py-2 px-6 bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white rounded-lg transition-colors duration-200">
                         Next Question
