@@ -36,6 +36,14 @@
         <!-- Hidden difficulty container, now only used for starting the quiz -->
         <div id="difficulty-container" class="theme-card dark-mode p-6 sm:p-8 mb-6 sm:mb-8">
             <h2 class="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6">Ready to Test Your Knowledge?</h2>
+            
+            <!-- Name Input Form -->
+            <div class="mb-6">
+                <label for="trader-name" class="block text-lg mb-2">Enter your name:</label>
+                <input type="text" id="trader-name" class="w-full p-3 rounded-lg bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Your Name" required>
+                <p class="text-sm text-gray-500 mt-2">This will appear on your achievement certificates</p>
+            </div>
+
             <div class="text-center">
                 <button id="start-quiz-btn" class="secondary-btn dark-mode py-3 sm:py-4 px-8 sm:px-12 transition duration-300 text-base sm:text-lg">
                     Start Quiz
@@ -154,20 +162,69 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
                     </svg>
                 </button>
-                <div id="certificate-content" class="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 p-8 rounded-lg text-center">
-                    <h2 class="text-3xl font-bold mb-6">Certificate of Achievement</h2>
-                    <div class="mb-6">
-                        <p class="text-xl">This certifies that</p>
-                        <p class="text-2xl font-bold mt-2 mb-4">Trader</p>
-                        <p class="text-xl">has successfully completed</p>
-                        <p id="certificate-level" class="text-2xl font-bold mt-2 mb-4"></p>
-                    </div>
-                    <div class="flex justify-center mb-6">
-                        <div id="certificate-badge" class="text-6xl"></div>
-                    </div>
-                    <div class="text-sm text-gray-600 dark:text-gray-400">
-                        <p>Achieved on <span id="certificate-date"></span></p>
-                        <p>With an accuracy of <span id="certificate-accuracy"></span></p>
+                <div id="certificate-content" class="bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 p-12 rounded-lg text-center relative overflow-hidden">
+                    <!-- Decorative Corner Elements -->
+                    <div class="absolute top-0 left-0 w-24 h-24 border-t-4 border-l-4 border-purple-600 dark:border-purple-400 rounded-tl-lg"></div>
+                    <div class="absolute top-0 right-0 w-24 h-24 border-t-4 border-r-4 border-purple-600 dark:border-purple-400 rounded-tr-lg"></div>
+                    <div class="absolute bottom-0 left-0 w-24 h-24 border-b-4 border-l-4 border-purple-600 dark:border-purple-400 rounded-bl-lg"></div>
+                    <div class="absolute bottom-0 right-0 w-24 h-24 border-b-4 border-r-4 border-purple-600 dark:border-purple-400 rounded-br-lg"></div>
+                    
+                    <!-- Decorative Lines -->
+                    <div class="absolute top-8 left-8 right-8 h-1 bg-gradient-to-r from-transparent via-purple-600 dark:via-purple-400 to-transparent opacity-30"></div>
+                    <div class="absolute bottom-8 left-8 right-8 h-1 bg-gradient-to-r from-transparent via-purple-600 dark:via-purple-400 to-transparent opacity-30"></div>
+                    
+                    <!-- Main Content with Inner Border -->
+                    <div class="border-4 border-purple-600/20 dark:border-purple-400/20 rounded-lg p-8 relative">
+                        <!-- Decorative Header -->
+                        <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 bg-purple-600 dark:bg-purple-400 text-white px-8 py-2 rounded-full">
+                            <h2 class="text-4xl font-bold">Certificate of Achievement</h2>
+                        </div>
+
+                        <!-- Certificate Content -->
+                        <div class="mt-8 mb-8 space-y-6">
+                            <!-- Decorative Divider -->
+                            <div class="flex items-center justify-center space-x-4 my-6">
+                                <div class="h-0.5 w-12 bg-purple-600/30 dark:bg-purple-400/30"></div>
+                                <div class="text-2xl">✦</div>
+                                <div class="h-0.5 w-12 bg-purple-600/30 dark:bg-purple-400/30"></div>
+                            </div>
+
+                            <p class="text-2xl text-gray-700 dark:text-gray-300">This certifies that</p>
+                            <p id="certificate-trader-name" class="text-4xl font-bold text-purple-700 dark:text-purple-300 my-4 font-serif"></p>
+                            <p class="text-2xl text-gray-700 dark:text-gray-300">has successfully completed</p>
+                            <p id="certificate-level" class="text-3xl font-bold text-purple-700 dark:text-purple-300 my-4"></p>
+
+                            <!-- Decorative Divider -->
+                            <div class="flex items-center justify-center space-x-4 my-6">
+                                <div class="h-0.5 w-12 bg-purple-600/30 dark:bg-purple-400/30"></div>
+                                <div class="text-2xl">✦</div>
+                                <div class="h-0.5 w-12 bg-purple-600/30 dark:bg-purple-400/30"></div>
+                            </div>
+                        </div>
+
+                        <!-- Badge Section with Decorative Background -->
+                        <div class="relative mb-8">
+                            <div class="absolute inset-0 bg-purple-600/5 dark:bg-purple-400/5 rounded-full transform -rotate-3"></div>
+                            <div class="relative">
+                                <div id="certificate-badge" class="text-8xl mb-2"></div>
+                                <div class="text-sm text-purple-600 dark:text-purple-400 font-semibold uppercase tracking-wide">Achievement Badge</div>
+                            </div>
+                        </div>
+
+                        <!-- Certificate Details with Decorative Elements -->
+                        <div class="text-lg text-gray-700 dark:text-gray-300 space-y-2 relative">
+                            <div class="absolute -left-4 top-1/2 transform -translate-y-1/2 w-2 h-16 bg-gradient-to-b from-transparent via-purple-600/20 dark:via-purple-400/20 to-transparent rounded-full"></div>
+                            <div class="absolute -right-4 top-1/2 transform -translate-y-1/2 w-2 h-16 bg-gradient-to-b from-transparent via-purple-600/20 dark:via-purple-400/20 to-transparent rounded-full"></div>
+                            <p>Achieved on <span id="certificate-date" class="font-semibold"></span></p>
+                            <p>With an accuracy of <span id="certificate-accuracy" class="font-semibold"></span></p>
+                        </div>
+
+                        <!-- Decorative Footer -->
+                        <div class="absolute -bottom-5 left-1/2 transform -translate-x-1/2">
+                            <div class="bg-purple-600 dark:bg-purple-400 text-white px-6 py-1 rounded-full text-sm font-semibold tracking-wider">
+                                STOCK MARKET TRADE QUIZ
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="mt-6 flex justify-center space-x-4">

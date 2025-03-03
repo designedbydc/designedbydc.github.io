@@ -171,6 +171,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start quiz button handler
     startQuizBtn.addEventListener('click', () => {
+        // Get and validate trader name
+        const traderNameInput = document.getElementById('trader-name');
+        const traderName = traderNameInput.value.trim();
+        
+        if (!traderName) {
+            // Show error if name is empty
+            traderNameInput.classList.add('border-red-500');
+            const errorMsg = document.createElement('p');
+            errorMsg.className = 'text-red-500 text-sm mt-1';
+            errorMsg.textContent = 'Please enter your name to start the quiz';
+            
+            // Remove any existing error message
+            const existingError = traderNameInput.parentElement.querySelector('.text-red-500');
+            if (existingError) {
+                existingError.remove();
+            }
+            
+            traderNameInput.parentElement.appendChild(errorMsg);
+            return;
+        }
+        
+        // Store trader name
+        localStorage.setItem('traderName', traderName);
+        
         // Hide difficulty container and show quiz
         difficultyContainer.classList.add('hidden');
         quizMainContainer.classList.remove('hidden');
@@ -838,9 +862,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function checkForResumeState() {
         if (lastQuizState) {
             const level = LEVELS[lastQuizState.currentLevel];
-            resumeLevel.textContent = `Level: ${level.name}`;
+            const traderName = localStorage.getItem('traderName') || 'Trader';
+            resumeLevel.textContent = `${traderName} - Level: ${level.name}`;
             resumeScore.textContent = `Score: ${lastQuizState.score}`;
             resumeQuizContainer.classList.remove('hidden');
+            
+            // Pre-fill the name input if resuming
+            const traderNameInput = document.getElementById('trader-name');
+            if (traderNameInput) {
+                traderNameInput.value = traderName;
+            }
         } else {
             resumeQuizContainer.classList.add('hidden');
         }
@@ -943,8 +974,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('certificate-modal');
         const levelInfo = LEVELS[level];
         const accuracy = Math.round((score / (currentQuestionIndex + 1)) * 100);
+        const traderName = localStorage.getItem('traderName') || 'Trader';
         
         // Update certificate content
+        document.getElementById('certificate-trader-name').textContent = traderName;
         document.getElementById('certificate-level').textContent = levelInfo.name;
         document.getElementById('certificate-badge').textContent = levelInfo.badge;
         document.getElementById('certificate-date').textContent = new Date().toLocaleDateString();
