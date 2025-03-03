@@ -591,6 +591,13 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 currentQuestion = JSON.parse(content);
                 
+                // Validate the parsed question data
+                if (!currentQuestion.question || !Array.isArray(currentQuestion.options) || 
+                    currentQuestion.options.length !== 4 || typeof currentQuestion.correctAnswer !== 'number' ||
+                    !currentQuestion.explanation) {
+                    throw new Error('Invalid question format received from API');
+                }
+                
                 // Check if this question has been asked before
                 if (isQuestionAskedBefore(currentQuestion)) {
                     console.log('Received a repeated question from API, requesting a new one');
@@ -614,23 +621,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 showQuestion(currentQuestion);
             } catch (e) {
-                throw new Error('Failed to parse question data from API');
+                console.error('Question parsing error:', e);
+                console.error('Raw content:', content);
+                
+                // Try to extract any valid text from the response
+                let errorMessage = 'Failed to parse question data from API';
+                try {
+                    // Try to clean up the content and parse it
+                    const cleanContent = content.trim().replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+                    currentQuestion = JSON.parse(cleanContent);
+                    showQuestion(currentQuestion);
+                    return;
+                } catch (cleanupError) {
+                    errorMessage += '. The API response was not in the expected format.';
+                }
+                
+                throw new Error(errorMessage);
             }
         } catch (error) {
             showError(`API Error: ${error.message}. Please try again later or contact support.`);
             showLoading(false);
             
-            // Add a retry button
+            // Add a retry button with improved error display
             quizContainer.innerHTML = `
-                <div class="text-center p-6 bg-blue-50 rounded-lg">
-                    <h2 class="text-xl font-bold text-blue-800 mb-4">Something went wrong</h2>
-                    <p class="mb-4">We couldn't generate a new question. This might be due to a temporary issue.</p>
-                    <button id="retry-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
-                        Try Again
-                    </button>
-                    <button id="restart-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 ml-2">
-                        Start Over
-                    </button>
+                <div class="text-center p-6 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                    <h2 class="text-xl font-bold text-blue-800 dark:text-blue-200 mb-4">Something went wrong</h2>
+                    <p class="mb-4 text-blue-600 dark:text-blue-300">We couldn't generate a new question. This might be due to a temporary issue.</p>
+                    <div class="space-y-4">
+                        <button id="retry-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300">
+                            Try Again
+                        </button>
+                        <button id="restart-btn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-lg transition duration-300 ml-2">
+                            Start Over
+                        </button>
+                        <div class="mt-4 pt-4 border-t border-blue-200 dark:border-blue-700">
+                            <a href="mailto:support@example.com?subject=Quiz%20API%20Error&body=Error%20details%3A%20${encodeURIComponent(error.message)}" 
+                               class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm">
+                                Contact Support
+                            </a>
+                        </div>
+                    </div>
                 </div>
             `;
             
