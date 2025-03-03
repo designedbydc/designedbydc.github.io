@@ -693,46 +693,40 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isCorrect) {
             score++;
             scoreElement.textContent = score;
-            optionButtons[selectedIndex].style.borderColor = LEVELS[currentLevel].theme.primary;
-            optionButtons[selectedIndex].style.borderWidth = '2px';
             
-            feedbackContainer.classList.remove('hidden', 'feedback-incorrect');
-            feedbackContainer.classList.add('feedback-correct');
+            // Add green background to correct answer
+            optionButtons[selectedIndex].classList.add('bg-green-500', 'text-white', 'dark:bg-green-600');
             
             // Check for level progression
             checkLevelProgression();
             
             if (questionsCompletedInLevel < LEVELS[currentLevel].questionsRequired) {
-                feedbackText.textContent = "Correct! Well done.";
                 // Move to the next question after a delay for correct answers
                 setTimeout(() => {
                     currentQuestionIndex++;
                     currentQuestionElement.textContent = currentQuestionIndex + 1;
                     getNextQuestion();
-                }, 2000);
+                }, 1500);
             }
         } else {
-            optionButtons[selectedIndex].style.borderColor = LEVELS[currentLevel].theme.accent;
-            optionButtons[selectedIndex].style.borderWidth = '2px';
-            optionButtons[currentQuestion.correctAnswer].style.borderColor = LEVELS[currentLevel].theme.primary;
-            optionButtons[currentQuestion.correctAnswer].style.borderWidth = '2px';
+            // Add red background to wrong answer
+            optionButtons[selectedIndex].classList.add('bg-red-500', 'text-white', 'dark:bg-red-600');
             
-            feedbackContainer.classList.remove('hidden', 'feedback-correct');
-            feedbackContainer.classList.add('feedback-incorrect');
+            // Add green background to correct answer
+            optionButtons[currentQuestion.correctAnswer].classList.add('bg-green-500', 'text-white', 'dark:bg-green-600');
             
-            // Create a container for the explanation and next button
-            const explanationHTML = `
-                <div>
-                    <p class="mb-4 text-lg">${currentQuestion.explanation}</p>
-                    <div class="text-center mt-6">
-                        <button id="next-question-btn" class="secondary-btn dark-mode py-3 px-8 transition duration-300">
-                            Next Question
-                        </button>
-                    </div>
+            // Add explanation below the options
+            const explanationDiv = document.createElement('div');
+            explanationDiv.className = 'mt-6 p-4 rounded-lg bg-gray-100 dark:bg-gray-800';
+            explanationDiv.innerHTML = `
+                <p class="text-base">${currentQuestion.explanation}</p>
+                <div class="text-center mt-4">
+                    <button id="next-question-btn" class="secondary-btn dark-mode py-2 px-6">
+                        Next Question
+                    </button>
                 </div>
             `;
-            
-            feedbackText.innerHTML = `<strong class="text-xl block mb-3">Incorrect</strong> ${explanationHTML}`;
+            optionsContainer.appendChild(explanationDiv);
             
             // Add event listener to the next question button
             setTimeout(() => {
@@ -749,9 +743,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add this question to missed questions for later review
             missedQuestions.push(currentQuestion);
         }
-        
-        feedbackContainer.classList.add('fade-in');
-        
     }
 
     // Show/hide loading spinner
