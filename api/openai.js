@@ -46,23 +46,53 @@ export default async function handler(req, res) {
           model: 'gpt-3.5-turbo',
           messages: [
             {
+              role: 'system',
+              content: 'You are a quiz question generator. Always respond with valid JSON in the exact format specified by the user.'
+            },
+            {
               role: 'user',
               content: prompt
             }
           ],
-          temperature: 0.7
+          temperature: 0.7,
+          response_format: { type: "json_object" }
         });
         
-        console.log('Received successful response from OpenAI API');
-        return res.status(200).json({
-          choices: [
-            {
-              message: {
-                content: completion.choices[0].message.content
-              }
+        console.log('Received response from OpenAI API');
+        
+        // Log the raw response for debugging
+        console.log('Raw response content:', completion.choices[0].message.content);
+        
+        // Validate JSON format before sending
+        try {
+            const parsedContent = JSON.parse(completion.choices[0].message.content);
+            
+            // Validate required fields
+            if (!parsedContent.question || !Array.isArray(parsedContent.options) || 
+                parsedContent.options.length !== 4 || typeof parsedContent.correctAnswer !== 'number' ||
+                !parsedContent.explanation) {
+                throw new Error('Response missing required fields');
             }
-          ]
-        });
+            
+            return res.status(200).json({
+                choices: [
+                    {
+                        message: {
+                            content: completion.choices[0].message.content
+                        }
+                    }
+                ]
+            });
+        } catch (parseError) {
+            console.error('Failed to parse OpenAI response:', parseError);
+            console.error('Invalid response content:', completion.choices[0].message.content);
+            
+            return res.status(400).json({
+                error: 'Invalid response format from OpenAI',
+                details: parseError.message,
+                suggestion: 'The API response was not in the correct JSON format. Please try again.'
+            });
+        }
       } catch (apiError) {
         console.error('OpenAI API error:', apiError);
         
