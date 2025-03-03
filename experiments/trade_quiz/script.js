@@ -17,12 +17,127 @@ document.addEventListener('DOMContentLoaded', () => {
     const backgroundMusic = document.getElementById('background-music');
     const thinkingMusicContainer = document.getElementById('thinking-music-container');
     
+    // Level configuration
+    const LEVELS = [
+        { 
+            name: "Gully Investor", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#4CAF50',
+                secondary: '#81C784',
+                accent: '#2E7D32'
+            },
+            badge: '🌱',
+            description: 'Starting from the streets'
+        },
+        { 
+            name: "Chai Break Trader", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#FF9800',
+                secondary: '#FFB74D',
+                accent: '#F57C00'
+            },
+            badge: '☕',
+            description: 'Trading between tea breaks'
+        },
+        { 
+            name: "Dabba Trading Master", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#2196F3',
+                secondary: '#64B5F6',
+                accent: '#1976D2'
+            },
+            badge: '📦',
+            description: 'Master of quick trades'
+        },
+        { 
+            name: "Bazaar Pundit", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#9C27B0',
+                secondary: '#BA68C8',
+                accent: '#7B1FA2'
+            },
+            badge: '📊',
+            description: 'Market wisdom personified'
+        },
+        { 
+            name: "Dalal Street Veteran", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#F44336',
+                secondary: '#E57373',
+                accent: '#D32F2F'
+            },
+            badge: '🎯',
+            description: 'Seasoned market player'
+        },
+        { 
+            name: "Sher of Share Market", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#FFC107',
+                secondary: '#FFD54F',
+                accent: '#FFA000'
+            },
+            badge: '🦁',
+            description: 'King of the market jungle'
+        },
+        { 
+            name: "Trading Titan", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#607D8B',
+                secondary: '#90A4AE',
+                accent: '#455A64'
+            },
+            badge: '🏛️',
+            description: 'Massive market influence'
+        },
+        { 
+            name: "Crore-pati Portfolio Pro", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#E91E63',
+                secondary: '#F06292',
+                accent: '#C2185B'
+            },
+            badge: '💎',
+            description: 'Master of wealth creation'
+        },
+        { 
+            name: "Raja of Risk Analysis", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#673AB7',
+                secondary: '#9575CD',
+                accent: '#512DA8'
+            },
+            badge: '👑',
+            description: 'Supreme risk manager'
+        },
+        { 
+            name: "Hedge Fund Maharathi", 
+            questionsRequired: 3,
+            theme: {
+                primary: '#00BCD4',
+                secondary: '#4DD0E1',
+                accent: '#0097A7'
+            },
+            badge: '🏆',
+            description: 'Ultimate market warrior'
+        }
+    ];
+    
     // Track if we have active YouTube players
     let activeYouTubePlayer = null;
     let activeThinkingMusicPlayer = null;
 
     // Quiz state
-    let currentDifficulty = 'beginner';
+    let currentLevel = 0; // Index into LEVELS array
+    let questionsCompletedInLevel = 0;
     let currentQuestionIndex = 0;
     let score = 0;
     let missedQuestions = [];
@@ -38,6 +153,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const MAX_RETRY_ATTEMPTS = 3;
     const MAX_STORED_QUESTIONS = 500; // Maximum number of questions to store in history
 
+    // Track earned badges
+    let earnedBadges = JSON.parse(localStorage.getItem('earnedBadges') || '[]');
+    
     // Apply dark mode to all elements by default
     applyDarkMode();
 
@@ -58,11 +176,12 @@ document.addEventListener('DOMContentLoaded', () => {
         cleanupThinkingMusicPlayer();
         
         currentQuestionIndex = 0;
+        currentLevel = 0;
+        questionsCompletedInLevel = 0;
         score = 0;
         missedQuestions = [];
         userPerformance = [];
         consecutiveCorrectAnswers = 0;
-        currentDifficulty = 'beginner';
         
         // Load asked questions from localStorage instead of resetting
         askedQuestions = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
@@ -72,7 +191,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         scoreElement.textContent = score;
         currentQuestionElement.textContent = currentQuestionIndex + 1;
-        currentDifficultyElement.textContent = 'Beginner';
+        updateLevelDisplay();
+        
+        // Initialize badges display
+        initBadges();
+        
+        // Apply initial theme
+        applyLevelTheme(currentLevel);
         
         // Get the first question
         getNextQuestion();
@@ -132,6 +257,70 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem('askedQuestions', JSON.stringify(askedQuestions));
     }
 
+    // Update the level display
+    function updateLevelDisplay() {
+        const currentLevelInfo = LEVELS[currentLevel];
+        const progressText = `${questionsCompletedInLevel}/${currentLevelInfo.questionsRequired}`;
+        currentDifficultyElement.textContent = `${currentLevelInfo.name} (${progressText})`;
+        
+        // Update progress bar
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = `${(questionsCompletedInLevel / currentLevelInfo.questionsRequired) * 100}%`;
+    }
+
+    // Check if player should advance to next level
+    function checkLevelProgression() {
+        const currentLevelInfo = LEVELS[currentLevel];
+        if (questionsCompletedInLevel >= currentLevelInfo.questionsRequired) {
+            if (currentLevel < LEVELS.length - 1) {
+                // Show level up message
+                showLevelUpMessage();
+                currentLevel++;
+                questionsCompletedInLevel = 0;
+            }
+        }
+        updateLevelDisplay();
+    }
+
+    // Show level up message
+    function showLevelUpMessage() {
+        const nextLevel = LEVELS[currentLevel + 1];
+        feedbackContainer.classList.remove('hidden', 'feedback-incorrect');
+        feedbackContainer.classList.add('feedback-correct');
+        
+        // Award badge for completed level
+        awardBadge(currentLevel);
+        
+        feedbackText.innerHTML = `
+            <div class="text-center">
+                <h3 class="text-2xl font-bold mb-4">🎉 Level Complete! 🎉</h3>
+                <div class="badge-showcase mb-6">
+                    <div class="text-6xl mb-2">${LEVELS[currentLevel].badge}</div>
+                    <p class="text-lg">You've earned the ${LEVELS[currentLevel].name} badge!</p>
+                </div>
+                <p class="text-lg mb-6">Next level: <strong>${nextLevel.name}</strong></p>
+                <button id="continue-btn" class="secondary-btn dark-mode py-3 px-8 transition duration-300">
+                    Continue Journey
+                </button>
+            </div>
+        `;
+
+        // Add event listener to the continue button
+        setTimeout(() => {
+            const continueBtn = document.getElementById('continue-btn');
+            if (continueBtn) {
+                continueBtn.addEventListener('click', () => {
+                    feedbackContainer.classList.add('hidden');
+                    currentLevel++;
+                    questionsCompletedInLevel = 0;
+                    applyLevelTheme(currentLevel);
+                    updateLevelDisplay();
+                    getNextQuestion();
+                });
+            }
+        }, 100);
+    }
+
     // Get next question from OpenAI
     async function getNextQuestion() {
         showLoading(true);
@@ -140,47 +329,17 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reset retry attempts for each new question request
             retryAttempts = 0;
             
-            // Determine difficulty based on user performance
-            updateDifficultyBasedOnPerformance();
-            
-            // If we have missed questions, prioritize them
-            if (missedQuestions.length > 0 && Math.random() < 0.3) {
-                // 30% chance to get a missed question
-                const randomIndex = Math.floor(Math.random() * missedQuestions.length);
-                currentQuestion = missedQuestions[randomIndex];
-                
-                // Remove the question from missed questions
-                missedQuestions.splice(randomIndex, 1);
-                
-                // Check if this missed question has already been asked again
-                if (isQuestionAskedBefore(currentQuestion)) {
-                    console.log('Skipping repeated missed question');
-                    
-                    // Increment retry attempts
-                    retryAttempts++;
-                    if (retryAttempts >= MAX_RETRY_ATTEMPTS) {
-                        // If we've tried too many times, just use the question anyway
-                        console.log('Max retry attempts reached, using repeated question');
-                        showQuestion(currentQuestion);
-                        return;
-                    }
-                    
-                    getNextQuestion(); // Try again with a different question
-                    return;
-                }
-                
-                // Add to asked questions list and store
-                storeAskedQuestion(currentQuestion);
-                
-                showQuestion(currentQuestion);
-                return;
-            }
-            
             // Get recently asked questions for the prompt
             const recentQuestions = askedQuestions.slice(-20).map(q => q.question);
             
             // Prepare the prompt for OpenAI
-            const prompt = `Generate a unique multiple-choice question about stock market trading at ${currentDifficulty} level. 
+            const prompt = `Generate a unique multiple-choice question about stock market trading at ${LEVELS[currentLevel].name} level. 
+
+            The question should match the expertise level:
+            - For Gully Investor: Focus on absolute basics and terminology
+            - For higher levels: Gradually increase complexity
+            - For Hedge Fund Maharathi: Include advanced concepts and strategic thinking
+
             The question MUST be significantly different from these recently asked questions:
             ${recentQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
 
@@ -193,7 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             
             Make sure the question is:
-            1. Challenging but fair for a ${currentDifficulty} level trader
+            1. Appropriate for ${LEVELS[currentLevel].name} level
             2. Completely unique and not similar to any of the recent questions
             3. Tests a different concept or aspect than the recent questions`;
             
@@ -276,25 +435,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Update difficulty based on performance
-    function updateDifficultyBasedOnPerformance() {
-        // Only update difficulty after the first question
-        if (currentQuestionIndex > 0) {
-            // Check if we should increase difficulty
-            if (consecutiveCorrectAnswers >= 3 && currentDifficulty !== 'advanced') {
-                if (currentDifficulty === 'beginner') {
-                    currentDifficulty = 'intermediate';
-                } else if (currentDifficulty === 'intermediate') {
-                    currentDifficulty = 'advanced';
-                }
-                // Update UI
-                currentDifficultyElement.textContent = currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1);
-                // Reset counter
-                consecutiveCorrectAnswers = 0;
-            }
-        }
-    }
-
     // Display the current question
     function showQuestion(questionData) {
         showLoading(false);
@@ -327,6 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update consecutive correct answers counter
         if (isCorrect) {
             consecutiveCorrectAnswers++;
+            questionsCompletedInLevel++;
         } else {
             consecutiveCorrectAnswers = 0;
         }
@@ -340,23 +481,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isCorrect) {
             score++;
             scoreElement.textContent = score;
-            optionButtons[selectedIndex].style.borderColor = 'var(--color-pink)';
+            optionButtons[selectedIndex].style.borderColor = LEVELS[currentLevel].theme.primary;
             optionButtons[selectedIndex].style.borderWidth = '2px';
             
             feedbackContainer.classList.remove('hidden', 'feedback-incorrect');
             feedbackContainer.classList.add('feedback-correct');
-            feedbackText.textContent = "Correct! Well done.";
             
-            // Move to the next question after a delay for correct answers
-            setTimeout(() => {
-                currentQuestionIndex++;
-                currentQuestionElement.textContent = currentQuestionIndex + 1;
-                getNextQuestion();
-            }, 4000);
+            // Check for level progression
+            checkLevelProgression();
+            
+            if (questionsCompletedInLevel < LEVELS[currentLevel].questionsRequired) {
+                feedbackText.textContent = "Correct! Well done.";
+                // Move to the next question after a delay for correct answers
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    currentQuestionElement.textContent = currentQuestionIndex + 1;
+                    getNextQuestion();
+                }, 2000);
+            }
         } else {
-            optionButtons[selectedIndex].style.borderColor = 'var(--color-dark-purple)';
+            optionButtons[selectedIndex].style.borderColor = LEVELS[currentLevel].theme.accent;
             optionButtons[selectedIndex].style.borderWidth = '2px';
-            optionButtons[currentQuestion.correctAnswer].style.borderColor = 'var(--color-pink)';
+            optionButtons[currentQuestion.correctAnswer].style.borderColor = LEVELS[currentLevel].theme.primary;
             optionButtons[currentQuestion.correctAnswer].style.borderWidth = '2px';
             
             feedbackContainer.classList.remove('hidden', 'feedback-correct');
@@ -444,5 +590,58 @@ document.addEventListener('DOMContentLoaded', () => {
             const themeCards = document.querySelectorAll('.theme-card');
             themeCards.forEach(card => card.classList.toggle('dark-mode'));
         });
+    }
+
+    // Initialize badges display
+    function initBadges() {
+        const badgesContainer = document.getElementById('badges-container');
+        badgesContainer.innerHTML = '';
+        
+        LEVELS.forEach((level, index) => {
+            const badgeElement = document.createElement('div');
+            badgeElement.className = 'badge-item text-center p-2';
+            
+            const isEarned = earnedBadges.includes(index);
+            badgeElement.innerHTML = `
+                <div class="badge-icon text-4xl mb-2 ${isEarned ? 'earned' : 'locked'}" title="${level.name}">
+                    ${isEarned ? level.badge : '🔒'}
+                </div>
+                <div class="badge-name text-xs font-medium ${isEarned ? 'text-gray-800' : 'text-gray-400'}">
+                    ${level.name}
+                </div>
+            `;
+            
+            if (isEarned) {
+                badgeElement.setAttribute('title', level.description);
+            }
+            
+            badgesContainer.appendChild(badgeElement);
+        });
+        
+        badgesContainer.classList.remove('hidden');
+    }
+
+    // Apply level-specific theme
+    function applyLevelTheme(level) {
+        const theme = LEVELS[level].theme;
+        const root = document.documentElement;
+        
+        root.style.setProperty('--color-primary', theme.primary);
+        root.style.setProperty('--color-secondary', theme.secondary);
+        root.style.setProperty('--color-accent', theme.accent);
+        
+        // Update progress bar
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.backgroundColor = theme.primary;
+        progressBar.style.width = `${(questionsCompletedInLevel / LEVELS[level].questionsRequired) * 100}%`;
+    }
+
+    // Award badge for completing a level
+    function awardBadge(level) {
+        if (!earnedBadges.includes(level)) {
+            earnedBadges.push(level);
+            localStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
+            initBadges();
+        }
     }
 }); 

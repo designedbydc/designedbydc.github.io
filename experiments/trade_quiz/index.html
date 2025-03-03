@@ -6,6 +6,8 @@
     <title>Stock Market Trade Quiz</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="style.css">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3711910121540204"
+     crossorigin="anonymous"></script>
 </head>
 <body class="min-h-screen font-sans dark-mode">
     <!-- Theme toggle moved to top right corner -->
@@ -19,6 +21,11 @@
     </div>
 
     <div class="container mx-auto px-6 py-10 max-w-3xl">
+        <!-- Badges Display -->
+        <div id="badges-container" class="mb-8 p-4 rounded-xl grid grid-cols-5 gap-4 hidden">
+            <!-- Badges will be inserted here -->
+        </div>
+
         <header class="text-center mb-12">
             <h1 class="text-4xl font-semibold mb-3" style="color: var(--color-purple);">Stock Market Quiz</h1>
             <p class="text-gray-500 text-lg mb-6">Test your knowledge of stock market trading concepts</p>
@@ -32,10 +39,32 @@
                     Start Quiz
                 </button>
             </div>
-            <p class="text-gray-500 mt-6 text-sm text-center">Questions will adapt to your performance as you progress.</p>
+            <p class="text-gray-500 mt-6 text-sm text-center">Master all levels from Gully Investor to Hedge Fund Maharathi!</p>
+            
+            <!-- Level Preview -->
+            <div class="mt-8 p-4 rounded-xl bg-opacity-50 bg-gray-100 dark:bg-gray-800">
+                <h3 class="text-lg font-semibold mb-3">Your Journey Awaits</h3>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <p>🎯 10 Exciting Levels</p>
+                        <p>🏆 Earn Unique Badges</p>
+                        <p>📈 Track Progress</p>
+                    </div>
+                    <div>
+                        <p>🌟 Level-specific Themes</p>
+                        <p>🎮 Adaptive Difficulty</p>
+                        <p>🏅 Achievement System</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <div id="quiz-main-container" class="hidden theme-card dark-mode p-8 mb-8">
+            <!-- Level Progress Bar -->
+            <div id="level-progress" class="mb-4 relative h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div id="progress-bar" class="absolute top-0 left-0 h-full transition-all duration-500 ease-out"></div>
+            </div>
+
             <div id="stats" class="flex justify-between mb-8 border-b border-gray-200 pb-4">
                 <div class="text-gray-700">
                     <span class="font-medium">Question:</span> <span id="current-question" class="font-semibold">1</span>
@@ -44,7 +73,7 @@
                     <span class="font-medium">Score:</span> <span id="score" class="font-semibold">0</span>
                 </div>
                 <div class="text-gray-700">
-                    <span class="font-medium">Difficulty:</span> <span id="current-difficulty" class="font-semibold">Beginner</span>
+                    <span class="font-medium">Level:</span> <span id="current-difficulty" class="font-semibold">Beginner</span>
                 </div>
             </div>
 
