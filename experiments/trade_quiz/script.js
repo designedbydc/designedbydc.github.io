@@ -30,12 +30,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentQuestion = null;
     let consecutiveCorrectAnswers = 0;
     
-    // Track all previously asked questions to prevent repetition
-    let askedQuestions = [];
+    // Track all previously asked questions to prevent repetition - now using localStorage
+    let askedQuestions = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
     
     // Track retry attempts to prevent infinite loops
     let retryAttempts = 0;
     const MAX_RETRY_ATTEMPTS = 3;
+    const MAX_STORED_QUESTIONS = 500; // Maximum number of questions to store in history
 
     // Apply dark mode to all elements by default
     applyDarkMode();
@@ -52,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initialize the quiz
     function initQuiz() {
-        // Clean up any existing YouTube player
+        // Clean up any YouTube player
         cleanupYouTubePlayer();
         cleanupThinkingMusicPlayer();
         
@@ -63,8 +64,8 @@ document.addEventListener('DOMContentLoaded', () => {
         consecutiveCorrectAnswers = 0;
         currentDifficulty = 'beginner';
         
-        // Reset the list of asked questions when starting a new quiz
-        askedQuestions = [];
+        // Load asked questions from localStorage instead of resetting
+        askedQuestions = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
         
         // Reset retry attempts
         retryAttempts = 0;
@@ -106,9 +107,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if a question has been asked before
     function isQuestionAskedBefore(question) {
         // Check if the exact same question text exists in our asked questions array
-        return askedQuestions.some(askedQuestion => 
-            askedQuestion.question.trim().toLowerCase() === question.question.trim().toLowerCase()
-        );
+        return askedQuestions.some(askedQuestion => {
+            const normalizedNewQuestion = question.question.trim().toLowerCase();
+            const normalizedAskedQuestion = askedQuestion.question.trim().toLowerCase();
+            
+            // Check for high similarity (exact match or very similar)
+            return normalizedNewQuestion === normalizedAskedQuestion ||
+                   (normalizedNewQuestion.length > 20 && // Only check similarity for longer questions
+                    (normalizedNewQuestion.includes(normalizedAskedQuestion) ||
+                     normalizedAskedQuestion.includes(normalizedNewQuestion)));
+        });
+    }
+
+    // Store a new question in history
+    function storeAskedQuestion(question) {
+        askedQuestions.push(question);
+        
+        // Remove oldest questions if we exceed the maximum
+        if (askedQuestions.length > MAX_STORED_QUESTIONS) {
+            askedQuestions = askedQuestions.slice(-MAX_STORED_QUESTIONS);
+        }
+        
+        // Save to localStorage
+        localStorage.setItem('askedQuestions', JSON.stringify(askedQuestions));
     }
 
     // Get next question from OpenAI
@@ -148,15 +169,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                // Add to asked questions list
-                askedQuestions.push(currentQuestion);
+                // Add to asked questions list and store
+                storeAskedQuestion(currentQuestion);
                 
                 showQuestion(currentQuestion);
                 return;
             }
             
+            // Get recently asked questions for the prompt
+            const recentQuestions = askedQuestions.slice(-20).map(q => q.question);
+            
             // Prepare the prompt for OpenAI
-            const prompt = `Generate a multiple-choice question about stock market trading at ${currentDifficulty} level. 
+            const prompt = `Generate a unique multiple-choice question about stock market trading at ${currentDifficulty} level. 
+            The question MUST be significantly different from these recently asked questions:
+            ${recentQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
+
             Return the response in JSON format with the following structure:
             {
                 "question": "The question text",
@@ -165,10 +192,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 "explanation": "Detailed explanation of why this answer is correct and others are wrong"
             }
             
-            Make sure the question is challenging but fair for a ${currentDifficulty} level trader.
-            
-            ${askedQuestions.length > 0 ? 'IMPORTANT: Do not generate any of these questions that have already been asked: ' + 
-            askedQuestions.slice(-10).map(q => '"' + q.question + '"').join(', ') : ''}`;
+            Make sure the question is:
+            1. Challenging but fair for a ${currentDifficulty} level trader
+            2. Completely unique and not similar to any of the recent questions
+            3. Tests a different concept or aspect than the recent questions`;
             
             // Call our API route instead of OpenAI directly
             const response = await fetch('/api/openai', {
@@ -209,8 +236,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
                 
-                // Add to asked questions list
-                askedQuestions.push(currentQuestion);
+                // Add to asked questions list and store
+                storeAskedQuestion(currentQuestion);
                 
                 showQuestion(currentQuestion);
             } catch (e) {
