@@ -1,16 +1,16 @@
-// Import leaderboard and challenge functionality
-import {
-    loadLeaderboard,
-    addToLeaderboard,
-    showLeaderboard,
-    addLeaderboardButton,
-    showChallengeModal,
-    showChallengeInfo,
-    checkForChallenge,
-    isChallengeMode,
-    challengeData,
-    leaderboard
-} from './leaderboard.js';
+// Remove leaderboard imports
+// import {
+//     loadLeaderboard,
+//     addToLeaderboard,
+//     showLeaderboard,
+//     addLeaderboardButton,
+//     showChallengeModal,
+//     showChallengeInfo,
+//     checkForChallenge,
+//     isChallengeMode,
+//     challengeData,
+//     leaderboard
+// } from './leaderboard.js';
 
 // Quiz state variables
 let currentQuestionIndex = 0;
@@ -18,6 +18,10 @@ let score = 0;
 let incorrectAnswers = [];
 let questions = [];
 let currentDifficulty = 'beginner';
+
+// Define variables for challenge functionality since we removed the imports
+let isChallengeMode = false;
+let challengeData = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM Elements
@@ -56,13 +60,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // applyDarkMode();
     
     // Load leaderboard
-    loadLeaderboard();
+    // loadLeaderboard();
     
     // Check for challenge
-    checkForChallenge();
+    // checkForChallenge();
     
     // Add leaderboard button
-    addLeaderboardButton();
+    // addLeaderboardButton();
     
     // Check for resume state
     // checkForResumeState();
@@ -318,26 +322,15 @@ document.addEventListener('DOMContentLoaded', () => {
 // }
 
 function showQuizCompletion() {
+    // Get DOM elements that might not be defined in the current scope
+    const quizContainer = document.getElementById('quiz-container');
+    
     // Calculate total questions and accuracy
     const totalQuestions = currentQuestionIndex;
     const accuracy = totalQuestions > 0 ? Math.round((score / (totalQuestions * 10)) * 100) : 0;
     
     // Get player name
     const playerName = localStorage.getItem('traderName') || 'Anonymous';
-    
-    // Add to leaderboard if score is greater than 0
-    let leaderboardPosition = 0;
-    let leaderboardMessage = '';
-    
-    if (score > 0) {
-        leaderboardPosition = addToLeaderboard(playerName, score, totalQuestions, accuracy);
-        
-        if (leaderboardPosition === 1) {
-            leaderboardMessage = `<p class="text-green-600 dark:text-green-400 font-bold mb-4">🎉 Congratulations! You're #1 on the leaderboard!</p>`;
-        } else {
-            leaderboardMessage = `<p class="text-blue-600 dark:text-blue-400 mb-4">You're #${leaderboardPosition} on the leaderboard!</p>`;
-        }
-    }
     
     // Create challenge result message if in challenge mode
     let challengeResultMessage = '';
@@ -376,7 +369,6 @@ function showQuizCompletion() {
         <h2 class="text-2xl font-bold mb-4">Quiz Completed!</h2>
         
         ${challengeResultMessage}
-        ${leaderboardMessage}
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
             <div class="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -401,14 +393,6 @@ function showQuizCompletion() {
         </div>
         
         <div class="flex flex-wrap justify-center gap-3 mb-6">
-            <button id="challenge-friend-btn" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors">
-                Challenge a Friend
-            </button>
-            
-            <button id="view-leaderboard-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                View Leaderboard
-            </button>
-            
             <button id="review-incorrect-btn" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg transition-colors ${incorrectAnswers.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}">
                 Review Incorrect Answers
             </button>
@@ -420,32 +404,27 @@ function showQuizCompletion() {
     `;
     
     // Clear quiz container and add completion container
-    quizContainer.innerHTML = '';
-    quizContainer.appendChild(completionContainer);
-    
-    // Add event listeners
-    document.getElementById('challenge-friend-btn').addEventListener('click', () => {
-        showChallengeModal();
-    });
-    
-    document.getElementById('view-leaderboard-btn').addEventListener('click', () => {
-        showLeaderboard();
-    });
-    
-    document.getElementById('review-incorrect-btn').addEventListener('click', () => {
-        if (incorrectAnswers.length > 0) {
-            // showIncorrectAnswers(); // This function is not defined
-            alert('Review incorrect answers functionality needs to be implemented.');
-        }
-    });
-    
-    document.getElementById('restart-quiz-btn').addEventListener('click', () => {
-        // resetQuiz(); // This function is not defined
-        // showDifficultySelection(); // This function is not defined
+    if (quizContainer) {
+        quizContainer.innerHTML = '';
+        quizContainer.appendChild(completionContainer);
         
-        // Simple alternative: reload the page
-        window.location.reload();
-    });
+        // Add event listeners
+        const reviewIncorrectBtn = document.getElementById('review-incorrect-btn');
+        if (reviewIncorrectBtn) {
+            reviewIncorrectBtn.addEventListener('click', () => {
+                if (incorrectAnswers.length > 0) {
+                    showIncorrectAnswers();
+                }
+            });
+        }
+        
+        const restartQuizBtn = document.getElementById('restart-quiz-btn');
+        if (restartQuizBtn) {
+            restartQuizBtn.addEventListener('click', () => {
+                window.location.reload();
+            });
+        }
+    }
 }
 
 // Basic implementations of missing functions
@@ -467,6 +446,9 @@ function showDifficultySelection() {
 
 // Function to show incorrect answers for review
 function showIncorrectAnswers() {
+    // Get DOM elements that might not be defined in the current scope
+    const quizContainer = document.getElementById('quiz-container');
+    
     if (incorrectAnswers.length === 0) {
         alert('No incorrect answers to review!');
         return;
@@ -508,23 +490,32 @@ function showIncorrectAnswers() {
     reviewContainer.appendChild(backButton);
     
     // Clear quiz container and add review container
-    quizContainer.innerHTML = '';
-    quizContainer.appendChild(reviewContainer);
+    if (quizContainer) {
+        quizContainer.innerHTML = '';
+        quizContainer.appendChild(reviewContainer);
+    }
 }
 
 // Function to initialize the quiz
 function initQuiz() {
+    // Get DOM elements that might not be defined in the current scope
+    const difficultyContainer = document.getElementById('difficulty-container');
+    const quizMainContainer = document.getElementById('quiz-main-container');
+    const scoreElement = document.getElementById('score');
+    const currentQuestionElement = document.getElementById('current-question');
+    const currentDifficultyElement = document.getElementById('current-difficulty');
+    
     // Hide difficulty container and show quiz container
-    difficultyContainer.classList.add('hidden');
-    quizMainContainer.classList.remove('hidden');
+    if (difficultyContainer) difficultyContainer.classList.add('hidden');
+    if (quizMainContainer) quizMainContainer.classList.remove('hidden');
     
     // Reset quiz state
     resetQuiz();
     
     // Update UI
-    scoreElement.textContent = score;
-    currentQuestionElement.textContent = currentQuestionIndex + 1;
-    currentDifficultyElement.textContent = currentDifficulty;
+    if (scoreElement) scoreElement.textContent = score;
+    if (currentQuestionElement) currentQuestionElement.textContent = currentQuestionIndex + 1;
+    if (currentDifficultyElement) currentDifficultyElement.textContent = currentDifficulty;
     
     // Load first question (placeholder)
     loadQuestion();
@@ -532,15 +523,23 @@ function initQuiz() {
 
 // Function to load a question
 function loadQuestion() {
+    // Get DOM elements that might not be defined in the current scope
+    const quizContainer = document.getElementById('quiz-container');
+    const loadingContainer = document.getElementById('loading-container');
+    const questionElement = document.getElementById('question');
+    const optionsContainer = document.getElementById('options-container');
+    const feedbackContainer = document.getElementById('feedback-container');
+    const feedbackText = document.getElementById('feedback-text');
+    
     // Show loading state
-    quizContainer.classList.add('hidden');
-    loadingContainer.classList.remove('hidden');
+    if (quizContainer) quizContainer.classList.add('hidden');
+    if (loadingContainer) loadingContainer.classList.remove('hidden');
     
     // Simulate loading a question (in a real app, this would fetch from an API or database)
     setTimeout(() => {
         // Hide loading state
-        loadingContainer.classList.add('hidden');
-        quizContainer.classList.remove('hidden');
+        if (loadingContainer) loadingContainer.classList.add('hidden');
+        if (quizContainer) quizContainer.classList.remove('hidden');
         
         // Create a sample question (in a real app, this would come from your questions array)
         const sampleQuestion = {
@@ -555,75 +554,83 @@ function loadQuestion() {
         };
         
         // Display the question
-        questionElement.textContent = sampleQuestion.question;
+        if (questionElement) questionElement.textContent = sampleQuestion.question;
         
         // Clear previous options
-        optionsContainer.innerHTML = '';
+        if (optionsContainer) optionsContainer.innerHTML = '';
         
         // Add options
-        sampleQuestion.options.forEach((option, index) => {
-            const optionButton = document.createElement('button');
-            optionButton.className = 'w-full text-left p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors';
-            optionButton.textContent = option;
-            
-            optionButton.addEventListener('click', () => {
-                // Check answer
-                if (option === sampleQuestion.correctAnswer) {
-                    // Correct answer
-                    score += 10;
-                    scoreElement.textContent = score;
+        if (optionsContainer) {
+            sampleQuestion.options.forEach((option, index) => {
+                const optionButton = document.createElement('button');
+                optionButton.className = 'w-full text-left p-3 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors';
+                optionButton.textContent = option;
+                
+                optionButton.addEventListener('click', () => {
+                    // Check answer
+                    if (option === sampleQuestion.correctAnswer) {
+                        // Correct answer
+                        score += 10;
+                        const scoreElement = document.getElementById('score');
+                        if (scoreElement) scoreElement.textContent = score;
+                        
+                        // Show feedback
+                        if (feedbackContainer) {
+                            feedbackContainer.className = 'block mb-6 p-4 rounded-2xl bg-green-100 dark:bg-green-900/30';
+                            if (feedbackText) feedbackText.textContent = 'Correct! Well done.';
+                        }
+                    } else {
+                        // Incorrect answer
+                        incorrectAnswers.push({
+                            question: sampleQuestion.question,
+                            userAnswer: option,
+                            correctAnswer: sampleQuestion.correctAnswer
+                        });
+                        
+                        // Show feedback
+                        if (feedbackContainer) {
+                            feedbackContainer.className = 'block mb-6 p-4 rounded-2xl bg-red-100 dark:bg-red-900/30';
+                            if (feedbackText) feedbackText.textContent = `Incorrect. The correct answer is: ${sampleQuestion.correctAnswer}`;
+                        }
+                    }
                     
-                    // Show feedback
-                    feedbackContainer.className = 'block mb-6 p-4 rounded-2xl bg-green-100 dark:bg-green-900/30';
-                    feedbackText.textContent = 'Correct! Well done.';
-                } else {
-                    // Incorrect answer
-                    incorrectAnswers.push({
-                        question: sampleQuestion.question,
-                        userAnswer: option,
-                        correctAnswer: sampleQuestion.correctAnswer
+                    if (feedbackContainer) feedbackContainer.classList.remove('hidden');
+                    
+                    // Disable all option buttons
+                    const buttons = optionsContainer.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        btn.disabled = true;
+                        btn.classList.add('opacity-50');
                     });
                     
-                    // Show feedback
-                    feedbackContainer.className = 'block mb-6 p-4 rounded-2xl bg-red-100 dark:bg-red-900/30';
-                    feedbackText.textContent = `Incorrect. The correct answer is: ${sampleQuestion.correctAnswer}`;
-                }
-                
-                feedbackContainer.classList.remove('hidden');
-                
-                // Disable all option buttons
-                const buttons = optionsContainer.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    btn.disabled = true;
-                    btn.classList.add('opacity-50');
+                    // Show next question button
+                    const nextButton = document.createElement('button');
+                    nextButton.className = 'mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors';
+                    nextButton.textContent = 'Next Question';
+                    nextButton.addEventListener('click', () => {
+                        // Increment question index
+                        currentQuestionIndex++;
+                        const currentQuestionElement = document.getElementById('current-question');
+                        if (currentQuestionElement) currentQuestionElement.textContent = currentQuestionIndex + 1;
+                        
+                        // Hide feedback
+                        if (feedbackContainer) feedbackContainer.classList.add('hidden');
+                        
+                        // Check if quiz is complete (for demo purposes, end after 5 questions)
+                        if (currentQuestionIndex >= 5) {
+                            showQuizCompletion();
+                        } else {
+                            // Load next question
+                            loadQuestion();
+                        }
+                    });
+                    
+                    if (feedbackContainer) feedbackContainer.appendChild(nextButton);
                 });
                 
-                // Show next question button
-                const nextButton = document.createElement('button');
-                nextButton.className = 'mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors';
-                nextButton.textContent = 'Next Question';
-                nextButton.addEventListener('click', () => {
-                    // Increment question index
-                    currentQuestionIndex++;
-                    currentQuestionElement.textContent = currentQuestionIndex + 1;
-                    
-                    // Hide feedback
-                    feedbackContainer.classList.add('hidden');
-                    
-                    // Check if quiz is complete (for demo purposes, end after 5 questions)
-                    if (currentQuestionIndex >= 5) {
-                        showQuizCompletion();
-                    } else {
-                        // Load next question
-                        loadQuestion();
-                    }
-                });
-                
-                feedbackContainer.appendChild(nextButton);
+                optionsContainer.appendChild(optionButton);
             });
-            
-            optionsContainer.appendChild(optionButton);
-        });
+        }
     }, 1000); // Simulate loading delay
 }
 
