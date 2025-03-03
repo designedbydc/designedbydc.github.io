@@ -552,43 +552,31 @@ document.addEventListener('DOMContentLoaded', () => {
         showLoading(true);
         
         try {
-            // Reset retry attempts for each new question request
-            retryAttempts = 0;
+            // Determine the difficulty level based on current question index
+            const currentLevel = Math.min(Math.floor(currentQuestionIndex / 3), LEVELS.length - 1);
+            const difficulty = LEVELS[currentLevel].name;
             
-            // Get recently asked questions for the prompt
-            const recentQuestions = askedQuestions.slice(-20).map(q => q.question);
+            // Create a prompt for the OpenAI API
+            const prompt = `Generate a challenging stock market quiz question about ${difficulty} level concepts. 
+            The question should test knowledge of stock market trading, investing principles, or financial concepts.
             
-            // Prepare the prompt for OpenAI
-            const prompt = `Generate a unique multiple-choice question about stock market trading at ${LEVELS[currentLevel].name} level. 
-
-            The question should match the expertise level:
-            - For Gully Investor: Focus on absolute basics and terminology
-            - For higher levels: Gradually increase complexity
-            - For Hedge Fund Maharathi: Include advanced concepts and strategic thinking
-
-            The question MUST be significantly different from these recently asked questions:
-            ${recentQuestions.map((q, i) => `${i + 1}. ${q}`).join('\n')}
-
-            Return the response in JSON format with the following structure:
+            Return ONLY a JSON object with the following structure:
             {
-                "question": "The question text",
-                "options": ["Option A", "Option B", "Option C", "Option D"],
-                "correctAnswer": 0, // Index of the correct answer (0-3)
-                "explanation": "Detailed explanation of why this answer is correct and others are wrong"
-            }
+                "question": "The question text goes here?",
+                "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
+                "correctAnswer": 0, // Index of the correct option (0-3)
+                "explanation": "Detailed explanation of why the answer is correct"
+            }`;
             
-            Make sure the question is:
-            1. Appropriate for ${LEVELS[currentLevel].name} level
-            2. Completely unique and not similar to any of the recent questions
-            3. Tests a different concept or aspect than the recent questions`;
+            console.log(`Fetching question for difficulty: ${difficulty}`);
             
-            // Call our API route instead of OpenAI directly
+            // Make a request to the OpenAI API
             const response = await fetch('/api/openai', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ prompt })
+                body: JSON.stringify({ prompt }),
             });
             
             if (!response.ok) {
@@ -620,7 +608,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 
                 // Show the question immediately without checking for duplicates
-                        showQuestion(currentQuestion);
+                showQuestion(currentQuestion);
             } catch (e) {
                 console.error('Question parsing error:', e);
                 console.error('Raw content:', content);
@@ -637,18 +625,115 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (!currentQuestion.question || !Array.isArray(currentQuestion.options)) {
                         throw new Error('Invalid question format after cleanup');
                     }
-                
-                showQuestion(currentQuestion);
+                    
+                    showQuestion(currentQuestion);
                     return;
                 } catch (cleanupError) {
                     console.error('Failed to clean up response:', cleanupError);
-                    throw new Error('Failed to parse question data. The response was not in the expected format.');
+                    
+                    // Create a fallback question if we can't get one from the API
+                    const fallbackQuestion = createFallbackQuestion(currentLevel);
+                    currentQuestion = fallbackQuestion;
+                    showQuestion(currentQuestion);
+                    
+                    // Show a warning toast that we're using a fallback question
+                    showFallbackWarning();
+                    return;
                 }
             }
         } catch (error) {
+            console.error('Error fetching question:', error);
             showError(error);
             showLoading(false);
         }
+    }
+
+    // Function to create a fallback question when API fails
+    function createFallbackQuestion(level) {
+        // Array of pre-defined fallback questions for different levels
+        const fallbackQuestions = [
+            // Beginner level questions
+            {
+                question: "What does 'Bull Market' refer to?",
+                options: [
+                    "A market where prices are falling",
+                    "A market where prices are rising",
+                    "A market with high volatility",
+                    "A market dominated by aggressive traders"
+                ],
+                correctAnswer: 1,
+                explanation: "A Bull Market refers to a financial market in which prices are rising or expected to rise. This is typically characterized by investor optimism and confidence."
+            },
+            // Intermediate level questions
+            {
+                question: "What is the P/E ratio used for?",
+                options: [
+                    "Measuring a company's debt level",
+                    "Calculating dividend yield",
+                    "Valuing a company relative to its earnings",
+                    "Determining market volatility"
+                ],
+                correctAnswer: 2,
+                explanation: "The Price-to-Earnings (P/E) ratio is a valuation metric that compares a company's current share price to its per-share earnings. It helps investors determine if a stock is overvalued or undervalued relative to its earnings."
+            },
+            // Advanced level questions
+            {
+                question: "Which of the following is NOT a common hedging strategy?",
+                options: [
+                    "Purchasing put options",
+                    "Diversification across asset classes",
+                    "Dollar-cost averaging",
+                    "Short selling correlated assets"
+                ],
+                correctAnswer: 2,
+                explanation: "Dollar-cost averaging is an investment strategy where an investor divides the total amount to be invested across periodic purchases. While it can reduce the impact of volatility, it's not primarily a hedging strategy but rather an investment approach."
+            }
+        ];
+        
+        // Select a question based on the level
+        const levelIndex = Math.min(level, 2); // Cap at index 2 (advanced)
+        return fallbackQuestions[levelIndex];
+    }
+    
+    // Function to show a warning that we're using a fallback question
+    function showFallbackWarning() {
+        const warningToast = document.createElement('div');
+        warningToast.className = 'fixed bottom-4 left-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 rounded shadow-lg max-w-md';
+        warningToast.innerHTML = `
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-yellow-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm">Using a pre-defined question due to API issues. This won't affect your quiz progress.</p>
+                </div>
+                <div class="ml-auto pl-3">
+                    <div class="-mx-1.5 -my-1.5">
+                        <button class="close-warning inline-flex rounded-md p-1.5 text-yellow-500 hover:bg-yellow-200 focus:outline-none">
+                            <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(warningToast);
+        
+        // Add event listener to close button
+        warningToast.querySelector('.close-warning').addEventListener('click', () => {
+            warningToast.remove();
+        });
+        
+        // Auto-remove after 8 seconds
+        setTimeout(() => {
+            if (document.body.contains(warningToast)) {
+                warningToast.remove();
+            }
+        }, 8000);
     }
 
     // Display the current question
