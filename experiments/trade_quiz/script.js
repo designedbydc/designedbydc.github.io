@@ -75,14 +75,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const traderName = document.getElementById('trader-name').value.trim();
         if (traderName) {
             localStorage.setItem('traderName', traderName);
-            // initQuiz(); // Commented out since this function is not defined
+            initQuiz(); // Now using the defined initQuiz function
             
-            // Simple alternative: hide difficulty container and show quiz container
-            difficultyContainer.classList.add('hidden');
-            quizMainContainer.classList.remove('hidden');
-            
-            // You may want to implement a proper quiz initialization here
-            alert('Quiz started! The initQuiz function needs to be implemented.');
+            // No longer needed since initQuiz is defined
+            // difficultyContainer.classList.add('hidden');
+            // quizMainContainer.classList.remove('hidden');
+            // alert('Quiz started! The initQuiz function needs to be implemented.');
         } else {
             alert('Please enter your name to start the quiz.');
         }
