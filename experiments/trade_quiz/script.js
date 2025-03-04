@@ -774,40 +774,97 @@ document.addEventListener('DOMContentLoaded', () => {
         feedbackContainer.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
         feedbackContainer.classList.add(isCorrect ? 'feedback-correct' : 'feedback-incorrect');
         
+        // Clear previous feedback content
+        feedbackText.innerHTML = '';
+        
+        // Create feedback elements using DOM methods instead of template strings
+        const feedbackHeader = document.createElement('div');
+        feedbackHeader.className = 'flex items-center mb-2';
+        
+        const feedbackIcon = document.createElement('span');
+        feedbackIcon.className = 'text-2xl mr-2';
+        feedbackIcon.textContent = isCorrect ? '✓' : '✗';
+        
+        const feedbackTitle = document.createElement('span');
+        feedbackTitle.className = 'font-semibold';
+        feedbackTitle.textContent = isCorrect ? 'Correct!' : 'Incorrect';
+        
+        feedbackHeader.appendChild(feedbackIcon);
+        feedbackHeader.appendChild(feedbackTitle);
+        feedbackText.appendChild(feedbackHeader);
+        
+        // Add explanation
+        if (!isCorrect) {
+            const correctAnswerText = document.createElement('p');
+            correctAnswerText.textContent = `The correct answer is: ${currentQuestionData.shuffledOptions[currentQuestionData.correctIndex]}`;
+            feedbackText.appendChild(correctAnswerText);
+        }
+        
+        const explanationText = document.createElement('p');
+        explanationText.className = !isCorrect ? 'mt-2' : '';
+        explanationText.textContent = currentQuestionData.explanation || (isCorrect ? 'Great job!' : 'Better luck next time!');
+        feedbackText.appendChild(explanationText);
+        
+        // Update score if correct
         if (isCorrect) {
             score++;
             document.getElementById('score').textContent = score;
-            feedbackText.innerHTML = `
-                <div class="flex items-center mb-2">
-                    <span class="text-2xl mr-2">✓</span>
-                    <span class="font-semibold">Correct!</span>
-                </div>
-                <p>${currentQuestionData.explanation || 'Great job!'}</p>
-                <button id="next-question-btn" onclick="window.handleNextQuestion()" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
-            `;
-        } else {
-            feedbackText.innerHTML = `
-                <div class="flex items-center mb-2">
-                    <span class="text-2xl mr-2">✗</span>
-                    <span class="font-semibold">Incorrect</span>
-                </div>
-                <p>The correct answer is: ${currentQuestionData.shuffledOptions[currentQuestionData.correctIndex]}</p>
-                <p class="mt-2">${currentQuestionData.explanation || 'Better luck next time!'}</p>
-                <button id="next-question-btn" onclick="window.handleNextQuestion()" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
-            `;
         }
         
+        // Create and add next button
+        const nextButton = document.createElement('button');
+        nextButton.id = 'next-question-btn';
+        nextButton.className = 'mt-4 next-btn py-2 px-6 text-white font-bold';
+        nextButton.textContent = 'Next Question';
+        
+        // Add multiple click handlers using different methods for redundancy
+        nextButton.addEventListener('click', moveToNextQuestion);
+        nextButton.onclick = moveToNextQuestion; // Alternative event binding
+        nextButton.setAttribute('onclick', 'javascript:moveToNextQuestion()'); // Inline attribute
+        
+        feedbackText.appendChild(nextButton);
+        
+        // Create an alternative link button in case button doesn't work
+        const alternativeLink = document.createElement('a');
+        alternativeLink.href = 'javascript:void(0)';
+        alternativeLink.className = 'block text-center mt-4 text-green-600 hover:underline';
+        alternativeLink.textContent = 'Click here if Next button doesn\'t work';
+        alternativeLink.onclick = moveToNextQuestion;
+        feedbackText.appendChild(alternativeLink);
+        
+        // Add animation
         feedbackContainer.classList.add('fade-in');
+        
+        // Add a fallback method - automatically proceed after a delay if needed
+        window.nextQuestionTimeout = setTimeout(function() {
+            // Check if we're still on the same question after 10 seconds
+            // If so, provide a direct way to proceed
+            const proceedDiv = document.createElement('div');
+            proceedDiv.className = 'bg-yellow-100 p-4 mt-4 rounded-lg';
+            proceedDiv.innerHTML = `
+                <p class="font-bold">Having trouble with the Next button?</p>
+                <button onclick="moveToNextQuestion()" class="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded mt-2 w-full">
+                    Click here to continue
+                </button>
+            `;
+            feedbackText.appendChild(proceedDiv);
+        }, 10000);
     }
     
-    // Handle next question - now simplified since we're using event delegation
-    // Make it globally accessible for the inline onclick handler
-    window.handleNextQuestion = function() {
-        console.log("Next question button clicked"); // Debug log
+    // Separate function for moving to next question
+    function moveToNextQuestion() {
+        console.log("Moving to next question");
         
+        // Clear any pending timeout
+        if (window.nextQuestionTimeout) {
+            clearTimeout(window.nextQuestionTimeout);
+            window.nextQuestionTimeout = null;
+        }
+        
+        // Increment question index
         currentQuestionIndex++;
         
-        // Save quiz state after each answer
+        // Save quiz state
         saveQuizState();
         
         // Update best score if applicable
@@ -821,7 +878,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // Continue with next question
             getNextQuestion();
         }
-    };
+    }
+
+    // Make moveToNextQuestion global for absolute fallback
+    window.moveToNextQuestion = moveToNextQuestion;
 
     // Show/hide loading spinner
     function showLoading(show) {
@@ -1127,16 +1187,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add event listeners for start button
         document.getElementById('start-quiz-btn').addEventListener('click', startQuiz);
         
-        // Check for resume state
-        checkForResumeState();
-        
-        // Add global event delegation for dynamically created elements
+        // Add global fallback handler for the next button
         document.addEventListener('click', function(event) {
-            // Next question button handling
-            if (event.target && event.target.id === 'next-question-btn') {
-                handleNextQuestion();
+            if (event.target.id === 'next-question-btn' || 
+                (event.target.parentElement && event.target.parentElement.id === 'next-question-btn')) {
+                console.log("Global handler for next button clicked");
+                moveToNextQuestion();
             }
         });
+        
+        // Check for resume state
+        checkForResumeState();
         
         // Display best scores
         displayBestScores();

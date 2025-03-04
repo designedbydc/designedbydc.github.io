@@ -660,38 +660,43 @@ button:focus-visible {
     color: var(--color-gray-800);
 }
 
-/* Next button styling with primary accent color */
+/* Next button styling with primary accent color - more aggressive styling */
 .next-btn {
-    background-color: var(--color-accent);
+    background-color: var(--color-accent) !important;
     color: var(--color-white) !important;
-    border: none;
-    border-radius: 24px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    padding: 10px 20px;
-    font-size: 18px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
-    position: relative;
-    z-index: 10; /* Ensure button is on top */
-    display: inline-block;
+    border: none !important;
+    border-radius: 24px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    padding: 12px 24px !important;
+    font-size: 18px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2) !important;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
+    position: relative !important;
+    z-index: 100 !important; /* Very high z-index */
+    display: block !important;
+    margin: 20px auto 10px auto !important;
+    text-align: center !important;
+    min-width: 200px !important;
+    max-width: 300px !important;
+    outline: none !important;
 }
 
 .next-btn:hover {
-    background-color: var(--color-dark-green);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
-    transform: translateY(-2px);
+    background-color: var(--color-dark-green) !important;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
+    transform: translateY(-2px) !important;
 }
 
 .next-btn:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    transform: translateY(1px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
 }
 
 .next-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 200, 5, 0.4);
+    outline: none !important;
+    box-shadow: 0 0 0 4px rgba(0, 200, 5, 0.4) !important;
 }
 
 /* Add animation to make the button more noticeable */
@@ -702,5 +707,16 @@ button:focus-visible {
 }
 
 #next-question-btn {
-    animation: pulse-button 2s infinite;
+    animation: pulse-button 2s infinite !important;
+}
+
+/* Ensure the feedback container has proper positioning to not interfere with button */
+#feedback-container {
+    position: relative !important;
+    z-index: 10 !important;
+    padding-bottom: 20px !important;
+}
+
+#feedback-text {
+    position: relative !important;
 } 
