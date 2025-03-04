@@ -94,6 +94,7 @@ body {
     transition: all 0.2s ease;
     text-align: left;
     width: 100%;
+    box-shadow: var(--shadow-sm);
 }
 
 .option-btn:hover {
@@ -104,6 +105,8 @@ body {
 .option-btn.selected {
     background-color: var(--color-accent-light);
     border-color: var(--color-green);
+    color: var(--color-black);
+    font-weight: 500;
 }
 
 .loader {
@@ -608,4 +611,27 @@ button:focus-visible {
 
 #download-certificate:hover, #share-certificate:hover {
     background-color: var(--color-dark-green);
+}
+
+/* Quiz container styles */
+#quiz-container {
+    background-color: var(--color-white);
+}
+
+#question {
+    color: var(--color-black);
+    font-weight: 500;
+}
+
+#stats {
+    color: var(--color-black);
+}
+
+/* Make sure all text in the quiz is visible */
+.text-gray-700 {
+    color: var(--color-gray-700);
+}
+
+.text-gray-800 {
+    color: var(--color-gray-800);
 } 

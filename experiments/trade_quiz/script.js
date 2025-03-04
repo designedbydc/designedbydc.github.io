@@ -645,25 +645,48 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Display the current question
+    // Show question
     function showQuestion(questionData) {
+        // Hide loading and feedback
         showLoading(false);
+        feedbackContainer.classList.add('hidden');
         
-        questionElement.textContent = questionData.question;
+        const questionElement = document.getElementById('question');
+        const optionsContainer = document.getElementById('options-container');
+        
+        // Clear previous options
         optionsContainer.innerHTML = '';
         
+        // Set question text
+        questionElement.textContent = questionData.question;
+        
+        // Create option buttons
         questionData.options.forEach((option, index) => {
             const button = document.createElement('button');
+            button.className = 'option-btn';
             button.textContent = option;
-            button.classList.add('w-full', 'text-left', 'p-4', 'rounded-2xl', 
-                'transition', 'duration-300', 'border', 
-                'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500', 'option-btn', 'dark-mode');
+            button.dataset.index = index;
             
-            button.addEventListener('click', () => checkAnswer(index));
+            // Ensure text color is visible
+            button.style.color = 'var(--color-black)';
+            
+            button.addEventListener('click', () => {
+                // Remove selected class from all buttons
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+                
+                // Add selected class to clicked button
+                button.classList.add('selected');
+                
+                // Check answer
+                checkAnswer(index);
+            });
+            
             optionsContainer.appendChild(button);
         });
         
-        feedbackContainer.classList.add('hidden');
+        // Show question container with animation
         quizContainer.classList.add('fade-in');
     }
 
@@ -749,7 +772,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         feedbackContainer.classList.add('fade-in');
-        
     }
 
     // Show/hide loading spinner
