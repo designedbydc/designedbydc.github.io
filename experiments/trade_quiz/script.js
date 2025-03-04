@@ -309,18 +309,27 @@ document.addEventListener('DOMContentLoaded', () => {
         progressBar.style.width = `${(questionsCompletedInLevel / currentLevelInfo.questionsRequired) * 100}%`;
     }
 
-    // Check if player should advance to next level
+    // Check if level progression is needed
     function checkLevelProgression() {
-        const currentLevelInfo = LEVELS[currentLevel];
-        if (questionsCompletedInLevel >= currentLevelInfo.questionsRequired) {
+        // Check if user has completed enough questions for this level
+        if (questionsCompletedInLevel >= LEVELS[currentLevel].questionsRequired) {
+            // Check if there's a next level
             if (currentLevel < LEVELS.length - 1) {
-                // Show level up message
-                showLevelUpMessage();
+                // Move to next level
                 currentLevel++;
                 questionsCompletedInLevel = 0;
+                
+                // Update level display
+                updateLevelDisplay();
+                
+                // Apply new level theme
+                applyLevelTheme(currentLevel);
+                
+                return true; // Level up occurred
             }
         }
-        updateLevelDisplay();
+        
+        return false; // No level up
     }
 
     // Show level up message
@@ -660,8 +669,18 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set question text
         questionElement.textContent = questionData.question;
         
-        // Create option buttons
-        questionData.options.forEach((option, index) => {
+        // Randomize the order of options
+        const correctAnswer = questionData.options[0]; // Store the correct answer (first option)
+        const allOptions = [...questionData.options]; // Create a copy of all options
+        
+        // Shuffle the options array
+        const shuffledOptions = shuffleArray(allOptions);
+        
+        // Find the new index of the correct answer after shuffling
+        const correctIndex = shuffledOptions.indexOf(correctAnswer);
+        
+        // Create option buttons with shuffled order
+        shuffledOptions.forEach((option, index) => {
             const button = document.createElement('button');
             button.className = 'option-btn';
             button.textContent = option;
@@ -679,25 +698,38 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Add selected class to clicked button
                 button.classList.add('selected');
                 
-                // Check answer
-                checkAnswer(index);
+                // Check if the selected option is the correct answer
+                const isCorrect = index === correctIndex;
+                checkAnswer(isCorrect);
             });
             
             optionsContainer.appendChild(button);
         });
         
+        // Store the correct index for reference
+        currentQuestionData = {
+            ...questionData,
+            correctIndex: correctIndex,
+            shuffledOptions: shuffledOptions
+        };
+        
         // Show question container with animation
         quizContainer.classList.add('fade-in');
     }
+    
+    // Function to shuffle an array (Fisher-Yates algorithm)
+    function shuffleArray(array) {
+        const newArray = [...array];
+        for (let i = newArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
+        }
+        return newArray;
+    }
 
-    // Check if the selected answer is correct
-    function checkAnswer(selectedIndex) {
-        const isCorrect = selectedIndex === currentQuestion.correctAnswer;
-        
-        // Track user performance
-        userPerformance.push(isCorrect);
-        
-        // Update consecutive correct answers counter
+    // Check answer
+    function checkAnswer(isCorrect) {
+        // Track user performance for level progression
         if (isCorrect) {
             consecutiveCorrectAnswers++;
             questionsCompletedInLevel++;
@@ -705,71 +737,68 @@ document.addEventListener('DOMContentLoaded', () => {
             consecutiveCorrectAnswers = 0;
         }
         
+        // Update progress bar
+        const progressBar = document.getElementById('progress-bar');
+        progressBar.style.width = `${(questionsCompletedInLevel / LEVELS[currentLevel].questionsRequired) * 100}%`;
+        
         // Disable all option buttons
-        const optionButtons = optionsContainer.querySelectorAll('button');
+        const optionButtons = document.querySelectorAll('.option-btn');
         optionButtons.forEach(button => {
             button.disabled = true;
+            
+            // Highlight the correct answer
+            if (parseInt(button.dataset.index) === currentQuestionData.correctIndex) {
+                button.style.borderColor = 'var(--color-green)';
+                button.style.backgroundColor = 'var(--color-accent-light)';
+            }
         });
+        
+        // Update feedback based on answer correctness
+        feedbackContainer.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
+        feedbackContainer.classList.add(isCorrect ? 'feedback-correct' : 'feedback-incorrect');
         
         if (isCorrect) {
             score++;
-            scoreElement.textContent = score;
-            optionButtons[selectedIndex].style.borderColor = LEVELS[currentLevel].theme.primary;
-            optionButtons[selectedIndex].style.borderWidth = '2px';
-            
-            feedbackContainer.classList.remove('hidden', 'feedback-incorrect');
-            feedbackContainer.classList.add('feedback-correct');
-            
-            // Check for level progression
-            checkLevelProgression();
-            
-            if (questionsCompletedInLevel < LEVELS[currentLevel].questionsRequired) {
-                feedbackText.textContent = "Correct! Well done.";
-                // Move to the next question after a delay for correct answers
-                setTimeout(() => {
-                    currentQuestionIndex++;
-                    currentQuestionElement.textContent = currentQuestionIndex + 1;
-                    getNextQuestion();
-                }, 2000);
-            }
-        } else {
-            optionButtons[selectedIndex].style.borderColor = LEVELS[currentLevel].theme.accent;
-            optionButtons[selectedIndex].style.borderWidth = '2px';
-            optionButtons[currentQuestion.correctAnswer].style.borderColor = LEVELS[currentLevel].theme.primary;
-            optionButtons[currentQuestion.correctAnswer].style.borderWidth = '2px';
-            
-            feedbackContainer.classList.remove('hidden', 'feedback-correct');
-            feedbackContainer.classList.add('feedback-incorrect');
-            
-            // Create a container for the explanation and next button
-            const explanationHTML = `
-                <div>
-                    <p class="mb-4 text-lg">${currentQuestion.explanation}</p>
-                    <div class="text-center mt-6">
-                        <button id="next-question-btn" class="secondary-btn dark-mode py-3 px-8 transition duration-300">
-                            Next Question
-                        </button>
-                    </div>
+            document.getElementById('score').textContent = score;
+            feedbackText.innerHTML = `
+                <div class="flex items-center mb-2">
+                    <span class="text-2xl mr-2">✓</span>
+                    <span class="font-semibold">Correct!</span>
                 </div>
+                <p>${currentQuestionData.explanation || 'Great job!'}</p>
+                <button id="next-question-btn" class="mt-4 secondary-btn py-2 px-6">Next Question</button>
             `;
-            
-            feedbackText.innerHTML = `<strong class="text-xl block mb-3">Incorrect</strong> ${explanationHTML}`;
-            
-            // Add event listener to the next question button
-            setTimeout(() => {
-                const nextQuestionBtn = document.getElementById('next-question-btn');
-                if (nextQuestionBtn) {
-                    nextQuestionBtn.addEventListener('click', () => {
-                        currentQuestionIndex++;
-                        currentQuestionElement.textContent = currentQuestionIndex + 1;
-                        getNextQuestion();
-                    });
-                }
-            }, 100);
-            
-            // Add this question to missed questions for later review
-            missedQuestions.push(currentQuestion);
+        } else {
+            feedbackText.innerHTML = `
+                <div class="flex items-center mb-2">
+                    <span class="text-2xl mr-2">✗</span>
+                    <span class="font-semibold">Incorrect</span>
+                </div>
+                <p>The correct answer is: ${currentQuestionData.shuffledOptions[currentQuestionData.correctIndex]}</p>
+                <p class="mt-2">${currentQuestionData.explanation || 'Better luck next time!'}</p>
+                <button id="next-question-btn" class="mt-4 secondary-btn py-2 px-6">Next Question</button>
+            `;
         }
+        
+        // Add event listener to next question button
+        document.getElementById('next-question-btn').addEventListener('click', () => {
+            currentQuestionIndex++;
+            
+            // Save quiz state after each answer
+            saveQuizState();
+            
+            // Update best score if applicable
+            updateBestScore();
+            
+            // Check if level progression is needed
+            if (checkLevelProgression()) {
+                // Level up - show message
+                showLevelUpMessage();
+            } else {
+                // Continue with next question
+                getNextQuestion();
+            }
+        });
         
         feedbackContainer.classList.add('fade-in');
     }
