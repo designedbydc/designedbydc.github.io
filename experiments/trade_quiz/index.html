@@ -43,7 +43,11 @@
         
         <!-- Score Container - Odometer Style -->
         <div id="score-container" class="text-center py-6">
-            <div id="score-odometer" class="odometer score-odometer">0</div>
+            <div class="score-display">
+                <span id="score-odometer" class="odometer score-odometer">0</span>
+                <span class="score-separator"> of 30</span>
+            </div>
+            <p class="text-gray-600 mt-2">Score</p>
         </div>
 
         <!-- Quiz Main Container -->
@@ -60,6 +64,7 @@
             </div>
 
             <div id="quiz-container">
+                <!-- Removing the difficulty indicator section -->
                 <div id="question-container" class="mb-6 sm:mb-8">
                     <h2 id="question" class="text-lg sm:text-xl font-medium text-gray-800 mb-4 sm:mb-6"></h2>
                     <div id="options-container" class="space-y-3 sm:space-y-4">

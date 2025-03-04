@@ -145,57 +145,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
     
-    // Mock questions
+    // Mock questions array organized by difficulty (easy -> medium -> hard)
     const mockQuestions = [
+        // EASY questions (0-9)
         {
-            question: "What is the main function of the stock market?",
+            question: "What is a stock?",
             options: [
-                "To provide a platform for companies to raise capital",
-                "To enable government to regulate businesses",
-                "To allow only institutional investors to trade",
-                "To restrict foreign investments"
+                "A type of bond issued by companies",
+                "A share of ownership in a company",
+                "A loan given to a corporation",
+                "A government-issued security"
             ],
-            correctAnswer: "To provide a platform for companies to raise capital"
-        },
-        {
-            question: "What does the term 'bull market' refer to?",
-            options: [
-                "A market dominated by sellers",
-                "A market with rising stock prices",
-                "A market controlled by regulatory agencies",
-                "A market for agricultural commodities"
-            ],
-            correctAnswer: "A market with rising stock prices"
-        },
-        {
-            question: "What is a stock dividend?",
-            options: [
-                "A cash payment to shareholders",
-                "Additional shares given to shareholders",
-                "A tax on stock profits",
-                "The company's annual profit"
-            ],
-            correctAnswer: "Additional shares given to shareholders"
-        },
-        {
-            question: "What is an IPO?",
-            options: [
-                "International Purchase Order",
-                "Initial Public Offering",
-                "Insider Price Option",
-                "Investment Portfolio Optimization"
-            ],
-            correctAnswer: "Initial Public Offering"
-        },
-        {
-            question: "Which of these is NOT a major stock exchange in India?",
-            options: [
-                "Bombay Stock Exchange (BSE)",
-                "National Stock Exchange (NSE)",
-                "Delhi Stock Exchange (DSE)",
-                "Metropolitan Stock Exchange (MSE)"
-            ],
-            correctAnswer: "Delhi Stock Exchange (DSE)"
+            correctAnswer: "A share of ownership in a company"
         },
         {
             question: "What is a market order?",
@@ -248,204 +209,248 @@ document.addEventListener('DOMContentLoaded', function() {
             correctAnswer: "Price/Earnings ratio"
         },
         {
-            question: "What is a bear market?",
+            question: "What is a dividend?",
             options: [
-                "A market for wildlife stocks",
-                "A market where prices are falling",
-                "A market that opens only in certain seasons",
-                "A market that trades using cryptocurrency"
+                "A fee paid to stockbrokers",
+                "A portion of a company's profit paid to shareholders",
+                "A type of stock split",
+                "A tax on stock profits"
             ],
-            correctAnswer: "A market where prices are falling"
-        },
-        {
-            question: "What is a stock split?",
-            options: [
-                "Dividing a company into two separate entities",
-                "Increasing the number of shares by dividing existing ones",
-                "Selling a portion of company stocks to investors",
-                "Sharing profits with stockholders"
-            ],
-            correctAnswer: "Increasing the number of shares by dividing existing ones"
-        },
-        {
-            question: "What is a demat account?",
-            options: [
-                "A dematerialized account where shares are held electronically",
-                "A demonstration account for practice trading",
-                "An account with limited trading privileges",
-                "A special account for foreign investors"
-            ],
-            correctAnswer: "A dematerialized account where shares are held electronically"
+            correctAnswer: "A portion of a company's profit paid to shareholders"
         },
         {
             question: "What is a limit order?",
             options: [
-                "An order with a maximum quantity limit",
-                "An order that expires at a specific time",
-                "An order to buy or sell at a specified price or better",
-                "An order that requires approval from market regulators"
+                "An order to buy or sell a security at a specific price or better",
+                "A restriction on how many shares you can buy",
+                "An order that must be executed by the end of the trading day",
+                "A cap on how much you can invest"
             ],
-            correctAnswer: "An order to buy or sell at a specified price or better"
+            correctAnswer: "An order to buy or sell a security at a specific price or better"
         },
         {
-            question: "What does SEBI stand for?",
+            question: "What is a bull market?",
             options: [
-                "Stock Exchange Board of India",
-                "Securities and Exchange Board of India",
-                "Share Exchange Bureau of Investment",
-                "State Equity Business Institute"
+                "A market where prices are falling",
+                "A market where prices are rising",
+                "A market exclusively for agricultural products",
+                "A market regulated by specific broker firms"
             ],
-            correctAnswer: "Securities and Exchange Board of India"
+            correctAnswer: "A market where prices are rising"
+        },
+        {
+            question: "What is the NIFTY?",
+            options: [
+                "A mobile trading application",
+                "The National Stock Exchange's benchmark index in India",
+                "A type of dividend payment",
+                "A strategy for buying stocks"
+            ],
+            correctAnswer: "The National Stock Exchange's benchmark index in India"
+        },
+        
+        // MEDIUM questions (10-19)
+        {
+            question: "What is a stop-loss order?",
+            options: [
+                "An order to buy a stock when it reaches a certain price",
+                "An order to sell a stock when it falls to a certain price",
+                "A limit on how much you can lose in a trading day",
+                "An order that automatically cancels at the end of the day"
+            ],
+            correctAnswer: "An order to sell a stock when it falls to a certain price"
         },
         {
             question: "What is market capitalization?",
             options: [
-                "The total value of a company's assets minus liabilities",
-                "The total market value of a company's outstanding shares",
-                "The maximum capital a company can raise",
-                "The total investment made by the company founders"
+                "The maximum price a stock can reach in a day",
+                "The total value of a company's outstanding shares",
+                "The minimum investment required to enter a market",
+                "The capital required to start a brokerage firm"
             ],
-            correctAnswer: "The total market value of a company's outstanding shares"
+            correctAnswer: "The total value of a company's outstanding shares"
         },
         {
-            question: "What is a futures contract?",
+            question: "What is an IPO?",
             options: [
-                "A contract for employment with a company in the future",
-                "An agreement to buy or sell an asset at a predetermined price on a specific future date",
-                "A technology contract for future software updates",
-                "A contract that predicts future market conditions"
+                "International Payment Option",
+                "Internal Profit Organization",
+                "Initial Public Offering",
+                "Indexed Portfolio Optimization"
             ],
-            correctAnswer: "An agreement to buy or sell an asset at a predetermined price on a specific future date"
+            correctAnswer: "Initial Public Offering"
         },
         {
-            question: "What is diversification in investment?",
+            question: "What is diversification in investing?",
             options: [
-                "Investing only in diverse industries",
-                "Spreading investments across various assets to reduce risk",
+                "Investing in multiple currencies",
+                "Spreading investments across different asset classes to reduce risk",
                 "Changing investment strategies frequently",
-                "Investing in international markets only"
+                "Investing only in diverse companies"
             ],
-            correctAnswer: "Spreading investments across various assets to reduce risk"
+            correctAnswer: "Spreading investments across different asset classes to reduce risk"
         },
         {
-            question: "What is a dividend yield?",
+            question: "What is a bear market?",
             options: [
-                "The total amount of dividends paid by a company",
-                "The annual dividend per share divided by the stock's price per share",
-                "The growth rate of a dividend",
-                "The tax paid on dividend income"
+                "A market where prices are rising steadily",
+                "A market where prices are falling steadily",
+                "A market dominated by aggressive investors",
+                "A market with minimal government regulation"
             ],
-            correctAnswer: "The annual dividend per share divided by the stock's price per share"
+            correctAnswer: "A market where prices are falling steadily"
         },
         {
-            question: "What is insider trading?",
+            question: "What is a stock split?",
             options: [
-                "Trading within the company premises",
-                "Trading based on material, non-public information",
-                "Trading between company employees",
-                "Trading company shares during working hours"
+                "Dividing a company's profits among shareholders",
+                "When a company divides its existing shares into multiple shares",
+                "Separating a company into two different companies",
+                "Distributing shares to new investors"
             ],
-            correctAnswer: "Trading based on material, non-public information"
+            correctAnswer: "When a company divides its existing shares into multiple shares"
         },
         {
-            question: "What is a stock's beta?",
+            question: "What does 'volume' refer to in stock trading?",
             options: [
-                "A measure of a stock's volatility compared to the market",
-                "The testing phase before a stock is publicly traded",
-                "The initial price of a stock",
-                "The maximum price a stock can reach"
+                "The size of the company",
+                "The number of shares traded in a given period",
+                "The loudness of trading floor activity",
+                "The market capitalization divided by share price"
             ],
-            correctAnswer: "A measure of a stock's volatility compared to the market"
-        },
-        {
-            question: "What does ROI stand for in investing?",
-            options: [
-                "Rate of Inflation",
-                "Return on Investment",
-                "Risk of Investment",
-                "Record of Income"
-            ],
-            correctAnswer: "Return on Investment"
-        },
-        {
-            question: "What is a stop-loss order?",
-            options: [
-                "An order to stop all trading activity",
-                "An order to sell when a stock reaches a certain price to limit losses",
-                "An order that prevents more than a specified loss in a day",
-                "A regulation that stops trading when market losses are too high"
-            ],
-            correctAnswer: "An order to sell when a stock reaches a certain price to limit losses"
+            correctAnswer: "The number of shares traded in a given period"
         },
         {
             question: "What is a mutual fund?",
             options: [
-                "A fund that invests only in bonds",
-                "A pool of money invested in various securities by a professional fund manager",
-                "A government-run investment program",
-                "A fund for mutual benefit societies"
+                "A fund shared between two investors",
+                "A pool of money from many investors that is invested in securities",
+                "A government-managed retirement fund",
+                "A joint bank account for multiple traders"
             ],
-            correctAnswer: "A pool of money invested in various securities by a professional fund manager"
+            correctAnswer: "A pool of money from many investors that is invested in securities"
         },
         {
             question: "What is an ETF?",
             options: [
-                "Electronic Trading Facility",
+                "Electronic Trading Format",
                 "Exchange-Traded Fund",
-                "Equity Transfer Fee",
+                "Equity Trust Foundation",
                 "Extended Time Finance"
             ],
             correctAnswer: "Exchange-Traded Fund"
         },
         {
-            question: "What is shorting a stock?",
+            question: "What is a bond?",
             options: [
-                "Buying a stock for a short period",
-                "Selling shares you don't own in anticipation of a price drop",
-                "Reducing the number of shares in a company",
-                "Trading stocks in shortened market hours"
+                "An ownership share in a company",
+                "A debt security, similar to an IOU",
+                "A type of insurance for investors",
+                "A contract between two traders"
             ],
-            correctAnswer: "Selling shares you don't own in anticipation of a price drop"
+            correctAnswer: "A debt security, similar to an IOU"
+        },
+        
+        // HARD questions (20-29)
+        {
+            question: "What is arbitrage?",
+            options: [
+                "A type of trading software",
+                "The practice of taking advantage of price differences in different markets",
+                "A method of currency conversion",
+                "A high-risk investment strategy"
+            ],
+            correctAnswer: "The practice of taking advantage of price differences in different markets"
         },
         {
-            question: "What is a margin call?",
+            question: "What is the difference between futures and options?",
             options: [
-                "A call from a broker demanding additional funds when a margin account falls below required amount",
-                "A phone call to place a margin order",
-                "A call to increase the profit margin",
-                "A notification about profit margins"
+                "Futures are binding contracts, while options give the right but not obligation to buy/sell",
+                "Futures are for commodities, options are for stocks only",
+                "Futures expire in one year, options expire in one month",
+                "Futures are regulated by the government, options are not"
             ],
-            correctAnswer: "A call from a broker demanding additional funds when a margin account falls below required amount"
+            correctAnswer: "Futures are binding contracts, while options give the right but not obligation to buy/sell"
         },
         {
-            question: "What is meant by 'going long' in the stock market?",
+            question: "What is an 'order book' in trading?",
             options: [
-                "Holding stocks for a very long time",
-                "Buying stocks with the expectation that their value will increase",
-                "Investing in companies with long histories",
-                "Making long-term predictions about market movements"
+                "A record of all orders placed by a single trader",
+                "A list of all buy and sell orders for a specific security, organized by price level",
+                "The official record of completed transactions",
+                "A manual used by new traders to learn order types"
             ],
-            correctAnswer: "Buying stocks with the expectation that their value will increase"
+            correctAnswer: "A list of all buy and sell orders for a specific security, organized by price level"
         },
         {
-            question: "What is a stock's 'float'?",
+            question: "What is meant by 'shorting' a stock?",
             options: [
-                "The number of shares available for trading by the public",
-                "The maximum price a stock can reach",
-                "How quickly a stock's price changes",
-                "The amount a stock's price fluctuates daily"
+                "Buying shares for a short period of time",
+                "Setting a short limit on the maximum price to pay",
+                "Borrowing shares to sell now and buy back later at a lower price",
+                "Reducing your position in a particular stock"
             ],
-            correctAnswer: "The number of shares available for trading by the public"
+            correctAnswer: "Borrowing shares to sell now and buy back later at a lower price"
         },
         {
-            question: "What is fundamental analysis in stock investing?",
+            question: "What is the VIX?",
             options: [
-                "Analyzing the basic structure of the stock market",
-                "Evaluating a company's financial health, management, and competitive advantages",
-                "Studying the fundamentals of trading psychology",
-                "Basic analysis suitable for beginner investors"
+                "A visualized index of trading patterns",
+                "A volatility index that measures market fear",
+                "A broker verification system",
+                "A variable interest exchange system"
             ],
-            correctAnswer: "Evaluating a company's financial health, management, and competitive advantages"
+            correctAnswer: "A volatility index that measures market fear"
+        },
+        {
+            question: "What is 'alpha' in investment terms?",
+            options: [
+                "The first stock in an index",
+                "The return on an investment relative to a benchmark index",
+                "The primary investor in a mutual fund",
+                "The maximum potential gain of an investment"
+            ],
+            correctAnswer: "The return on an investment relative to a benchmark index"
+        },
+        {
+            question: "What is a 'derivative'?",
+            options: [
+                "A direct investment in a company",
+                "A financial security with a value dependent on an underlying asset",
+                "A foreign exchange investment",
+                "A dividend reinvestment program"
+            ],
+            correctAnswer: "A financial security with a value dependent on an underlying asset"
+        },
+        {
+            question: "What is 'quantitative easing'?",
+            options: [
+                "Reducing trade volumes to stabilize markets",
+                "A central bank strategy involving increased money supply to boost the economy",
+                "Strict regulation of high-frequency trading",
+                "Statistical analysis of market trends"
+            ],
+            correctAnswer: "A central bank strategy involving increased money supply to boost the economy"
+        },
+        {
+            question: "What is the 'efficient market hypothesis'?",
+            options: [
+                "The theory that markets will always become more efficient over time",
+                "The idea that market prices reflect all available information",
+                "The concept that trading algorithms are more efficient than human traders",
+                "A strategy for maximizing trading efficiency"
+            ],
+            correctAnswer: "The idea that market prices reflect all available information"
+        },
+        {
+            question: "What is a 'straddle' in options trading?",
+            options: [
+                "Buying both call and put options with the same strike price and expiration date",
+                "Trading two different stocks in the same sector",
+                "Alternating between long and short positions",
+                "A trading position that spans multiple markets"
+            ],
+            correctAnswer: "Buying both call and put options with the same strike price and expiration date"
         }
     ];
     
@@ -460,9 +465,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Apply theme of the first level
         applyLevelTheme(LEVELS[currentLevel]);
         
-        // Update level display
-        updateLevelDisplay();
-        
         // Hide difficulty container and show quiz container
         difficultyContainer.classList.add('hidden');
         quizMainContainer.classList.remove('hidden');
@@ -474,12 +476,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listener for start quiz button
     startQuizBtn.addEventListener('click', initQuiz);
     
-    // Update the level display
+    // Update the level display - function kept for compatibility but no longer updates UI
     function updateLevelDisplay() {
-        currentDifficultySpan.textContent = LEVELS[currentLevel].name;
-        currentQuestionSpan.textContent = currentQuestionIndex + 1;
-        // Update odometer instead of scoreSpan
-        scoreOdometer.innerHTML = score;
+        // Question counter removed from UI
     }
     
     // Apply theme based on current level
@@ -499,22 +498,54 @@ document.addEventListener('DOMContentLoaded', function() {
         return shuffled;
     }
     
-    // Get next question
+    // Get next question with progressive difficulty
     function getNextQuestion() {
         try {
             // Show loading spinner
             showLoading(true);
             
-            // For simplicity, we'll use mock questions and shuffle them
-            const shuffledQuestions = shuffleArray(mockQuestions);
-            const mockQuestion = shuffledQuestions[currentQuestionIndex % shuffledQuestions.length];
+            // Calculate question difficulty based on current index
+            // First 10 questions are easy, next 10 are medium, last 10 are hard
+            let difficultyLevel;
+            if (currentQuestionIndex < 10) {
+                difficultyLevel = 'easy';
+            } else if (currentQuestionIndex < 20) {
+                difficultyLevel = 'medium';
+            } else {
+                difficultyLevel = 'hard';
+            }
+            
+            // Categorize the mock questions by difficulty
+            const easyQuestions = mockQuestions.slice(0, 10);
+            const mediumQuestions = mockQuestions.slice(10, 20);
+            const hardQuestions = mockQuestions.slice(20, 30);
+            
+            // Select the appropriate question pool based on difficulty
+            let questionPool;
+            switch (difficultyLevel) {
+                case 'easy':
+                    questionPool = easyQuestions;
+                    break;
+                case 'medium':
+                    questionPool = mediumQuestions;
+                    break;
+                case 'hard':
+                    questionPool = hardQuestions;
+                    break;
+                default:
+                    questionPool = easyQuestions;
+            }
+            
+            // Select a question from the appropriate pool
+            // Use modulo to cycle through the available questions in each difficulty level
+            const selectedQuestion = questionPool[currentQuestionIndex % 10];
             
             // Use setTimeout to simulate loading
             setTimeout(() => {
                 showQuestion({
-                    question: mockQuestion.question,
-                    options: mockQuestion.options,
-                    correctAnswer: mockQuestion.correctAnswer
+                    question: selectedQuestion.question,
+                    options: selectedQuestion.options,
+                    correctAnswer: selectedQuestion.correctAnswer
                 });
                 showLoading(false);
             }, 500);
@@ -609,16 +640,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check answer and handle progression
     function checkAnswer(isCorrect) {
         try {
-            // Show feedback
-            feedbackContainer.classList.remove('hidden');
-            
-            // Clear any existing buttons in the feedback container
-            const feedbackDiv = feedbackContainer.querySelector('div');
-            // Keep only the feedback text paragraph and remove any other elements
-            const feedbackParagraph = feedbackDiv.querySelector('#feedback-text');
-            feedbackDiv.innerHTML = '';
-            feedbackDiv.appendChild(feedbackParagraph);
-            
             if (isCorrect) {
                 // Increment score
                 score += 1;
@@ -627,10 +648,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Increment questions completed in level
                 questionsCompletedInLevel += 1;
-                
-                // Show feedback
-                feedbackText.textContent = 'Correct! Great job!';
-                feedbackDiv.className = 'p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400';
                 
                 // Check if level is complete
                 if (questionsCompletedInLevel >= LEVELS[currentLevel].questionsRequired) {
@@ -643,13 +660,16 @@ document.addEventListener('DOMContentLoaded', function() {
                         // Apply new level theme
                         applyLevelTheme(LEVELS[currentLevel]);
                         
-                        // Show level up feedback
-                        feedbackText.textContent = `Level complete! You've advanced to ${LEVELS[currentLevel].name}!`;
+                        // We no longer show level name messages
+                        feedbackContainer.classList.add('hidden');
                     } else {
                         // Game complete
                         showFinalScore();
                         return;
                     }
+                } else {
+                    // Don't show the feedback container for correct answers
+                    feedbackContainer.classList.add('hidden');
                 }
                 
                 // Automatically proceed to next question after a short delay
@@ -657,15 +677,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Increment question index
                     currentQuestionIndex += 1;
                     
-                    // Update level display
+                    // Update level display - without showing level names
                     updateLevelDisplay();
                     
                     // Get next question
                     getNextQuestion();
-                }, 1500); // 1.5 second delay
+                }, 800); // Reduced to 0.8 second delay since we're not showing feedback
                 
             } else {
-                // Game over
+                // Game over - show feedback for incorrect answers
+                feedbackContainer.classList.remove('hidden');
+                
+                // Clear any existing buttons in the feedback container
+                const feedbackDiv = feedbackContainer.querySelector('div');
+                // Keep only the feedback text paragraph and remove any other elements
+                const feedbackParagraph = feedbackDiv.querySelector('#feedback-text');
+                feedbackDiv.innerHTML = '';
+                feedbackDiv.appendChild(feedbackParagraph);
+                
+                // Show feedback for incorrect answer
                 feedbackText.textContent = `Incorrect! The correct answer is: ${currentQuestion.correctAnswer}`;
                 feedbackDiv.className = 'p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400';
                 
@@ -683,7 +713,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Show final score
+    // Show final score without level names
     function showFinalScore() {
         // Hide question container
         questionContainer.classList.add('hidden');
@@ -692,13 +722,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const finalScoreContainer = document.createElement('div');
         finalScoreContainer.className = 'final-score-container fade-in';
         
-        // Create content
+        // Create content without mentioning levels
         finalScoreContainer.innerHTML = `
             <h2 class="text-2xl font-bold mb-4">Quiz Complete!</h2>
-            <p class="mb-2">You've completed all 10 levels of the Stock Market Trade Quiz!</p>
+            <p class="mb-2">You've completed the Stock Market Trade Quiz!</p>
             <div class="my-6">
-                <span class="final-score">${score}/30</span>
-                <p class="text-gray-600">Total Score</p>
+                <div class="final-score">${score} of 30</div>
+                <p class="text-gray-600">Score</p>
             </div>
             <div class="mt-6 mb-2">
                 <button id="restart-quiz" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
@@ -746,7 +776,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Share result function
     function shareResult(platform) {
-        const shareText = `I scored ${score}/30 in the Stock Market Trade Quiz! Can you beat my score?`;
+        const shareText = `I scored ${score} of 30 in the Stock Market Trade Quiz! Can you beat my score?`;
         const shareUrl = window.location.href;
         
         let shareLink = '';

@@ -135,8 +135,31 @@ body {
     font-weight: 700;
     color: var(--primary-color);
     line-height: 1;
-    margin: 1rem 0;
     transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.score-display {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.score-separator {
+    font-size: 8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+    margin-left: 1rem;
+}
+
+.score-total {
+    font-size: 4rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+    display: inline-block;
+    margin-top: 0.5rem;
 }
 
 #score-container {
@@ -150,5 +173,14 @@ body {
 @media (max-width: 640px) {
     .score-odometer {
         font-size: 5rem;
+    }
+    
+    .score-separator {
+        font-size: 3rem;
+        margin-left: 0.5rem;
+    }
+    
+    .score-total {
+        font-size: 2.5rem;
     }
 } 
