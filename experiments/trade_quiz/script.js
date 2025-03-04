@@ -166,9 +166,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let bestScores = JSON.parse(localStorage.getItem('bestScores') || '{}');
     let lastQuizState = JSON.parse(localStorage.getItem('lastQuizState') || null);
 
-    // Apply dark mode to all elements by default
-    applyDarkMode();
-
     // Start quiz button handler
     startQuizBtn.addEventListener('click', () => {
         // Get and validate trader name
@@ -435,28 +432,29 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Show achievement toast
+    // Show achievement toast with sharing
     function showAchievementToast(title, description, icon = '🏆') {
         const toast = document.getElementById('achievement-toast');
-        const achievementTitle = document.getElementById('achievement-title');
-        const achievementDescription = document.getElementById('achievement-description');
-        const achievementIcon = document.getElementById('achievement-icon');
-
-        achievementTitle.textContent = title;
-        achievementDescription.textContent = description;
-        achievementIcon.textContent = icon;
-
+        const iconElement = document.getElementById('achievement-icon');
+        const titleElement = document.getElementById('achievement-title');
+        const descriptionElement = document.getElementById('achievement-description');
+        
+        // Set content
+        iconElement.textContent = icon;
+        titleElement.textContent = title;
+        descriptionElement.textContent = description;
+        
+        // Show toast
         toast.classList.remove('hidden');
-        toast.classList.add('animate-slide-in');
-
+        
+        // Auto hide after 5 seconds
         setTimeout(() => {
-            toast.classList.remove('animate-slide-in');
-            toast.classList.add('animate-slide-out');
+            toast.style.animation = 'slideOut 0.5s forwards';
             setTimeout(() => {
                 toast.classList.add('hidden');
-                toast.classList.remove('animate-slide-out');
-            }, 300);
-        }, 3000);
+                toast.style.animation = '';
+            }, 500);
+        }, 5000);
     }
 
     // Show progress summary with best scores
@@ -776,35 +774,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     }
 
-    // Apply dark mode to all elements
-    function applyDarkMode() {
-        document.body.classList.add('dark-mode');
-        
-        // Apply dark mode to all theme-card elements
-        const themeCards = document.querySelectorAll('.theme-card');
-        themeCards.forEach(card => card.classList.add('dark-mode'));
-        
-        // Apply dark mode to all buttons
-        const buttons = document.querySelectorAll('.secondary-btn, .option-btn');
-        buttons.forEach(button => button.classList.add('dark-mode'));
-    }
-
-    // Add event listener for theme toggle
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            document.body.classList.toggle('dark-mode');
-            
-            // Toggle dark mode for buttons
-            const buttons = document.querySelectorAll('.secondary-btn, .option-btn');
-            buttons.forEach(button => button.classList.toggle('dark-mode'));
-            
-            // Toggle dark mode for theme cards
-            const themeCards = document.querySelectorAll('.theme-card');
-            themeCards.forEach(card => card.classList.toggle('dark-mode'));
-        });
-    }
-
     // Initialize badges display
     function initBadges() {
         const badgesContainer = document.getElementById('badges-container');
@@ -836,17 +805,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Apply level-specific theme
     function applyLevelTheme(level) {
-        const theme = LEVELS[level].theme;
         const root = document.documentElement;
         
-        root.style.setProperty('--color-primary', theme.primary);
-        root.style.setProperty('--color-secondary', theme.secondary);
-        root.style.setProperty('--color-accent', theme.accent);
+        // Set level-specific colors based on Robinhood's aesthetic
+        switch(level) {
+            case 0: // Gully Investor
+                root.style.setProperty('--color-accent', '#00C805'); // Robinhood green
+                break;
+            case 1: // Rookie Trader
+                root.style.setProperty('--color-accent', '#00B8D9');
+                break;
+            case 2: // Market Enthusiast
+                root.style.setProperty('--color-accent', '#36B37E');
+                break;
+            case 3: // Savvy Investor
+                root.style.setProperty('--color-accent', '#00875A');
+                break;
+            case 4: // Technical Analyst
+                root.style.setProperty('--color-accent', '#0052CC');
+                break;
+            case 5: // Chart Master
+                root.style.setProperty('--color-accent', '#5243AA');
+                break;
+            case 6: // Swing Trader
+                root.style.setProperty('--color-accent', '#FF5630');
+                break;
+            case 7: // Options Specialist
+                root.style.setProperty('--color-accent', '#FF8B00');
+                break;
+            case 8: // Portfolio Manager
+                root.style.setProperty('--color-accent', '#6554C0');
+                break;
+            case 9: // Hedge Fund Maharathi
+                root.style.setProperty('--color-accent', '#172B4D');
+                break;
+            default:
+                root.style.setProperty('--color-accent', '#00C805'); // Default Robinhood green
+        }
         
-        // Update progress bar
-        const progressBar = document.getElementById('progress-bar');
-        progressBar.style.backgroundColor = theme.primary;
-        progressBar.style.width = `${(questionsCompletedInLevel / LEVELS[level].questionsRequired) * 100}%`;
+        // Update accent light color based on the accent color
+        const accentColor = getComputedStyle(root).getPropertyValue('--color-accent');
+        const accentLight = accentColor + '15'; // Add 15% opacity
+        root.style.setProperty('--color-accent-light', accentLight);
     }
 
     // Award badge for completing a level
@@ -983,6 +983,13 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('certificate-date').textContent = new Date().toLocaleDateString();
         document.getElementById('certificate-accuracy').textContent = `${accuracy}%`;
         
+        // Apply level-specific color to certificate
+        const certificateLevel = document.getElementById('certificate-level');
+        const certificateName = document.getElementById('certificate-trader-name');
+        
+        certificateLevel.style.color = getComputedStyle(document.documentElement).getPropertyValue('--color-accent');
+        certificateName.style.color = getComputedStyle(document.documentElement).getPropertyValue('--color-accent');
+        
         // Show modal
         modal.classList.remove('hidden');
         
@@ -1040,4 +1047,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Remove dark mode toggle event listener
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize badges
+        initBadges();
+        
+        // Check for resume state
+        checkForResumeState();
+        
+        // Display best scores if available
+        displayBestScores();
+    });
 }); 
