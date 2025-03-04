@@ -718,4 +718,131 @@ button:focus-visible {
 
 #feedback-text {
     position: relative !important;
+}
+
+/* Timeline styles */
+#timeline-container {
+    background-color: var(--color-white);
+    border-radius: 12px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--color-gray-200);
+}
+
+#timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+#timeline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 10px;
+    width: 2px;
+    background-color: var(--color-gray-300);
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+}
+
+.timeline-item:last-child {
+    margin-bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -30px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: var(--color-white);
+    border: 2px solid var(--color-gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+.timeline-marker.completed {
+    background-color: var(--color-accent);
+    border-color: var(--color-accent);
+    color: white;
+}
+
+.timeline-marker.current {
+    background-color: var(--color-white);
+    border-color: var(--color-accent);
+    border-width: 3px;
+}
+
+.timeline-marker.future {
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-300);
+    color: var(--color-gray-400);
+}
+
+.timeline-content {
+    padding-left: 10px;
+}
+
+.timeline-level {
+    font-weight: 600;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+}
+
+.timeline-level-icon {
+    margin-right: 8px;
+    font-size: 1.2em;
+}
+
+.timeline-description {
+    font-size: 0.85em;
+    color: var(--color-gray-500);
+}
+
+.timeline-level.completed {
+    color: var(--color-accent);
+}
+
+.timeline-level.current {
+    color: var(--color-black);
+}
+
+.timeline-level.future {
+    color: var(--color-gray-400);
+}
+
+@media (max-width: 640px) {
+    #timeline {
+        padding-left: 25px;
+    }
+    
+    #timeline::before {
+        left: 8px;
+    }
+    
+    .timeline-marker {
+        left: -25px;
+        width: 16px;
+        height: 16px;
+    }
+    
+    .timeline-level {
+        font-size: 0.9em;
+    }
+    
+    .timeline-description {
+        font-size: 0.8em;
+    }
+}
+
+/* Hide badges display since we're replacing it with timeline */
+#badges-container {
+    display: none;
 } 

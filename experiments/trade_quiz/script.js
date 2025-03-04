@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const resumeScore = document.getElementById('resume-score');
     const bestScoresPreview = document.getElementById('best-scores-preview');
     const bestScoresList = document.getElementById('best-scores-list');
+    const timelineContainer = document.getElementById('timeline-container');
+    const timeline = document.getElementById('timeline');
     
     // Level configuration
     const LEVELS = [
@@ -168,36 +170,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start quiz button handler
     startQuizBtn.addEventListener('click', () => {
-        // Get and validate trader name
-        const traderNameInput = document.getElementById('trader-name');
-        const traderName = traderNameInput.value.trim();
-        
-        if (!traderName) {
-            // Show error if name is empty
-            traderNameInput.classList.add('border-red-500');
-            const errorMsg = document.createElement('p');
-            errorMsg.className = 'text-red-500 text-sm mt-1';
-            errorMsg.textContent = 'Please enter your name to start the quiz';
-            
-            // Remove any existing error message
-            const existingError = traderNameInput.parentElement.querySelector('.text-red-500');
-            if (existingError) {
-                existingError.remove();
-            }
-            
-            traderNameInput.parentElement.appendChild(errorMsg);
-            return;
-        }
-        
-        // Store trader name
+        const traderName = document.getElementById('trader-name').value.trim() || 'Trader';
         localStorage.setItem('traderName', traderName);
         
-        // Hide difficulty container and show quiz
         difficultyContainer.classList.add('hidden');
         quizMainContainer.classList.remove('hidden');
         
-        // Start fresh quiz
-        initQuiz(false);
+        // Initialize quiz
+        initQuiz();
+        
+        // Initialize timeline (replacing badges)
+        initTimeline();
+        
+        // Get first question
+        getNextQuestion();
     });
 
     // Initialize the quiz
@@ -235,7 +221,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLevelDisplay();
         
         // Initialize badges display
-        initBadges();
+        initTimeline();
         
         // Apply initial theme
         applyLevelTheme(currentLevel);
@@ -300,13 +286,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Update the level display
     function updateLevelDisplay() {
-        const currentLevelInfo = LEVELS[currentLevel];
-        const progressText = `${questionsCompletedInLevel}/${currentLevelInfo.questionsRequired}`;
-        currentDifficultyElement.textContent = `${currentLevelInfo.name} (${progressText})`;
+        currentDifficultyElement.textContent = LEVELS[currentLevel].name;
         
         // Update progress bar
         const progressBar = document.getElementById('progress-bar');
-        progressBar.style.width = `${(questionsCompletedInLevel / currentLevelInfo.questionsRequired) * 100}%`;
+        const progressPercentage = (questionsCompletedInLevel / LEVELS[currentLevel].questionsRequired) * 100;
+        progressBar.style.width = `${progressPercentage}%`;
+        progressBar.style.backgroundColor = LEVELS[currentLevel].theme.primary;
+        
+        // Update timeline to reflect current level
+        initTimeline();
     }
 
     // Check if level progression is needed
@@ -334,68 +323,59 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show level up message
     function showLevelUpMessage() {
-        const nextLevel = LEVELS[currentLevel + 1];
-        feedbackContainer.classList.remove('hidden', 'feedback-incorrect');
-        feedbackContainer.classList.add('feedback-correct');
+        // Hide quiz container
+        quizContainer.classList.add('hidden');
         
-        // Award badge for completed level
-        awardBadge(currentLevel);
+        // Create level complete message
+        const levelCompleteContainer = document.createElement('div');
+        levelCompleteContainer.className = 'level-complete text-center py-8';
         
-        // Trigger confetti effect
-        triggerConfetti();
+        const completedLevel = LEVELS[currentLevel - 1]; // The level we just completed
+        const nextLevel = LEVELS[currentLevel]; // The new level we're moving to
         
-        // Show achievement toast with sharing
-        showAchievementToast(
-            LEVELS[currentLevel].name, 
-            `You've mastered the ${LEVELS[currentLevel].name} level!`,
-            LEVELS[currentLevel].badge
-        );
-        
-        // Generate and show certificate
-        showCertificate(currentLevel);
-        
-        feedbackText.innerHTML = `
-            <div class="text-center">
-                <h3 class="text-2xl font-bold mb-4">🎉 Level Complete! 🎉</h3>
-                <div class="badge-showcase mb-6">
-                    <div class="text-6xl mb-2">${LEVELS[currentLevel].badge}</div>
-                    <p class="text-lg">You've earned the ${LEVELS[currentLevel].name} badge!</p>
-                </div>
-                <p class="text-lg mb-6">Next level: <strong>${nextLevel.name}</strong></p>
-                <button id="continue-btn" class="secondary-btn dark-mode py-3 px-8 transition duration-300">
-                    Continue Journey
-                </button>
-                <button id="view-progress" class="text-sm text-gray-500 hover:text-gray-700 mt-4 block w-full">
-                    View Progress
-                </button>
+        levelCompleteContainer.innerHTML = `
+            <div class="badge-showcase mb-6 animate-showcase-fade-in">
+                <div class="text-6xl mb-4">${completedLevel.badge}</div>
+                <h3 class="text-2xl font-bold mb-2">Level Complete!</h3>
+                <p class="text-lg text-gray-600 mb-4">You've mastered the ${completedLevel.name} level</p>
+            </div>
+            <div class="mb-8">
+                <h4 class="text-xl font-semibold mb-3">Next Level: ${nextLevel.name} ${nextLevel.badge}</h4>
+                <p class="text-gray-600">${nextLevel.description}</p>
+            </div>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <button id="continue-btn" class="secondary-btn py-3 px-8">Continue Journey</button>
+                <button id="view-progress-btn" class="secondary-btn py-3 px-8">View Progress</button>
             </div>
         `;
-
-        // Add event listeners
-        setTimeout(() => {
-            const continueBtn = document.getElementById('continue-btn');
-            const viewProgressBtn = document.getElementById('view-progress');
+        
+        // Insert level complete message
+        quizMainContainer.insertBefore(levelCompleteContainer, quizContainer);
+        
+        // Award badge for completed level
+        awardBadge(currentLevel - 1);
+        
+        // Trigger confetti celebration
+        triggerConfetti();
+        
+        // Update timeline to show new progress
+        initTimeline();
+        
+        // Add event listeners for buttons
+        document.getElementById('continue-btn').addEventListener('click', () => {
+            // Remove level complete message
+            levelCompleteContainer.remove();
             
-            if (continueBtn) {
-                continueBtn.addEventListener('click', () => {
-                    feedbackContainer.classList.add('hidden');
-                    currentLevel++;
-                    questionsCompletedInLevel = 0;
-                    applyLevelTheme(currentLevel);
-                    updateLevelDisplay();
-                    getNextQuestion();
-                });
-            }
+            // Show quiz container
+            quizContainer.classList.remove('hidden');
             
-            if (viewProgressBtn) {
-                viewProgressBtn.addEventListener('click', showProgressSummary);
-            }
-        }, 100);
-
-        // If all levels are completed, clear the saved state
-        if (currentLevel === LEVELS.length - 1) {
-            localStorage.removeItem('lastQuizState');
-        }
+            // Get next question
+            getNextQuestion();
+        });
+        
+        document.getElementById('view-progress-btn').addEventListener('click', () => {
+            showProgressSummary();
+        });
     }
 
     // Confetti effect
@@ -466,7 +446,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     }
 
-    // Show progress summary with best scores
+    // Show progress summary
     function showProgressSummary() {
         const summary = document.getElementById('progress-summary');
         const stats = document.getElementById('progress-stats');
@@ -498,33 +478,48 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                     <div class="flex justify-between items-center">
                         <span class="text-gray-600">Levels Completed:</span>
-                        <span class="font-bold">${completedLevels}/10</span>
+                        <span class="font-bold">${completedLevels}</span>
                     </div>
                 </div>
                 
                 ${bestScore ? `
-                    <div class="space-y-3 pt-4 border-t">
-                        <h4 class="font-bold text-lg mb-2">Best Score - ${currentLevelName}</h4>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Score:</span>
-                            <span class="font-bold">${bestScore.score}/${bestScore.questionsAnswered}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Best Accuracy:</span>
-                            <span class="font-bold">${bestScore.accuracy}%</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-gray-600">Achieved:</span>
-                            <span class="font-bold">${new Date(bestScore.date).toLocaleDateString()}</span>
-                        </div>
+                <div class="space-y-3 border-t border-gray-200 pt-4 mt-4">
+                    <h4 class="font-bold text-lg mb-2">Best Score for ${currentLevelName}</h4>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Score:</span>
+                        <span class="font-bold">${bestScore.score}</span>
                     </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Accuracy:</span>
+                        <span class="font-bold">${bestScore.accuracy}%</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Date Achieved:</span>
+                        <span class="font-bold">${bestScore.date}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-600">Current vs. Best:</span>
+                        <span class="font-bold ${accuracy > bestScore.accuracy ? 'text-green-500' : 'text-gray-500'}">
+                            ${accuracy > bestScore.accuracy ? `+${accuracy - bestScore.accuracy}%` : `${accuracy - bestScore.accuracy}%`}
+                        </span>
+                    </div>
+                </div>
                 ` : ''}
+                
+                <div class="space-y-3 border-t border-gray-200 pt-4 mt-4">
+                    <h4 class="font-bold text-lg mb-2">Your Journey</h4>
+                    <p class="text-gray-600">Current Level: ${LEVELS[currentLevel].name} ${LEVELS[currentLevel].badge}</p>
+                    <p class="text-gray-600">Progress: ${questionsCompletedInLevel}/${LEVELS[currentLevel].questionsRequired} questions</p>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div class="bg-green-600 h-2.5 rounded-full" style="width: ${(questionsCompletedInLevel / LEVELS[currentLevel].questionsRequired) * 100}%"></div>
+                    </div>
+                </div>
             </div>
         `;
         
         summary.classList.remove('hidden');
         
-        // Add close button event listener
+        // Close button event listener
         document.getElementById('close-progress').addEventListener('click', () => {
             summary.classList.add('hidden');
         });
@@ -842,33 +837,61 @@ document.addEventListener('DOMContentLoaded', () => {
         }, 5000);
     }
 
-    // Initialize badges display
-    function initBadges() {
-        const badgesContainer = document.getElementById('badges-container');
-        badgesContainer.innerHTML = '';
+    // Initialize timeline display (replacing badges)
+    function initTimeline() {
+        const timelineContainer = document.getElementById('timeline-container');
+        const timeline = document.getElementById('timeline');
         
+        if (!timelineContainer || !timeline) {
+            console.error('Timeline elements not found in the DOM');
+            return;
+        }
+        
+        timeline.innerHTML = '';
+        
+        // Determine which levels are completed based on earned badges
         LEVELS.forEach((level, index) => {
-            const badgeElement = document.createElement('div');
-            badgeElement.className = 'badge-item text-center p-2';
+            const isCompleted = earnedBadges.includes(index);
+            const isCurrent = index === currentLevel;
+            const isFuture = index > currentLevel;
             
-            const isEarned = earnedBadges.includes(index);
-            badgeElement.innerHTML = `
-                <div class="badge-icon text-4xl mb-2 ${isEarned ? 'earned' : 'locked'}" title="${level.name}">
-                    ${isEarned ? level.badge : '🔒'}
-                </div>
-                <div class="badge-name text-xs font-medium ${isEarned ? 'text-gray-800' : 'text-gray-400'}">
-                    ${level.name}
+            const timelineItem = document.createElement('div');
+            timelineItem.className = 'timeline-item';
+            
+            // Determine the status class
+            let statusClass = '';
+            let statusIcon = '';
+            
+            if (isCompleted) {
+                statusClass = 'completed';
+                statusIcon = '✓';
+            } else if (isCurrent) {
+                statusClass = 'current';
+                statusIcon = '';
+            } else {
+                statusClass = 'future';
+                statusIcon = '';
+            }
+            
+            timelineItem.innerHTML = `
+                <div class="timeline-marker ${statusClass}">${statusIcon}</div>
+                <div class="timeline-content">
+                    <div class="timeline-level ${statusClass}">
+                        <span class="timeline-level-icon">${level.badge}</span>
+                        <span>${level.name}</span>
+                    </div>
+                    <div class="timeline-description">
+                        ${level.description}
+                        ${isCompleted ? '<span class="text-green-500 ml-1">Completed</span>' : ''}
+                        ${isCurrent ? '<span class="text-blue-500 ml-1">In Progress</span>' : ''}
+                    </div>
                 </div>
             `;
             
-            if (isEarned) {
-                badgeElement.setAttribute('title', level.description);
-            }
-            
-            badgesContainer.appendChild(badgeElement);
+            timeline.appendChild(timelineItem);
         });
         
-        badgesContainer.classList.remove('hidden');
+        timelineContainer.classList.remove('hidden');
     }
 
     // Apply level-specific theme
@@ -917,12 +940,22 @@ document.addEventListener('DOMContentLoaded', () => {
         root.style.setProperty('--color-accent-light', accentLight);
     }
 
-    // Award badge for completing a level
+    // Award badge for completed level
     function awardBadge(level) {
         if (!earnedBadges.includes(level)) {
             earnedBadges.push(level);
             localStorage.setItem('earnedBadges', JSON.stringify(earnedBadges));
-            initBadges();
+            
+            // Update timeline display
+            initTimeline();
+            
+            // Show achievement toast
+            const levelInfo = LEVELS[level];
+            showAchievementToast(
+                `${levelInfo.badge} Level Completed!`, 
+                `You've mastered the ${levelInfo.name} level!`,
+                levelInfo.badge
+            );
         }
     }
 
@@ -1184,8 +1217,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Initial setup
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize badges
-        initBadges();
+        // Initialize timeline
+        initTimeline();
         
         // Add event listeners for start button
         document.getElementById('start-quiz-btn').addEventListener('click', startQuiz);
