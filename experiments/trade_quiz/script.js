@@ -168,6 +168,44 @@ document.addEventListener('DOMContentLoaded', () => {
     let bestScores = JSON.parse(localStorage.getItem('bestScores') || '{}');
     let lastQuizState = JSON.parse(localStorage.getItem('lastQuizState') || null);
 
+    // Mock questions for local testing
+    const MOCK_QUESTIONS = [
+        {
+            question: "What is a stock?",
+            options: ["A type of bond", "Ownership in a company", "A type of currency", "A government debt"],
+            correctAnswer: 1,
+            explanation: "A stock represents ownership in a company. When you buy a stock, you're purchasing a small piece of that company."
+        },
+        {
+            question: "What does 'Bull Market' refer to?",
+            options: ["A market where prices are falling", "A market where prices are rising", "A market with high volatility", "A market with low trading volume"],
+            correctAnswer: 1,
+            explanation: "A bull market refers to a financial market where prices are rising or expected to rise. The term is most often used to refer to the stock market but can be applied to anything that is traded, such as bonds, real estate, currencies, and commodities."
+        },
+        {
+            question: "What is a P/E ratio?",
+            options: ["Price to Earnings ratio", "Profit to Expense ratio", "Performance to Efficiency ratio", "Potential to Earnings ratio"],
+            correctAnswer: 0,
+            explanation: "P/E ratio stands for Price to Earnings ratio. It is a valuation ratio of a company's current share price compared to its per-share earnings. It is calculated by dividing the market value per share by the earnings per share."
+        },
+        {
+            question: "What is a market order?",
+            options: ["An order to buy or sell a stock at a specific price", "An order to buy or sell a stock at the current market price", "An order that expires at the end of the trading day", "An order that is executed only if the price reaches a certain level"],
+            correctAnswer: 1,
+            explanation: "A market order is an order to buy or sell a stock at the current market price. Market orders are used when certainty of execution is a priority over the price of execution."
+        },
+        {
+            question: "What is diversification in investing?",
+            options: ["Investing all money in one promising stock", "Spreading investments across various assets to reduce risk", "Frequently trading stocks to maximize profits", "Investing only in blue-chip companies"],
+            correctAnswer: 1,
+            explanation: "Diversification is a risk management strategy that mixes a wide variety of investments within a portfolio. The rationale behind this technique is that a portfolio constructed of different kinds of assets will, on average, yield higher long-term returns and lower the risk of any individual holding or security."
+        }
+    ];
+
+    // Check if we're in a local environment
+    const isLocalEnvironment = window.location.hostname === 'localhost' || 
+                              window.location.hostname === '127.0.0.1';
+
     // Start quiz button handler
     startQuizBtn.addEventListener('click', () => {
         const traderName = document.getElementById('trader-name').value.trim() || 'Trader';
@@ -228,6 +266,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Get the next question
         getNextQuestion();
+        
+        // Update the timeline with current progress
+        updateTimeline(currentLevel, questionsCompletedInLevel);
     }
     
     // Clean up YouTube player
@@ -359,7 +400,7 @@ document.addEventListener('DOMContentLoaded', () => {
         triggerConfetti();
         
         // Update timeline to show new progress
-        initTimeline();
+        updateTimeline(currentLevel, questionsCompletedInLevel);
         
         // Add event listeners for buttons
         document.getElementById('continue-btn').addEventListener('click', () => {
@@ -543,6 +584,33 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reset retry attempts for each new question request
             retryAttempts = 0;
             
+            // Use mock data for local testing
+            if (isLocalEnvironment) {
+                console.log("Using mock data for local testing");
+                // Simulate network delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Get a random question from mock data
+                const randomIndex = Math.floor(Math.random() * MOCK_QUESTIONS.length);
+                const mockQuestion = MOCK_QUESTIONS[randomIndex];
+                
+                // Format mock question to match API response format
+                const questionData = {
+                    question: mockQuestion.question,
+                    options: [...mockQuestion.options],
+                    correctAnswer: mockQuestion.correctAnswer,
+                    explanation: mockQuestion.explanation
+                };
+                
+                // Store the question to avoid repeats
+                storeAskedQuestion(questionData);
+                
+                // Show the question
+                showQuestion(questionData);
+                showLoading(false);
+                return;
+            }
+            
             // Get recently asked questions for the prompt
             const recentQuestions = askedQuestions.slice(-20).map(q => q.question);
             
@@ -664,15 +732,27 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set question text
         questionElement.textContent = questionData.question;
         
-        // Randomize the order of options
-        const correctAnswer = questionData.options[0]; // Store the correct answer (first option)
-        const allOptions = [...questionData.options]; // Create a copy of all options
+        // Handle the correct answer based on the data structure
+        let correctAnswer, correctIndex;
+        
+        if (questionData.correctAnswer !== undefined) {
+            // For mock data format (correctAnswer is the index)
+            correctAnswer = questionData.options[questionData.correctAnswer];
+            correctIndex = questionData.correctAnswer;
+        } else {
+            // For API response format (first option is assumed correct)
+            correctAnswer = questionData.options[0];
+            correctIndex = 0;
+        }
+        
+        // Create a copy of all options
+        const allOptions = [...questionData.options];
         
         // Shuffle the options array
         const shuffledOptions = shuffleArray(allOptions);
         
         // Find the new index of the correct answer after shuffling
-        const correctIndex = shuffledOptions.indexOf(correctAnswer);
+        const newCorrectIndex = shuffledOptions.indexOf(correctAnswer);
         
         // Create option buttons with shuffled order
         shuffledOptions.forEach((option, index) => {
@@ -695,7 +775,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.classList.add('selected');
                 
                 // Check if the selected option is the correct answer
-                const isCorrect = index === correctIndex;
+                const isCorrect = index === newCorrectIndex;
                 
                 // Provide immediate visual feedback
                 if (isCorrect) {
@@ -715,12 +795,15 @@ document.addEventListener('DOMContentLoaded', () => {
         // Store the correct index for reference
         currentQuestionData = {
             ...questionData,
-            correctIndex: correctIndex,
+            correctIndex: newCorrectIndex,
             shuffledOptions: shuffledOptions
         };
         
         // Show question container with animation
         quizContainer.classList.add('fade-in');
+        
+        // Update the timeline to reflect progress within the level
+        updateTimeline(currentLevel, questionsCompletedInLevel);
     }
     
     // Function to shuffle an array (Fisher-Yates algorithm)
@@ -790,6 +873,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Add animation
         feedbackContainer.classList.add('fade-in');
+        
+        // Update the timeline to reflect progress within the level
+        updateTimeline(currentLevel, questionsCompletedInLevel);
     }
     
     // Super simple global function to go to next question
@@ -1229,4 +1315,147 @@ document.addEventListener('DOMContentLoaded', () => {
         // Display best scores
         displayBestScores();
     });
+
+    /**
+     * Initialize the timeline navigation
+     */
+    function initTimelineNavigation() {
+        const timeline = document.getElementById('timeline');
+        const prevBtn = document.getElementById('timeline-prev');
+        const nextBtn = document.getElementById('timeline-next');
+        const scrollContainer = document.querySelector('.timeline-scroll-container');
+        
+        if (!timeline || !prevBtn || !nextBtn || !scrollContainer) {
+            console.error('Timeline navigation elements not found');
+            return;
+        }
+        
+        let scrollPosition = 0;
+        const scrollStep = 300; // pixels to scroll each time
+        
+        // Initial button state
+        updateNavButtons();
+        
+        // Add event listeners to the buttons
+        prevBtn.addEventListener('click', () => {
+            scrollPosition = Math.max(scrollPosition - scrollStep, 0);
+            timeline.style.transform = `translateX(-${scrollPosition}px)`;
+            updateNavButtons();
+        });
+        
+        nextBtn.addEventListener('click', () => {
+            const maxScroll = timeline.scrollWidth - scrollContainer.clientWidth;
+            scrollPosition = Math.min(scrollPosition + scrollStep, maxScroll);
+            timeline.style.transform = `translateX(-${scrollPosition}px)`;
+            updateNavButtons();
+        });
+        
+        // Update button states based on scroll position
+        function updateNavButtons() {
+            prevBtn.disabled = scrollPosition <= 0;
+            nextBtn.disabled = scrollPosition >= timeline.scrollWidth - scrollContainer.clientWidth;
+            
+            // Visual feedback for disabled state
+            prevBtn.style.opacity = prevBtn.disabled ? '0.5' : '1';
+            nextBtn.style.opacity = nextBtn.disabled ? '0.5' : '1';
+        }
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            // Reset position if we're scrolled too far after resize
+            const maxScroll = timeline.scrollWidth - scrollContainer.clientWidth;
+            if (scrollPosition > maxScroll) {
+                scrollPosition = maxScroll > 0 ? maxScroll : 0;
+                timeline.style.transform = `translateX(-${scrollPosition}px)`;
+            }
+            updateNavButtons();
+        });
+    }
+
+    // Update the updateTimeline function to work with horizontal layout
+    function updateTimeline(currentLevel, questionsCompletedInLevel) {
+        const timeline = document.getElementById('timeline');
+        if (!timeline) return;
+        
+        // Clear existing timeline
+        timeline.innerHTML = '';
+        
+        // Define level data
+        const levels = [
+            { name: "Novice", icon: "🔰", description: "Basic market concepts" },
+            { name: "Apprentice", icon: "📊", description: "Understanding stocks" },
+            { name: "Trader", icon: "��", description: "Trading strategies" },
+            { name: "Analyst", icon: "📈", description: "Technical analysis" },
+            { name: "Expert", icon: "🏆", description: "Advanced concepts" },
+            { name: "Master", icon: "🌟", description: "Market mastery" }
+        ];
+        
+        // Create timeline items
+        levels.forEach((level, index) => {
+            const levelNum = index + 1;
+            const status = levelNum < currentLevel ? 'completed' : 
+                          levelNum === currentLevel ? 'current' : 'future';
+            
+            const item = document.createElement('div');
+            item.className = 'timeline-item';
+            
+            const marker = document.createElement('div');
+            marker.className = `timeline-marker ${status}`;
+            if (status === 'completed') {
+                marker.innerHTML = '✓';
+            } else if (status === 'current') {
+                // Show progress within current level
+                const progress = Math.min(Math.round((questionsCompletedInLevel / QUESTIONS_PER_LEVEL) * 100), 100);
+                marker.innerHTML = `<span style="font-size: 0.7em;">${progress}%</span>`;
+            } else {
+                marker.innerHTML = levelNum;
+            }
+            
+            const content = document.createElement('div');
+            content.className = 'timeline-content';
+            
+            const levelEl = document.createElement('div');
+            levelEl.className = `timeline-level ${status}`;
+            
+            const levelIcon = document.createElement('span');
+            levelIcon.className = 'timeline-level-icon';
+            levelIcon.textContent = level.icon;
+            
+            const levelName = document.createElement('span');
+            levelName.textContent = level.name;
+            
+            levelEl.appendChild(levelIcon);
+            levelEl.appendChild(levelName);
+            
+            const description = document.createElement('div');
+            description.className = 'timeline-description';
+            description.textContent = level.description;
+            
+            content.appendChild(levelEl);
+            content.appendChild(description);
+            
+            item.appendChild(marker);
+            item.appendChild(content);
+            timeline.appendChild(item);
+        });
+        
+        // Initialize timeline navigation after updating the timeline
+        initTimelineNavigation();
+    }
+
+    // Update showDifficultySelection function to show the timeline
+    function showDifficultySelection() {
+        // ... existing code ...
+        
+        // Show the timeline container
+        const timelineContainer = document.getElementById('timeline-container');
+        if (timelineContainer) {
+            timelineContainer.style.display = 'block';
+        }
+        
+        // Update the timeline with initial state
+        updateTimeline(currentLevel, questionsCompletedInLevel);
+        
+        // ... existing code ...
+    }
 }); 
