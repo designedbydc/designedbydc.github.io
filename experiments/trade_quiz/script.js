@@ -774,13 +774,6 @@ document.addEventListener('DOMContentLoaded', () => {
         feedbackContainer.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
         feedbackContainer.classList.add(isCorrect ? 'feedback-correct' : 'feedback-incorrect');
         
-        // Clear any existing next button event listeners
-        const oldButton = document.getElementById('next-question-btn');
-        if (oldButton) {
-            const newButton = oldButton.cloneNode(true);
-            oldButton.parentNode.replaceChild(newButton, oldButton);
-        }
-        
         if (isCorrect) {
             score++;
             document.getElementById('score').textContent = score;
@@ -790,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="font-semibold">Correct!</span>
                 </div>
                 <p>${currentQuestionData.explanation || 'Great job!'}</p>
-                <button id="next-question-btn" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
+                <button id="next-question-btn" onclick="window.handleNextQuestion()" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
             `;
         } else {
             feedbackText.innerHTML = `
@@ -800,28 +793,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <p>The correct answer is: ${currentQuestionData.shuffledOptions[currentQuestionData.correctIndex]}</p>
                 <p class="mt-2">${currentQuestionData.explanation || 'Better luck next time!'}</p>
-                <button id="next-question-btn" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
+                <button id="next-question-btn" onclick="window.handleNextQuestion()" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
             `;
         }
-        
-        // Add event listener to next question button with a slight delay to ensure DOM is ready
-        setTimeout(() => {
-            const nextButton = document.getElementById('next-question-btn');
-            if (nextButton) {
-                nextButton.addEventListener('click', handleNextQuestion);
-            }
-        }, 50);
         
         feedbackContainer.classList.add('fade-in');
     }
     
-    // Separate function to handle next question to avoid duplicate listeners
-    function handleNextQuestion() {
-        // Remove existing event listeners
-        const nextButton = document.getElementById('next-question-btn');
-        if (nextButton) {
-            nextButton.removeEventListener('click', handleNextQuestion);
-        }
+    // Handle next question - now simplified since we're using event delegation
+    // Make it globally accessible for the inline onclick handler
+    window.handleNextQuestion = function() {
+        console.log("Next question button clicked"); // Debug log
         
         currentQuestionIndex++;
         
@@ -839,7 +821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Continue with next question
             getNextQuestion();
         }
-    }
+    };
 
     // Show/hide loading spinner
     function showLoading(show) {
@@ -1137,15 +1119,26 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Remove dark mode toggle event listener
+    // Initial setup
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize badges
         initBadges();
         
+        // Add event listeners for start button
+        document.getElementById('start-quiz-btn').addEventListener('click', startQuiz);
+        
         // Check for resume state
         checkForResumeState();
         
-        // Display best scores if available
+        // Add global event delegation for dynamically created elements
+        document.addEventListener('click', function(event) {
+            // Next question button handling
+            if (event.target && event.target.id === 'next-question-btn') {
+                handleNextQuestion();
+            }
+        });
+        
+        // Display best scores
         displayBestScores();
     });
 }); 
