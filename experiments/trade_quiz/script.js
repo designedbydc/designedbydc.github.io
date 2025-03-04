@@ -701,6 +701,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Check if the selected option is the correct answer
                 const isCorrect = index === correctIndex;
+                
+                // Provide immediate visual feedback
+                if (isCorrect) {
+                    button.style.borderColor = 'var(--color-green)';
+                    button.style.backgroundColor = 'var(--color-accent-light)';
+                } else {
+                    button.style.borderColor = 'var(--color-error)';
+                    button.style.backgroundColor = '#FFEBEE'; // Light red background
+                }
+                
                 checkAnswer(isCorrect);
             });
             
@@ -752,6 +762,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.style.borderColor = 'var(--color-green)';
                 button.style.backgroundColor = 'var(--color-accent-light)';
             }
+            
+            // Highlight the selected incorrect answer in red
+            if (!isCorrect && button.classList.contains('selected')) {
+                button.style.borderColor = 'var(--color-error)';
+                button.style.backgroundColor = '#FFEBEE'; // Light red background
+            }
         });
         
         // Update feedback based on answer correctness
@@ -774,7 +790,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="font-semibold">Correct!</span>
                 </div>
                 <p>${currentQuestionData.explanation || 'Great job!'}</p>
-                <button id="next-question-btn" class="mt-4 secondary-btn py-2 px-6 text-white font-bold">Next Question</button>
+                <button id="next-question-btn" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
             `;
         } else {
             feedbackText.innerHTML = `
@@ -784,34 +800,45 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <p>The correct answer is: ${currentQuestionData.shuffledOptions[currentQuestionData.correctIndex]}</p>
                 <p class="mt-2">${currentQuestionData.explanation || 'Better luck next time!'}</p>
-                <button id="next-question-btn" class="mt-4 secondary-btn py-2 px-6 text-white font-bold">Next Question</button>
+                <button id="next-question-btn" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
             `;
         }
         
-        // Add event listener to next question button
-        document.getElementById('next-question-btn').addEventListener('click', function nextQuestionHandler() {
-            // Remove this event listener to prevent duplicates
-            this.removeEventListener('click', nextQuestionHandler);
-            
-            currentQuestionIndex++;
-            
-            // Save quiz state after each answer
-            saveQuizState();
-            
-            // Update best score if applicable
-            updateBestScore();
-            
-            // Check if level progression is needed
-            if (checkLevelProgression()) {
-                // Level up - show message
-                showLevelUpMessage();
-            } else {
-                // Continue with next question
-                getNextQuestion();
+        // Add event listener to next question button with a slight delay to ensure DOM is ready
+        setTimeout(() => {
+            const nextButton = document.getElementById('next-question-btn');
+            if (nextButton) {
+                nextButton.addEventListener('click', handleNextQuestion);
             }
-        });
+        }, 50);
         
         feedbackContainer.classList.add('fade-in');
+    }
+    
+    // Separate function to handle next question to avoid duplicate listeners
+    function handleNextQuestion() {
+        // Remove existing event listeners
+        const nextButton = document.getElementById('next-question-btn');
+        if (nextButton) {
+            nextButton.removeEventListener('click', handleNextQuestion);
+        }
+        
+        currentQuestionIndex++;
+        
+        // Save quiz state after each answer
+        saveQuizState();
+        
+        // Update best score if applicable
+        updateBestScore();
+        
+        // Check if level progression is needed
+        if (checkLevelProgression()) {
+            // Level up - show message
+            showLevelUpMessage();
+        } else {
+            // Continue with next question
+            getNextQuestion();
+        }
     }
 
     // Show/hide loading spinner
