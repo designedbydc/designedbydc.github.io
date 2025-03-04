@@ -147,310 +147,310 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mock questions array organized by difficulty (easy -> medium -> hard)
     const mockQuestions = [
-        // EASY questions (0-9) - Basic Price Action Setups
+        // EASY questions (0-9) - Basic Trade Setups
         {
-            question: "What is a candlestick in price action trading?",
+            question: "In a bullish engulfing pattern, what is the ideal entry point?",
             options: [
-                "A tool used to illuminate trading charts",
-                "A graphical representation of price movement showing open, high, low, and close",
-                "A pattern that only appears during market holidays",
-                "A type of trading platform"
+                "At the open of the engulfing candle",
+                "At the close of the engulfing candle",
+                "Above the high of the engulfing candle with confirmation",
+                "At the low of the previous candle"
             ],
-            correctAnswer: "A graphical representation of price movement showing open, high, low, and close"
+            correctAnswer: "Above the high of the engulfing candle with confirmation"
         },
         {
-            question: "What does a bullish engulfing pattern indicate?",
+            question: "When trading a breakout of a key resistance level, where should you place your stop loss?",
             options: [
-                "A potential downtrend continuation",
-                "A potential reversal from downtrend to uptrend",
-                "No significant price movement",
-                "A market holiday"
+                "At the breakout point",
+                "Below the resistance level that was broken",
+                "At a round number below entry",
+                "At a fixed percentage from entry"
             ],
-            correctAnswer: "A potential reversal from downtrend to uptrend"
+            correctAnswer: "Below the resistance level that was broken"
         },
         {
-            question: "What is a support level in price action?",
+            question: "What is the ideal setup for a pullback trade in an uptrend?",
             options: [
-                "A price level where buying pressure exceeds selling pressure",
-                "The highest price reached in a trading session",
-                "A level where traders receive technical support",
-                "The average price over 50 days"
+                "Price pulling back to a previous resistance level that now acts as support",
+                "Price making a new high",
+                "Price breaking below the 200-day moving average",
+                "Price forming a head and shoulders pattern"
             ],
-            correctAnswer: "A price level where buying pressure exceeds selling pressure"
+            correctAnswer: "Price pulling back to a previous resistance level that now acts as support"
         },
         {
-            question: "What is a resistance level in price action?",
+            question: "In a double bottom pattern, where is the optimal entry point?",
             options: [
-                "A price level where selling pressure exceeds buying pressure",
-                "The lowest price reached in a trading session",
-                "A level that resists technical analysis",
-                "The average price over 200 days"
+                "At the second bottom",
+                "After price breaks above the neckline (high between the two bottoms)",
+                "At the midpoint between the two bottoms",
+                "After the pattern completes a 50% retracement"
             ],
-            correctAnswer: "A price level where selling pressure exceeds buying pressure"
+            correctAnswer: "After price breaks above the neckline (high between the two bottoms)"
         },
         {
-            question: "What is a doji candlestick?",
+            question: "When using the moving average crossover strategy, what signals a potential buy entry?",
             options: [
-                "A candlestick with a very long body",
-                "A candlestick where open and close prices are nearly equal",
-                "A candlestick that only appears on weekly charts",
-                "A candlestick with no wicks"
+                "When price crosses above the moving average",
+                "When the shorter-term MA crosses above the longer-term MA",
+                "When both MAs are sloping downward",
+                "When price touches the moving average"
             ],
-            correctAnswer: "A candlestick where open and close prices are nearly equal"
+            correctAnswer: "When the shorter-term MA crosses above the longer-term MA"
         },
         {
-            question: "What does a long upper wick (shadow) on a candlestick typically indicate?",
+            question: "What is a valid entry signal for the 'trading the bounce off support' setup?",
             options: [
-                "Strong buying pressure throughout the period",
-                "That buyers pushed the price up but failed to maintain it",
-                "A guaranteed uptrend continuation",
-                "That the market was closed during that period"
+                "Entering as soon as price touches the support level",
+                "Waiting for a candlestick confirmation pattern at the support level",
+                "Entering after price breaks below support",
+                "Entering at a fixed percentage above support"
             ],
-            correctAnswer: "That buyers pushed the price up but failed to maintain it"
+            correctAnswer: "Waiting for a candlestick confirmation pattern at the support level"
         },
         {
-            question: "What is a 'pin bar' in price action trading?",
+            question: "In a range-bound market, what is the safest entry strategy?",
             options: [
-                "A tool used to pin charts to a trading desk",
-                "A candlestick with a small body and a long wick on one side",
-                "A bar chart used instead of candlesticks",
-                "A pattern that only appears at market open"
+                "Buy at the middle of the range",
+                "Buy at support with confirmation and sell at resistance",
+                "Always buy breakouts of the range",
+                "Buy when RSI is at 50"
             ],
-            correctAnswer: "A candlestick with a small body and a long wick on one side"
+            correctAnswer: "Buy at support with confirmation and sell at resistance"
         },
         {
-            question: "What is a 'trend line' in price action?",
+            question: "What is the proper entry technique for a bullish flag pattern?",
             options: [
-                "A horizontal line showing average price",
-                "A diagonal line connecting successive highs or lows",
-                "A line showing trading volume",
-                "A line indicating market hours"
+                "At the start of the flag formation",
+                "At the breakout above the upper trendline of the flag",
+                "At the lowest point within the flag",
+                "After the pattern fails"
             ],
-            correctAnswer: "A diagonal line connecting successive highs or lows"
+            correctAnswer: "At the breakout above the upper trendline of the flag"
         },
         {
-            question: "What is a 'breakout' in price action trading?",
+            question: "When using the RSI indicator for trade entries, what is considered an oversold condition that might signal a buy?",
             options: [
-                "When a trader takes a break from trading",
-                "When price moves decisively through a support or resistance level",
-                "When a trading platform crashes",
-                "When markets close early"
+                "RSI above 70",
+                "RSI below 30",
+                "RSI at 50",
+                "RSI crossing the 20-day moving average"
             ],
-            correctAnswer: "When price moves decisively through a support or resistance level"
+            correctAnswer: "RSI below 30"
         },
         {
-            question: "What is the 'body' of a candlestick?",
+            question: "What is a key characteristic of a valid 'higher low' entry in an uptrend?",
             options: [
-                "The entire candlestick including wicks",
-                "The rectangle between the open and close prices",
-                "The center point of the candlestick",
-                "The volume indicator below the candlestick"
+                "The low must be exactly 10% higher than the previous low",
+                "The low must be higher than the previous low while maintaining the overall uptrend structure",
+                "The low must touch a moving average",
+                "The low must form a specific candlestick pattern"
             ],
-            correctAnswer: "The rectangle between the open and close prices"
-        },
-        
-        // MEDIUM questions (10-19) - Intermediate Price Action Concepts
-        {
-            question: "What is a 'double top' pattern?",
-            options: [
-                "Two consecutive bullish candles",
-                "A bearish reversal pattern where price reaches a high twice before declining",
-                "A pattern indicating a strong uptrend",
-                "Two gaps in price in the same direction"
-            ],
-            correctAnswer: "A bearish reversal pattern where price reaches a high twice before declining"
-        },
-        {
-            question: "What is a 'head and shoulders' pattern in price action?",
-            options: [
-                "A pattern resembling a person's upper body",
-                "A bullish continuation pattern",
-                "A bearish reversal pattern with three peaks, the middle one being highest",
-                "A pattern only visible on monthly charts"
-            ],
-            correctAnswer: "A bearish reversal pattern with three peaks, the middle one being highest"
-        },
-        {
-            question: "What is an 'inside bar' in price action trading?",
-            options: [
-                "A bar that forms inside a trading building",
-                "A candlestick with a high and low within the previous candle's range",
-                "The middle bar in a three-bar pattern",
-                "A bar with higher volume than surrounding bars"
-            ],
-            correctAnswer: "A candlestick with a high and low within the previous candle's range"
-        },
-        {
-            question: "What is a 'false breakout' in price action?",
-            options: [
-                "When a trader incorrectly identifies a breakout",
-                "When price briefly breaks a level but then reverses back",
-                "A breakout that happens after market hours",
-                "A pattern that only appears on lower timeframes"
-            ],
-            correctAnswer: "When price briefly breaks a level but then reverses back"
-        },
-        {
-            question: "What is a 'swing high' in price action?",
-            options: [
-                "The highest price in an entire chart",
-                "A local peak where price reversed from up to down",
-                "A candlestick with an extremely long upper wick",
-                "The highest price during market open"
-            ],
-            correctAnswer: "A local peak where price reversed from up to down"
-        },
-        {
-            question: "What is a 'consolidation' in price action?",
-            options: [
-                "When a company combines with another company",
-                "A period of relatively horizontal price movement within a range",
-                "When price makes a new high",
-                "The final hour of trading"
-            ],
-            correctAnswer: "A period of relatively horizontal price movement within a range"
-        },
-        {
-            question: "What is the 'three black crows' pattern?",
-            options: [
-                "Three birds appearing near a trading floor",
-                "Three consecutive bearish candles, each closing lower than the previous",
-                "A bullish reversal pattern",
-                "Three gaps down in price"
-            ],
-            correctAnswer: "Three consecutive bearish candles, each closing lower than the previous"
-        },
-        {
-            question: "What is a 'flag pattern' in price action?",
-            options: [
-                "A patriotic pattern appearing on national holidays",
-                "A consolidation pattern that forms after a sharp move, resembling a flag on a pole",
-                "A pattern indicating market closure",
-                "A pattern only seen in forex markets"
-            ],
-            correctAnswer: "A consolidation pattern that forms after a sharp move, resembling a flag on a pole"
-        },
-        {
-            question: "What is 'momentum' in price action trading?",
-            options: [
-                "The speed at which a trader places orders",
-                "The strength of price movement in a particular direction",
-                "A specific candlestick pattern",
-                "The time between market open and close"
-            ],
-            correctAnswer: "The strength of price movement in a particular direction"
-        },
-        {
-            question: "What is a 'gap' in price action?",
-            options: [
-                "A space between two monitors on a trading desk",
-                "An area where no price data exists between two trading periods",
-                "The spread between bid and ask prices",
-                "The difference between actual and expected earnings"
-            ],
-            correctAnswer: "An area where no price data exists between two trading periods"
+            correctAnswer: "The low must be higher than the previous low while maintaining the overall uptrend structure"
         },
         
-        // HARD questions (20-29) - Advanced Price Action Concepts
+        // MEDIUM questions (10-19) - Intermediate Trade Setups
         {
-            question: "What is a 'liquidity trap' in price action trading?",
+            question: "In the 'inside bar' setup, what is the aggressive entry strategy?",
             options: [
-                "When a trader runs out of capital",
-                "A price level where stop losses accumulate, which may be targeted before a reversal",
-                "A central bank policy of low interest rates",
-                "When trading volume dries up completely"
+                "Buy at the open of the next bar after the inside bar",
+                "Buy on a break above the inside bar's high (for bullish setup)",
+                "Buy at the midpoint of the inside bar",
+                "Buy at the close of the inside bar"
             ],
-            correctAnswer: "A price level where stop losses accumulate, which may be targeted before a reversal"
+            correctAnswer: "Buy on a break above the inside bar's high (for bullish setup)"
         },
         {
-            question: "What is 'order flow' in price action trading?",
+            question: "What is the proper way to trade a 'three drives to a bottom' pattern?",
             options: [
-                "The sequence of placing trading orders",
-                "The visualization of buying and selling pressure through pending and executed orders",
-                "The flow of orders from retail to institutional traders",
-                "A type of chart pattern"
+                "Enter short at the third drive down",
+                "Enter long after the third drive down shows reversal confirmation",
+                "Enter long at the second drive down",
+                "Enter short after the pattern completes"
             ],
-            correctAnswer: "The visualization of buying and selling pressure through pending and executed orders"
+            correctAnswer: "Enter long after the third drive down shows reversal confirmation"
         },
         {
-            question: "What is a 'dark pool' in trading?",
+            question: "When trading a head and shoulders pattern, where is the optimal entry for a short position?",
             options: [
-                "A private exchange where trades are executed without public visibility",
-                "A bearish market condition",
-                "A pool of traders who use black candlesticks",
-                "A trading strategy used after market hours"
+                "At the formation of the right shoulder",
+                "At the head",
+                "After price breaks below the neckline with confirmation",
+                "At the highest point of the pattern"
             ],
-            correctAnswer: "A private exchange where trades are executed without public visibility"
+            correctAnswer: "After price breaks below the neckline with confirmation"
         },
         {
-            question: "What is 'market structure' in price action analysis?",
+            question: "In a VWAP (Volume Weighted Average Price) reversion strategy, what is the entry signal?",
             options: [
-                "The physical building where trading occurs",
-                "The pattern of higher highs/higher lows or lower highs/lower lows that define trends",
-                "The organizational structure of an exchange",
-                "The relationship between different market indices"
+                "When price crosses above VWAP",
+                "When price deviates significantly from VWAP and shows signs of reverting back",
+                "When VWAP flattens",
+                "When volume spikes above average"
             ],
-            correctAnswer: "The pattern of higher highs/higher lows or lower highs/lower lows that define trends"
+            correctAnswer: "When price deviates significantly from VWAP and shows signs of reverting back"
         },
         {
-            question: "What is a 'stop hunt' in price action trading?",
+            question: "What is the proper entry technique for an 'evening star' candlestick pattern?",
             options: [
-                "A search for the best place to put a stop loss",
-                "A deliberate price movement to trigger clustered stop losses before reversing",
-                "A trading strategy used by beginners",
-                "A tool to find stopped orders"
+                "Buy at the close of the third candle",
+                "Short after the third candle closes below the midpoint of the first candle",
+                "Buy at the open of the pattern",
+                "Short at the high of the second candle"
             ],
-            correctAnswer: "A deliberate price movement to trigger clustered stop losses before reversing"
+            correctAnswer: "Short after the third candle closes below the midpoint of the first candle"
         },
         {
-            question: "What is 'smart money' in trading?",
+            question: "In the 'failure test' setup (spring/upthrust), what is the entry signal?",
             options: [
-                "Money earned through intelligent trading decisions",
-                "Institutional traders and large players who can influence market direction",
-                "A type of cryptocurrency",
-                "Money used only for low-risk trades"
+                "When price breaks a support/resistance level and immediately reverses",
+                "When price tests a level multiple times",
+                "When price consolidates at a level",
+                "When volume decreases at a level"
             ],
-            correctAnswer: "Institutional traders and large players who can influence market direction"
+            correctAnswer: "When price breaks a support/resistance level and immediately reverses"
         },
         {
-            question: "What is an 'order block' in price action trading?",
+            question: "What is the correct entry for a 'cup and handle' pattern?",
             options: [
-                "A technical issue preventing order placement",
-                "A significant price area where large orders were previously filled, often acting as support/resistance",
-                "A limit on the number of orders a trader can place",
-                "A block of time when orders are processed"
+                "At the bottom of the cup",
+                "At the start of the handle formation",
+                "On the breakout above the handle's resistance",
+                "At the midpoint of the cup"
             ],
-            correctAnswer: "A significant price area where large orders were previously filled, often acting as support/resistance"
+            correctAnswer: "On the breakout above the handle's resistance"
         },
         {
-            question: "What is 'market profile' in advanced price action analysis?",
+            question: "When using the Fibonacci retracement tool in a trending market, which retracement level is often considered the 'golden pocket' for entries?",
             options: [
-                "A trader's biography and experience",
-                "A distribution chart showing time spent at each price level, forming a profile of market activity",
-                "A profile created by market regulators",
-                "A summary of a stock's fundamentals"
+                "23.6% retracement",
+                "38.2% retracement",
+                "The 61.8%-78.6% zone",
+                "100% retracement"
             ],
-            correctAnswer: "A distribution chart showing time spent at each price level, forming a profile of market activity"
+            correctAnswer: "The 61.8%-78.6% zone"
         },
         {
-            question: "What is a 'fair value gap' in price action?",
+            question: "In a 'three black crows' bearish pattern, what is the appropriate trade setup?",
             options: [
-                "The difference between a stock's price and its intrinsic value",
-                "An unfilled price area created by a strong imbalance between buyers and sellers",
-                "The gap between bid and ask prices",
-                "The difference between market open and close prices"
+                "Go long after the third black crow",
+                "Go short after the third black crow forms, with confirmation",
+                "Go short after the first black crow",
+                "Wait for a reversal pattern to form"
             ],
-            correctAnswer: "An unfilled price area created by a strong imbalance between buyers and sellers"
+            correctAnswer: "Go short after the third black crow forms, with confirmation"
         },
         {
-            question: "What is 'volume profile' in price action trading?",
+            question: "What is the proper entry technique for trading a 'rounded bottom' (saucer) pattern?",
             options: [
-                "A trader's history of trading volume",
-                "A histogram showing the amount of volume traded at each price level",
-                "The profile of a volume indicator",
-                "A measurement of market volatility"
+                "At the lowest point of the pattern",
+                "When the pattern is halfway complete",
+                "After price breaks above the resistance level with confirmation",
+                "At the first sign of upward movement"
             ],
-            correctAnswer: "A histogram showing the amount of volume traded at each price level"
+            correctAnswer: "After price breaks above the resistance level with confirmation"
+        },
+        
+        // HARD questions (20-29) - Advanced Trade Setups
+        {
+            question: "In an 'order block' trading strategy, what defines a valid buy-side order block?",
+            options: [
+                "Any area where price consolidated",
+                "The last down candle before a significant upward move, often with high volume",
+                "A series of doji candles",
+                "A gap in price action"
+            ],
+            correctAnswer: "The last down candle before a significant upward move, often with high volume"
+        },
+        {
+            question: "When trading the 'stop hunt' pattern, what is the optimal entry strategy?",
+            options: [
+                "Enter as soon as price hits a major support/resistance level",
+                "Enter after price breaches a key level, triggers stops, and then reverses back",
+                "Enter before the stop hunt occurs",
+                "Enter based on indicator signals only"
+            ],
+            correctAnswer: "Enter after price breaches a key level, triggers stops, and then reverses back"
+        },
+        {
+            question: "In the 'fair value gap' trading approach, what constitutes a valid entry setup?",
+            options: [
+                "Entering at any imbalance in the market",
+                "Entering when price returns to fill an unfilled gap created by a strong imbalance, with confirmation",
+                "Entering at the midpoint of the gap",
+                "Entering after the gap is completely filled"
+            ],
+            correctAnswer: "Entering when price returns to fill an unfilled gap created by a strong imbalance, with confirmation"
+        },
+        {
+            question: "What is the correct way to trade a 'liquidity grab' setup?",
+            options: [
+                "Enter in the direction of the grab as soon as it occurs",
+                "Enter counter to the grab after confirmation of reversal",
+                "Avoid trading during liquidity grabs",
+                "Enter based on volume profile only"
+            ],
+            correctAnswer: "Enter counter to the grab after confirmation of reversal"
+        },
+        {
+            question: "In the 'smart money concept' (SMC), what is the proper way to identify and trade a 'breaker block'?",
+            options: [
+                "Any support or resistance level",
+                "A former support turned resistance or former resistance turned support after a break and retest",
+                "Areas of high volume only",
+                "Zones where multiple indicators converge"
+            ],
+            correctAnswer: "A former support turned resistance or former resistance turned support after a break and retest"
+        },
+        {
+            question: "When trading the 'institutional candle' setup, what is the key entry strategy?",
+            options: [
+                "Enter at the open of any large candle",
+                "Enter on a retracement to the 50% level of a large momentum candle",
+                "Enter at the close of the institutional candle",
+                "Enter based on the next candle's behavior only"
+            ],
+            correctAnswer: "Enter on a retracement to the 50% level of a large momentum candle"
+        },
+        {
+            question: "In a 'market structure shift' trade setup, what signals a valid entry opportunity?",
+            options: [
+                "Any change in price direction",
+                "When price breaks a significant higher low in an uptrend (or lower high in a downtrend) and shows confirmation",
+                "When multiple indicators change direction",
+                "When volume increases suddenly"
+            ],
+            correctAnswer: "When price breaks a significant higher low in an uptrend (or lower high in a downtrend) and shows confirmation"
+        },
+        {
+            question: "What is the correct approach for trading the 'trapped traders' setup?",
+            options: [
+                "Enter in the same direction as the trapped traders",
+                "Enter in the opposite direction of trapped traders after confirmation",
+                "Avoid markets with trapped traders",
+                "Enter based on news events only"
+            ],
+            correctAnswer: "Enter in the opposite direction of trapped traders after confirmation"
+        },
+        {
+            question: "In the 'ICT (Inner Circle Trader) optimal trade entry' method, what is the key principle?",
+            options: [
+                "Entering at round numbers only",
+                "Entering at the exact 50% retracement of a move",
+                "Entering at untested liquidity levels where stop orders are likely to be clustered",
+                "Entering based on indicator crossovers only"
+            ],
+            correctAnswer: "Entering at untested liquidity levels where stop orders are likely to be clustered"
+        },
+        {
+            question: "When using the 'volume profile' for trade entries, what is considered the most significant zone for potential reversals?",
+            options: [
+                "Areas of highest volume (Point of Control)",
+                "Areas of lowest volume (Low Volume Nodes)",
+                "The Value Area High",
+                "The Value Area Low"
+            ],
+            correctAnswer: "Areas of lowest volume (Low Volume Nodes)"
         }
     ];
     
