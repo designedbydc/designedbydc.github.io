@@ -660,7 +660,7 @@ button:focus-visible {
     color: var(--color-gray-800);
 }
 
-/* Next button styling with primary accent color - more aggressive styling */
+/* Next button styling with primary accent color - more compatible approach */
 .next-btn {
     background-color: var(--color-accent) !important;
     color: var(--color-white) !important;
@@ -675,28 +675,27 @@ button:focus-visible {
     text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2) !important;
     position: relative !important;
     z-index: 100 !important; /* Very high z-index */
-    display: block !important;
-    margin: 20px auto 10px auto !important;
+    display: inline-block !important;
+    margin: 0 auto !important;
     text-align: center !important;
     min-width: 200px !important;
     max-width: 300px !important;
     outline: none !important;
+    text-decoration: none !important;
 }
 
 .next-btn:hover {
     background-color: var(--color-dark-green) !important;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25) !important;
     transform: translateY(-2px) !important;
+    text-decoration: none !important;
+    color: var(--color-white) !important;
 }
 
-.next-btn:active {
-    transform: translateY(1px) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-.next-btn:focus {
+.next-btn:active, .next-btn:focus, .next-btn:visited {
+    color: var(--color-white) !important;
+    text-decoration: none !important;
     outline: none !important;
-    box-shadow: 0 0 0 4px rgba(0, 200, 5, 0.4) !important;
 }
 
 /* Add animation to make the button more noticeable */
