@@ -686,8 +686,9 @@ document.addEventListener('DOMContentLoaded', () => {
             button.textContent = option;
             button.dataset.index = index;
             
-            // Ensure text color is visible
+            // Ensure text color is visible - set explicitly
             button.style.color = 'var(--color-black)';
+            button.style.backgroundColor = 'var(--color-white)';
             
             button.addEventListener('click', () => {
                 // Remove selected class from all buttons
@@ -757,6 +758,13 @@ document.addEventListener('DOMContentLoaded', () => {
         feedbackContainer.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
         feedbackContainer.classList.add(isCorrect ? 'feedback-correct' : 'feedback-incorrect');
         
+        // Clear any existing next button event listeners
+        const oldButton = document.getElementById('next-question-btn');
+        if (oldButton) {
+            const newButton = oldButton.cloneNode(true);
+            oldButton.parentNode.replaceChild(newButton, oldButton);
+        }
+        
         if (isCorrect) {
             score++;
             document.getElementById('score').textContent = score;
@@ -766,7 +774,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span class="font-semibold">Correct!</span>
                 </div>
                 <p>${currentQuestionData.explanation || 'Great job!'}</p>
-                <button id="next-question-btn" class="mt-4 secondary-btn py-2 px-6">Next Question</button>
+                <button id="next-question-btn" class="mt-4 secondary-btn py-2 px-6 text-white font-bold">Next Question</button>
             `;
         } else {
             feedbackText.innerHTML = `
@@ -776,12 +784,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <p>The correct answer is: ${currentQuestionData.shuffledOptions[currentQuestionData.correctIndex]}</p>
                 <p class="mt-2">${currentQuestionData.explanation || 'Better luck next time!'}</p>
-                <button id="next-question-btn" class="mt-4 secondary-btn py-2 px-6">Next Question</button>
+                <button id="next-question-btn" class="mt-4 secondary-btn py-2 px-6 text-white font-bold">Next Question</button>
             `;
         }
         
         // Add event listener to next question button
-        document.getElementById('next-question-btn').addEventListener('click', () => {
+        document.getElementById('next-question-btn').addEventListener('click', function nextQuestionHandler() {
+            // Remove this event listener to prevent duplicates
+            this.removeEventListener('click', nextQuestionHandler);
+            
             currentQuestionIndex++;
             
             // Save quiz state after each answer
