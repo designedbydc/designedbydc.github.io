@@ -147,310 +147,310 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Mock questions array organized by difficulty (easy -> medium -> hard)
     const mockQuestions = [
-        // EASY questions (0-9)
+        // EASY questions (0-9) - Basic Price Action Setups
         {
-            question: "What is a stock?",
+            question: "What is a candlestick in price action trading?",
             options: [
-                "A type of bond issued by companies",
-                "A share of ownership in a company",
-                "A loan given to a corporation",
-                "A government-issued security"
+                "A tool used to illuminate trading charts",
+                "A graphical representation of price movement showing open, high, low, and close",
+                "A pattern that only appears during market holidays",
+                "A type of trading platform"
             ],
-            correctAnswer: "A share of ownership in a company"
+            correctAnswer: "A graphical representation of price movement showing open, high, low, and close"
         },
         {
-            question: "What is a market order?",
+            question: "What does a bullish engulfing pattern indicate?",
             options: [
-                "An order to buy or sell a security at the best available current price",
-                "An order to buy or sell when a security reaches a specific price",
-                "An order that must be executed before the market opens",
-                "An order placed by market regulators"
+                "A potential downtrend continuation",
+                "A potential reversal from downtrend to uptrend",
+                "No significant price movement",
+                "A market holiday"
             ],
-            correctAnswer: "An order to buy or sell a security at the best available current price"
+            correctAnswer: "A potential reversal from downtrend to uptrend"
         },
         {
-            question: "What is the meaning of 'day trading'?",
+            question: "What is a support level in price action?",
             options: [
-                "Trading only during specific hours of the day",
-                "Buying and selling securities within the same trading day",
-                "Trading that occurs automatically at midnight",
-                "A trading strategy that requires waiting for a full day"
+                "A price level where buying pressure exceeds selling pressure",
+                "The highest price reached in a trading session",
+                "A level where traders receive technical support",
+                "The average price over 50 days"
             ],
-            correctAnswer: "Buying and selling securities within the same trading day"
+            correctAnswer: "A price level where buying pressure exceeds selling pressure"
         },
         {
-            question: "What is the SENSEX?",
+            question: "What is a resistance level in price action?",
             options: [
-                "A sensor that monitors electronic stock transfers",
-                "A benchmark index of 30 stocks on the Bombay Stock Exchange",
-                "A government regulatory committee",
-                "The Securities and Exchange Board of India's transaction tax"
+                "A price level where selling pressure exceeds buying pressure",
+                "The lowest price reached in a trading session",
+                "A level that resists technical analysis",
+                "The average price over 200 days"
             ],
-            correctAnswer: "A benchmark index of 30 stocks on the Bombay Stock Exchange"
+            correctAnswer: "A price level where selling pressure exceeds buying pressure"
         },
         {
-            question: "What is a blue-chip stock?",
+            question: "What is a doji candlestick?",
             options: [
-                "A newly issued stock",
-                "A stock that has lost significant value",
-                "A stock of a well-established, financially sound company",
-                "A stock that pays high dividends"
+                "A candlestick with a very long body",
+                "A candlestick where open and close prices are nearly equal",
+                "A candlestick that only appears on weekly charts",
+                "A candlestick with no wicks"
             ],
-            correctAnswer: "A stock of a well-established, financially sound company"
+            correctAnswer: "A candlestick where open and close prices are nearly equal"
         },
         {
-            question: "What does P/E ratio stand for?",
+            question: "What does a long upper wick (shadow) on a candlestick typically indicate?",
             options: [
-                "Profit/Equity ratio",
-                "Price/Earnings ratio",
-                "Percentage/Evaluation ratio",
-                "Public/Enterprise ratio"
+                "Strong buying pressure throughout the period",
+                "That buyers pushed the price up but failed to maintain it",
+                "A guaranteed uptrend continuation",
+                "That the market was closed during that period"
             ],
-            correctAnswer: "Price/Earnings ratio"
+            correctAnswer: "That buyers pushed the price up but failed to maintain it"
         },
         {
-            question: "What is a dividend?",
+            question: "What is a 'pin bar' in price action trading?",
             options: [
-                "A fee paid to stockbrokers",
-                "A portion of a company's profit paid to shareholders",
-                "A type of stock split",
-                "A tax on stock profits"
+                "A tool used to pin charts to a trading desk",
+                "A candlestick with a small body and a long wick on one side",
+                "A bar chart used instead of candlesticks",
+                "A pattern that only appears at market open"
             ],
-            correctAnswer: "A portion of a company's profit paid to shareholders"
+            correctAnswer: "A candlestick with a small body and a long wick on one side"
         },
         {
-            question: "What is a limit order?",
+            question: "What is a 'trend line' in price action?",
             options: [
-                "An order to buy or sell a security at a specific price or better",
-                "A restriction on how many shares you can buy",
-                "An order that must be executed by the end of the trading day",
-                "A cap on how much you can invest"
+                "A horizontal line showing average price",
+                "A diagonal line connecting successive highs or lows",
+                "A line showing trading volume",
+                "A line indicating market hours"
             ],
-            correctAnswer: "An order to buy or sell a security at a specific price or better"
+            correctAnswer: "A diagonal line connecting successive highs or lows"
         },
         {
-            question: "What is a bull market?",
+            question: "What is a 'breakout' in price action trading?",
             options: [
-                "A market where prices are falling",
-                "A market where prices are rising",
-                "A market exclusively for agricultural products",
-                "A market regulated by specific broker firms"
+                "When a trader takes a break from trading",
+                "When price moves decisively through a support or resistance level",
+                "When a trading platform crashes",
+                "When markets close early"
             ],
-            correctAnswer: "A market where prices are rising"
+            correctAnswer: "When price moves decisively through a support or resistance level"
         },
         {
-            question: "What is the NIFTY?",
+            question: "What is the 'body' of a candlestick?",
             options: [
-                "A mobile trading application",
-                "The National Stock Exchange's benchmark index in India",
-                "A type of dividend payment",
-                "A strategy for buying stocks"
+                "The entire candlestick including wicks",
+                "The rectangle between the open and close prices",
+                "The center point of the candlestick",
+                "The volume indicator below the candlestick"
             ],
-            correctAnswer: "The National Stock Exchange's benchmark index in India"
-        },
-        
-        // MEDIUM questions (10-19)
-        {
-            question: "What is a stop-loss order?",
-            options: [
-                "An order to buy a stock when it reaches a certain price",
-                "An order to sell a stock when it falls to a certain price",
-                "A limit on how much you can lose in a trading day",
-                "An order that automatically cancels at the end of the day"
-            ],
-            correctAnswer: "An order to sell a stock when it falls to a certain price"
-        },
-        {
-            question: "What is market capitalization?",
-            options: [
-                "The maximum price a stock can reach in a day",
-                "The total value of a company's outstanding shares",
-                "The minimum investment required to enter a market",
-                "The capital required to start a brokerage firm"
-            ],
-            correctAnswer: "The total value of a company's outstanding shares"
-        },
-        {
-            question: "What is an IPO?",
-            options: [
-                "International Payment Option",
-                "Internal Profit Organization",
-                "Initial Public Offering",
-                "Indexed Portfolio Optimization"
-            ],
-            correctAnswer: "Initial Public Offering"
-        },
-        {
-            question: "What is diversification in investing?",
-            options: [
-                "Investing in multiple currencies",
-                "Spreading investments across different asset classes to reduce risk",
-                "Changing investment strategies frequently",
-                "Investing only in diverse companies"
-            ],
-            correctAnswer: "Spreading investments across different asset classes to reduce risk"
-        },
-        {
-            question: "What is a bear market?",
-            options: [
-                "A market where prices are rising steadily",
-                "A market where prices are falling steadily",
-                "A market dominated by aggressive investors",
-                "A market with minimal government regulation"
-            ],
-            correctAnswer: "A market where prices are falling steadily"
-        },
-        {
-            question: "What is a stock split?",
-            options: [
-                "Dividing a company's profits among shareholders",
-                "When a company divides its existing shares into multiple shares",
-                "Separating a company into two different companies",
-                "Distributing shares to new investors"
-            ],
-            correctAnswer: "When a company divides its existing shares into multiple shares"
-        },
-        {
-            question: "What does 'volume' refer to in stock trading?",
-            options: [
-                "The size of the company",
-                "The number of shares traded in a given period",
-                "The loudness of trading floor activity",
-                "The market capitalization divided by share price"
-            ],
-            correctAnswer: "The number of shares traded in a given period"
-        },
-        {
-            question: "What is a mutual fund?",
-            options: [
-                "A fund shared between two investors",
-                "A pool of money from many investors that is invested in securities",
-                "A government-managed retirement fund",
-                "A joint bank account for multiple traders"
-            ],
-            correctAnswer: "A pool of money from many investors that is invested in securities"
-        },
-        {
-            question: "What is an ETF?",
-            options: [
-                "Electronic Trading Format",
-                "Exchange-Traded Fund",
-                "Equity Trust Foundation",
-                "Extended Time Finance"
-            ],
-            correctAnswer: "Exchange-Traded Fund"
-        },
-        {
-            question: "What is a bond?",
-            options: [
-                "An ownership share in a company",
-                "A debt security, similar to an IOU",
-                "A type of insurance for investors",
-                "A contract between two traders"
-            ],
-            correctAnswer: "A debt security, similar to an IOU"
+            correctAnswer: "The rectangle between the open and close prices"
         },
         
-        // HARD questions (20-29)
+        // MEDIUM questions (10-19) - Intermediate Price Action Concepts
         {
-            question: "What is arbitrage?",
+            question: "What is a 'double top' pattern?",
             options: [
-                "A type of trading software",
-                "The practice of taking advantage of price differences in different markets",
-                "A method of currency conversion",
-                "A high-risk investment strategy"
+                "Two consecutive bullish candles",
+                "A bearish reversal pattern where price reaches a high twice before declining",
+                "A pattern indicating a strong uptrend",
+                "Two gaps in price in the same direction"
             ],
-            correctAnswer: "The practice of taking advantage of price differences in different markets"
+            correctAnswer: "A bearish reversal pattern where price reaches a high twice before declining"
         },
         {
-            question: "What is the difference between futures and options?",
+            question: "What is a 'head and shoulders' pattern in price action?",
             options: [
-                "Futures are binding contracts, while options give the right but not obligation to buy/sell",
-                "Futures are for commodities, options are for stocks only",
-                "Futures expire in one year, options expire in one month",
-                "Futures are regulated by the government, options are not"
+                "A pattern resembling a person's upper body",
+                "A bullish continuation pattern",
+                "A bearish reversal pattern with three peaks, the middle one being highest",
+                "A pattern only visible on monthly charts"
             ],
-            correctAnswer: "Futures are binding contracts, while options give the right but not obligation to buy/sell"
+            correctAnswer: "A bearish reversal pattern with three peaks, the middle one being highest"
         },
         {
-            question: "What is an 'order book' in trading?",
+            question: "What is an 'inside bar' in price action trading?",
             options: [
-                "A record of all orders placed by a single trader",
-                "A list of all buy and sell orders for a specific security, organized by price level",
-                "The official record of completed transactions",
-                "A manual used by new traders to learn order types"
+                "A bar that forms inside a trading building",
+                "A candlestick with a high and low within the previous candle's range",
+                "The middle bar in a three-bar pattern",
+                "A bar with higher volume than surrounding bars"
             ],
-            correctAnswer: "A list of all buy and sell orders for a specific security, organized by price level"
+            correctAnswer: "A candlestick with a high and low within the previous candle's range"
         },
         {
-            question: "What is meant by 'shorting' a stock?",
+            question: "What is a 'false breakout' in price action?",
             options: [
-                "Buying shares for a short period of time",
-                "Setting a short limit on the maximum price to pay",
-                "Borrowing shares to sell now and buy back later at a lower price",
-                "Reducing your position in a particular stock"
+                "When a trader incorrectly identifies a breakout",
+                "When price briefly breaks a level but then reverses back",
+                "A breakout that happens after market hours",
+                "A pattern that only appears on lower timeframes"
             ],
-            correctAnswer: "Borrowing shares to sell now and buy back later at a lower price"
+            correctAnswer: "When price briefly breaks a level but then reverses back"
         },
         {
-            question: "What is the VIX?",
+            question: "What is a 'swing high' in price action?",
             options: [
-                "A visualized index of trading patterns",
-                "A volatility index that measures market fear",
-                "A broker verification system",
-                "A variable interest exchange system"
+                "The highest price in an entire chart",
+                "A local peak where price reversed from up to down",
+                "A candlestick with an extremely long upper wick",
+                "The highest price during market open"
             ],
-            correctAnswer: "A volatility index that measures market fear"
+            correctAnswer: "A local peak where price reversed from up to down"
         },
         {
-            question: "What is 'alpha' in investment terms?",
+            question: "What is a 'consolidation' in price action?",
             options: [
-                "The first stock in an index",
-                "The return on an investment relative to a benchmark index",
-                "The primary investor in a mutual fund",
-                "The maximum potential gain of an investment"
+                "When a company combines with another company",
+                "A period of relatively horizontal price movement within a range",
+                "When price makes a new high",
+                "The final hour of trading"
             ],
-            correctAnswer: "The return on an investment relative to a benchmark index"
+            correctAnswer: "A period of relatively horizontal price movement within a range"
         },
         {
-            question: "What is a 'derivative'?",
+            question: "What is the 'three black crows' pattern?",
             options: [
-                "A direct investment in a company",
-                "A financial security with a value dependent on an underlying asset",
-                "A foreign exchange investment",
-                "A dividend reinvestment program"
+                "Three birds appearing near a trading floor",
+                "Three consecutive bearish candles, each closing lower than the previous",
+                "A bullish reversal pattern",
+                "Three gaps down in price"
             ],
-            correctAnswer: "A financial security with a value dependent on an underlying asset"
+            correctAnswer: "Three consecutive bearish candles, each closing lower than the previous"
         },
         {
-            question: "What is 'quantitative easing'?",
+            question: "What is a 'flag pattern' in price action?",
             options: [
-                "Reducing trade volumes to stabilize markets",
-                "A central bank strategy involving increased money supply to boost the economy",
-                "Strict regulation of high-frequency trading",
-                "Statistical analysis of market trends"
+                "A patriotic pattern appearing on national holidays",
+                "A consolidation pattern that forms after a sharp move, resembling a flag on a pole",
+                "A pattern indicating market closure",
+                "A pattern only seen in forex markets"
             ],
-            correctAnswer: "A central bank strategy involving increased money supply to boost the economy"
+            correctAnswer: "A consolidation pattern that forms after a sharp move, resembling a flag on a pole"
         },
         {
-            question: "What is the 'efficient market hypothesis'?",
+            question: "What is 'momentum' in price action trading?",
             options: [
-                "The theory that markets will always become more efficient over time",
-                "The idea that market prices reflect all available information",
-                "The concept that trading algorithms are more efficient than human traders",
-                "A strategy for maximizing trading efficiency"
+                "The speed at which a trader places orders",
+                "The strength of price movement in a particular direction",
+                "A specific candlestick pattern",
+                "The time between market open and close"
             ],
-            correctAnswer: "The idea that market prices reflect all available information"
+            correctAnswer: "The strength of price movement in a particular direction"
         },
         {
-            question: "What is a 'straddle' in options trading?",
+            question: "What is a 'gap' in price action?",
             options: [
-                "Buying both call and put options with the same strike price and expiration date",
-                "Trading two different stocks in the same sector",
-                "Alternating between long and short positions",
-                "A trading position that spans multiple markets"
+                "A space between two monitors on a trading desk",
+                "An area where no price data exists between two trading periods",
+                "The spread between bid and ask prices",
+                "The difference between actual and expected earnings"
             ],
-            correctAnswer: "Buying both call and put options with the same strike price and expiration date"
+            correctAnswer: "An area where no price data exists between two trading periods"
+        },
+        
+        // HARD questions (20-29) - Advanced Price Action Concepts
+        {
+            question: "What is a 'liquidity trap' in price action trading?",
+            options: [
+                "When a trader runs out of capital",
+                "A price level where stop losses accumulate, which may be targeted before a reversal",
+                "A central bank policy of low interest rates",
+                "When trading volume dries up completely"
+            ],
+            correctAnswer: "A price level where stop losses accumulate, which may be targeted before a reversal"
+        },
+        {
+            question: "What is 'order flow' in price action trading?",
+            options: [
+                "The sequence of placing trading orders",
+                "The visualization of buying and selling pressure through pending and executed orders",
+                "The flow of orders from retail to institutional traders",
+                "A type of chart pattern"
+            ],
+            correctAnswer: "The visualization of buying and selling pressure through pending and executed orders"
+        },
+        {
+            question: "What is a 'dark pool' in trading?",
+            options: [
+                "A private exchange where trades are executed without public visibility",
+                "A bearish market condition",
+                "A pool of traders who use black candlesticks",
+                "A trading strategy used after market hours"
+            ],
+            correctAnswer: "A private exchange where trades are executed without public visibility"
+        },
+        {
+            question: "What is 'market structure' in price action analysis?",
+            options: [
+                "The physical building where trading occurs",
+                "The pattern of higher highs/higher lows or lower highs/lower lows that define trends",
+                "The organizational structure of an exchange",
+                "The relationship between different market indices"
+            ],
+            correctAnswer: "The pattern of higher highs/higher lows or lower highs/lower lows that define trends"
+        },
+        {
+            question: "What is a 'stop hunt' in price action trading?",
+            options: [
+                "A search for the best place to put a stop loss",
+                "A deliberate price movement to trigger clustered stop losses before reversing",
+                "A trading strategy used by beginners",
+                "A tool to find stopped orders"
+            ],
+            correctAnswer: "A deliberate price movement to trigger clustered stop losses before reversing"
+        },
+        {
+            question: "What is 'smart money' in trading?",
+            options: [
+                "Money earned through intelligent trading decisions",
+                "Institutional traders and large players who can influence market direction",
+                "A type of cryptocurrency",
+                "Money used only for low-risk trades"
+            ],
+            correctAnswer: "Institutional traders and large players who can influence market direction"
+        },
+        {
+            question: "What is an 'order block' in price action trading?",
+            options: [
+                "A technical issue preventing order placement",
+                "A significant price area where large orders were previously filled, often acting as support/resistance",
+                "A limit on the number of orders a trader can place",
+                "A block of time when orders are processed"
+            ],
+            correctAnswer: "A significant price area where large orders were previously filled, often acting as support/resistance"
+        },
+        {
+            question: "What is 'market profile' in advanced price action analysis?",
+            options: [
+                "A trader's biography and experience",
+                "A distribution chart showing time spent at each price level, forming a profile of market activity",
+                "A profile created by market regulators",
+                "A summary of a stock's fundamentals"
+            ],
+            correctAnswer: "A distribution chart showing time spent at each price level, forming a profile of market activity"
+        },
+        {
+            question: "What is a 'fair value gap' in price action?",
+            options: [
+                "The difference between a stock's price and its intrinsic value",
+                "An unfilled price area created by a strong imbalance between buyers and sellers",
+                "The gap between bid and ask prices",
+                "The difference between market open and close prices"
+            ],
+            correctAnswer: "An unfilled price area created by a strong imbalance between buyers and sellers"
+        },
+        {
+            question: "What is 'volume profile' in price action trading?",
+            options: [
+                "A trader's history of trading volume",
+                "A histogram showing the amount of volume traded at each price level",
+                "The profile of a volume indicator",
+                "A measurement of market volatility"
+            ],
+            correctAnswer: "A histogram showing the amount of volume traded at each price level"
         }
     ];
     
