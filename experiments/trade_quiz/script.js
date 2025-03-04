@@ -152,8 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let userPerformance = [];
     let currentQuestion = null;
     let consecutiveCorrectAnswers = 0;
-    let timerInterval = null;
-    let timeLeft = 45;
     
     // Track all previously asked questions to prevent repetition - now using localStorage
     let askedQuestions = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
@@ -221,8 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // Start fresh
             currentLevel = 0;
             questionsCompletedInLevel = 0;
-        currentQuestionIndex = 0;
-        score = 0;
+            currentQuestionIndex = 0;
+            score = 0;
         }
         
         missedQuestions = [];
@@ -659,15 +657,9 @@ document.addEventListener('DOMContentLoaded', () => {
         questionData.options.forEach((option, index) => {
             const button = document.createElement('button');
             button.textContent = option;
-            button.classList.add(
-                'w-full', 'text-left', 'p-4', 'rounded-2xl', 
-                'transition-colors', 'duration-200', 
-                'border', 'border-gray-200', 'dark:border-gray-700',
-                'bg-white/10', 'dark:bg-gray-800/10',
-                'text-gray-900', 'dark:text-white',
-                'hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20',
-                'focus:outline-none', 'focus:ring-2', 'focus:ring-purple-500'
-            );
+            button.classList.add('w-full', 'text-left', 'p-4', 'rounded-2xl', 
+                'transition', 'duration-300', 'border', 
+                'focus:outline-none', 'focus:ring-2', 'focus:ring-blue-500', 'option-btn', 'dark-mode');
             
             button.addEventListener('click', () => checkAnswer(index));
             optionsContainer.appendChild(button);
@@ -675,96 +667,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         feedbackContainer.classList.add('hidden');
         quizContainer.classList.add('fade-in');
-
-        // Start timer for first 3 questions
-        if (currentQuestionIndex < 3) {
-            startTimer();
-        } else {
-            // Hide timer for other questions
-            document.getElementById('timer').parentElement.classList.add('hidden');
-        }
     }
 
-    // Start the timer
-    function startTimer() {
-        // Reset and show timer
-        timeLeft = 45;
-        const timerElement = document.getElementById('timer');
-        timerElement.parentElement.classList.remove('hidden');
-        timerElement.textContent = timeLeft + 's';
-        timerElement.classList.remove('text-red-500');
-
-        // Clear any existing timer
-        if (timerInterval) {
-            clearInterval(timerInterval);
-        }
-
-        // Start new timer
-        timerInterval = setInterval(() => {
-            timeLeft--;
-            timerElement.textContent = timeLeft + 's';
-
-            // Warning when 10 seconds or less remain
-            if (timeLeft <= 10) {
-                timerElement.classList.add('text-red-500');
-            }
-
-            // Time's up
-            if (timeLeft <= 0) {
-                clearInterval(timerInterval);
-                handleTimeUp();
-            }
-        }, 1000);
-    }
-
-    // Handle when time runs out
-    function handleTimeUp() {
-        // Disable all option buttons
-        const optionButtons = optionsContainer.querySelectorAll('button');
-        optionButtons.forEach(button => {
-            button.disabled = true;
-            button.classList.add('pointer-events-none');
-        });
-
-        // Show correct answer in green
-        optionButtons[currentQuestion.correctAnswer].classList.remove('hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20', 'text-gray-900', 'dark:text-white', 'bg-white/10', 'dark:bg-gray-800/10');
-        optionButtons[currentQuestion.correctAnswer].classList.add('bg-green-500/90', 'dark:bg-green-600/90', 'text-white');
-
-        // Add explanation
-        const explanationDiv = document.createElement('div');
-        explanationDiv.className = 'mt-6 p-4 rounded-lg bg-white/10 dark:bg-gray-800/10 border border-gray-200 dark:border-gray-700';
-        explanationDiv.innerHTML = `
-            <p class="text-base text-gray-900 dark:text-white">Time's up! The correct answer was: ${currentQuestion.options[currentQuestion.correctAnswer]}</p>
-            <p class="text-base text-gray-900 dark:text-white mt-2">${currentQuestion.explanation}</p>
-            <div class="text-center mt-4">
-                <button id="next-question-btn" class="secondary-btn dark-mode py-2 px-6 bg-purple-600/90 hover:bg-purple-700/90 dark:bg-purple-500/90 dark:hover:bg-purple-600/90 text-white rounded-lg transition-colors duration-200">
-                    Next Question
-                </button>
-            </div>
-        `;
-        optionsContainer.appendChild(explanationDiv);
-
-        // Add event listener to next question button
-        setTimeout(() => {
-            const nextQuestionBtn = document.getElementById('next-question-btn');
-            if (nextQuestionBtn) {
-                nextQuestionBtn.addEventListener('click', () => {
-                    currentQuestionIndex++;
-                    currentQuestionElement.textContent = currentQuestionIndex + 1;
-                    getNextQuestion();
-                });
-            }
-        }, 100);
-    }
-
-    // Modify checkAnswer to clear timer when answer is selected
+    // Check if the selected answer is correct
     function checkAnswer(selectedIndex) {
-        // Clear timer if it's running
-        if (timerInterval) {
-            clearInterval(timerInterval);
-            timerInterval = null;
-        }
-
         const isCorrect = selectedIndex === currentQuestion.correctAnswer;
         
         // Track user performance
@@ -778,52 +684,55 @@ document.addEventListener('DOMContentLoaded', () => {
             consecutiveCorrectAnswers = 0;
         }
         
-        // Disable all option buttons and remove hover effects
+        // Disable all option buttons
         const optionButtons = optionsContainer.querySelectorAll('button');
         optionButtons.forEach(button => {
             button.disabled = true;
-            button.classList.add('pointer-events-none');
         });
         
         if (isCorrect) {
             score++;
             scoreElement.textContent = score;
+            optionButtons[selectedIndex].style.borderColor = LEVELS[currentLevel].theme.primary;
+            optionButtons[selectedIndex].style.borderWidth = '2px';
             
-            // Add green background to correct answer with proper dark mode support
-            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20', 'text-gray-900', 'dark:text-white', 'bg-white/10', 'dark:bg-gray-800/10');
-            optionButtons[selectedIndex].classList.add('bg-green-500/90', 'dark:bg-green-600/90', 'text-white');
+            feedbackContainer.classList.remove('hidden', 'feedback-incorrect');
+            feedbackContainer.classList.add('feedback-correct');
             
             // Check for level progression
             checkLevelProgression();
             
             if (questionsCompletedInLevel < LEVELS[currentLevel].questionsRequired) {
-            setTimeout(() => {
-                currentQuestionIndex++;
-                currentQuestionElement.textContent = currentQuestionIndex + 1;
-                getNextQuestion();
-                }, 1500);
+                feedbackText.textContent = "Correct! Well done.";
+                // Move to the next question after a delay for correct answers
+                setTimeout(() => {
+                    currentQuestionIndex++;
+                    currentQuestionElement.textContent = currentQuestionIndex + 1;
+                    getNextQuestion();
+                }, 2000);
             }
         } else {
-            // Add red background to wrong answer
-            optionButtons[selectedIndex].classList.remove('hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20', 'text-gray-900', 'dark:text-white', 'bg-white/10', 'dark:bg-gray-800/10');
-            optionButtons[selectedIndex].classList.add('bg-red-500/90', 'dark:bg-red-600/90', 'text-white');
+            optionButtons[selectedIndex].style.borderColor = LEVELS[currentLevel].theme.accent;
+            optionButtons[selectedIndex].style.borderWidth = '2px';
+            optionButtons[currentQuestion.correctAnswer].style.borderColor = LEVELS[currentLevel].theme.primary;
+            optionButtons[currentQuestion.correctAnswer].style.borderWidth = '2px';
             
-            // Add green background to correct answer
-            optionButtons[currentQuestion.correctAnswer].classList.remove('hover:bg-gray-100/20', 'dark:hover:bg-gray-700/20', 'text-gray-900', 'dark:text-white', 'bg-white/10', 'dark:bg-gray-800/10');
-            optionButtons[currentQuestion.correctAnswer].classList.add('bg-green-500/90', 'dark:bg-green-600/90', 'text-white');
+            feedbackContainer.classList.remove('hidden', 'feedback-correct');
+            feedbackContainer.classList.add('feedback-incorrect');
             
-            // Add explanation below the options with proper dark mode support
-            const explanationDiv = document.createElement('div');
-            explanationDiv.className = 'mt-6 p-4 rounded-lg bg-white/10 dark:bg-gray-800/10 border border-gray-200 dark:border-gray-700';
-            explanationDiv.innerHTML = `
-                <p class="text-base text-gray-900 dark:text-white">${currentQuestion.explanation}</p>
-                <div class="text-center mt-4">
-                    <button id="next-question-btn" class="secondary-btn dark-mode py-2 px-6 bg-purple-600/90 hover:bg-purple-700/90 dark:bg-purple-500/90 dark:hover:bg-purple-600/90 text-white rounded-lg transition-colors duration-200">
+            // Create a container for the explanation and next button
+            const explanationHTML = `
+                <div>
+                    <p class="mb-4 text-lg">${currentQuestion.explanation}</p>
+                    <div class="text-center mt-6">
+                        <button id="next-question-btn" class="secondary-btn dark-mode py-3 px-8 transition duration-300">
                             Next Question
                         </button>
+                    </div>
                 </div>
             `;
-            optionsContainer.appendChild(explanationDiv);
+            
+            feedbackText.innerHTML = `<strong class="text-xl block mb-3">Incorrect</strong> ${explanationHTML}`;
             
             // Add event listener to the next question button
             setTimeout(() => {
@@ -840,6 +749,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Add this question to missed questions for later review
             missedQuestions.push(currentQuestion);
         }
+        
+        feedbackContainer.classList.add('fade-in');
+        
     }
 
     // Show/hide loading spinner
