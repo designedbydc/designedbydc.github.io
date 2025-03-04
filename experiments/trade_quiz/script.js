@@ -805,7 +805,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentQuestionIndex++;
         
         // Save state
-        saveQuizState();
+        window.saveQuizState();
         
         // Update best score
         updateBestScore();
@@ -926,8 +926,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Save quiz state for resuming later
+    window.saveQuizState = function() {
+        const quizState = {
+            currentLevel,
+            questionsCompletedInLevel,
+            currentQuestionIndex,
+            score
+        };
+        localStorage.setItem('lastQuizState', JSON.stringify(quizState));
+    };
+
     // Check for saved quiz state and show resume option
     function checkForResumeState() {
+        const resumeQuizContainer = document.getElementById('resume-quiz-container');
+        const resumeLevel = document.getElementById('resume-level');
+        const resumeScore = document.getElementById('resume-score');
+        
+        if (!resumeQuizContainer || !resumeLevel || !resumeScore) {
+            console.error('Resume quiz elements not found in the DOM');
+            return;
+        }
+        
         if (lastQuizState) {
             const level = LEVELS[lastQuizState.currentLevel];
             const traderName = localStorage.getItem('traderName') || 'Trader';
