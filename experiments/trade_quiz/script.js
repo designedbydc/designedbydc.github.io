@@ -808,7 +808,7 @@ document.addEventListener('DOMContentLoaded', () => {
         window.saveQuizState();
         
         // Update best score
-        updateBestScore();
+        window.updateBestScore();
         
         // Check level progression
         if (checkLevelProgression()) {
@@ -928,77 +928,123 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Save quiz state for resuming later
     window.saveQuizState = function() {
-        const quizState = {
-            currentLevel,
-            questionsCompletedInLevel,
-            currentQuestionIndex,
-            score
-        };
-        localStorage.setItem('lastQuizState', JSON.stringify(quizState));
+        try {
+            const quizState = {
+                currentLevel,
+                questionsCompletedInLevel,
+                currentQuestionIndex,
+                score
+            };
+            localStorage.setItem('lastQuizState', JSON.stringify(quizState));
+        } catch (error) {
+            console.error('Error saving quiz state:', error);
+        }
+    };
+
+    // Update best score for the current level
+    window.updateBestScore = function() {
+        try {
+            const currentLevelName = LEVELS[currentLevel].name;
+            const totalQuestions = currentQuestionIndex + 1;
+            const accuracy = Math.round((score / totalQuestions) * 100);
+            const currentDate = new Date().toLocaleDateString();
+            
+            // Check if we have a best score for this level
+            if (!bestScores[currentLevelName] || bestScores[currentLevelName].accuracy < accuracy) {
+                bestScores[currentLevelName] = {
+                    score: score,
+                    accuracy: accuracy,
+                    date: currentDate
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('bestScores', JSON.stringify(bestScores));
+            }
+        } catch (error) {
+            console.error('Error updating best score:', error);
+        }
     };
 
     // Check for saved quiz state and show resume option
     function checkForResumeState() {
-        const resumeQuizContainer = document.getElementById('resume-quiz-container');
-        const resumeLevel = document.getElementById('resume-level');
-        const resumeScore = document.getElementById('resume-score');
-        
-        if (!resumeQuizContainer || !resumeLevel || !resumeScore) {
-            console.error('Resume quiz elements not found in the DOM');
-            return;
-        }
-        
-        if (lastQuizState) {
-            const level = LEVELS[lastQuizState.currentLevel];
-            const traderName = localStorage.getItem('traderName') || 'Trader';
-            resumeLevel.textContent = `${traderName} - Level: ${level.name}`;
-            resumeScore.textContent = `Score: ${lastQuizState.score}`;
-            resumeQuizContainer.classList.remove('hidden');
+        try {
+            // Get fresh references to DOM elements
+            const resumeQuizContainer = document.getElementById('resume-quiz-container');
+            const resumeLevel = document.getElementById('resume-level');
+            const resumeScore = document.getElementById('resume-score');
             
-            // Pre-fill the name input if resuming
-            const traderNameInput = document.getElementById('trader-name');
-            if (traderNameInput) {
-                traderNameInput.value = traderName;
+            if (!resumeQuizContainer || !resumeLevel || !resumeScore) {
+                console.error('Resume quiz elements not found in the DOM');
+                return;
             }
-        } else {
-            resumeQuizContainer.classList.add('hidden');
+            
+            if (lastQuizState) {
+                const level = LEVELS[lastQuizState.currentLevel];
+                const traderName = localStorage.getItem('traderName') || 'Trader';
+                resumeLevel.textContent = `${traderName} - Level: ${level.name}`;
+                resumeScore.textContent = `Score: ${lastQuizState.score}`;
+                resumeQuizContainer.classList.remove('hidden');
+                
+                // Pre-fill the name input if resuming
+                const traderNameInput = document.getElementById('trader-name');
+                if (traderNameInput) {
+                    traderNameInput.value = traderName;
+                }
+            } else if (resumeQuizContainer) {
+                resumeQuizContainer.classList.add('hidden');
+            }
+        } catch (error) {
+            console.error('Error checking for resume state:', error);
         }
     }
 
     // Display best scores in the preview section
     function displayBestScores() {
-        if (Object.keys(bestScores).length === 0) {
-            bestScoresPreview.classList.add('hidden');
-            return;
-        }
+        try {
+            // Get fresh reference to DOM elements
+            const bestScoresPreview = document.getElementById('best-scores-preview');
+            const bestScoresList = document.getElementById('best-scores-list');
+            
+            if (!bestScoresPreview || !bestScoresList) {
+                console.error('Best scores elements not found in the DOM');
+                return;
+            }
+            
+            if (Object.keys(bestScores).length === 0) {
+                bestScoresPreview.classList.add('hidden');
+                return;
+            }
 
-        bestScoresPreview.classList.remove('hidden');
-        bestScoresList.innerHTML = '';
+            bestScoresPreview.classList.remove('hidden');
+            bestScoresList.innerHTML = '';
 
-        // Sort levels by their order in LEVELS array
-        const sortedLevels = Object.keys(bestScores).sort((a, b) => {
-            const indexA = LEVELS.findIndex(level => level.name === a);
-            const indexB = LEVELS.findIndex(level => level.name === b);
-            return indexA - indexB;
-        });
+            // Sort levels by their order in LEVELS array
+            const sortedLevels = Object.keys(bestScores).sort((a, b) => {
+                const indexA = LEVELS.findIndex(level => level.name === a);
+                const indexB = LEVELS.findIndex(level => level.name === b);
+                return indexA - indexB;
+            });
 
-        // Display top 4 best scores
-        sortedLevels.slice(0, 4).forEach(levelName => {
-            const score = bestScores[levelName];
-            const scoreElement = document.createElement('div');
-            scoreElement.className = 'flex justify-between items-center text-gray-600 dark:text-gray-400';
-            scoreElement.innerHTML = `
-                <span>${levelName}:</span>
-                <span class="font-medium">${score.accuracy}%</span>
-            `;
-            bestScoresList.appendChild(scoreElement);
-        });
+            // Display top 4 best scores
+            sortedLevels.slice(0, 4).forEach(levelName => {
+                const score = bestScores[levelName];
+                const scoreElement = document.createElement('div');
+                scoreElement.className = 'flex justify-between items-center text-gray-600 dark:text-gray-400';
+                scoreElement.innerHTML = `
+                    <span>${levelName}:</span>
+                    <span class="font-medium">${score.accuracy}%</span>
+                `;
+                bestScoresList.appendChild(scoreElement);
+            });
 
-        if (sortedLevels.length > 4) {
-            const moreElement = document.createElement('div');
-            moreElement.className = 'text-center text-gray-500 dark:text-gray-400 mt-2';
-            moreElement.textContent = `+${sortedLevels.length - 4} more levels`;
-            bestScoresList.appendChild(moreElement);
+            if (sortedLevels.length > 4) {
+                const moreElement = document.createElement('div');
+                moreElement.className = 'text-center text-gray-500 dark:text-gray-400 mt-2';
+                moreElement.textContent = `+${sortedLevels.length - 4} more levels`;
+                bestScoresList.appendChild(moreElement);
+            }
+        } catch (error) {
+            console.error('Error displaying best scores:', error);
         }
     }
 
