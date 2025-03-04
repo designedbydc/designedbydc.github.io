@@ -367,6 +367,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Hide quiz container
         quizContainer.classList.add('hidden');
         
+        // Remove any existing level complete message first
+        const existingLevelComplete = document.querySelector('.level-complete');
+        if (existingLevelComplete) {
+            existingLevelComplete.remove();
+        }
+        
         // Create level complete message
         const levelCompleteContainer = document.createElement('div');
         levelCompleteContainer.className = 'level-complete text-center py-8';
@@ -384,9 +390,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 <h4 class="text-xl font-semibold mb-3">Next Level: ${nextLevel.name} ${nextLevel.badge}</h4>
                 <p class="text-gray-600">${nextLevel.description}</p>
             </div>
-            <div class="flex flex-col sm:flex-row justify-center gap-4">
+            <div class="flex justify-center">
                 <button id="continue-btn" class="secondary-btn py-3 px-8">Continue Journey</button>
-                <button id="view-progress-btn" class="secondary-btn py-3 px-8">View Progress</button>
             </div>
         `;
         
@@ -402,21 +407,33 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update timeline to show new progress
         updateTimeline(currentLevel, questionsCompletedInLevel);
         
-        // Add event listeners for buttons
-        document.getElementById('continue-btn').addEventListener('click', () => {
-            // Remove level complete message
-            levelCompleteContainer.remove();
-            
-            // Show quiz container
-            quizContainer.classList.remove('hidden');
-            
-            // Get next question
-            getNextQuestion();
-        });
-        
-        document.getElementById('view-progress-btn').addEventListener('click', () => {
-            showProgressSummary();
-        });
+        // Add event listener for continue button with a slight delay to ensure DOM is ready
+        setTimeout(() => {
+            const continueBtn = document.getElementById('continue-btn');
+            if (continueBtn) {
+                // Remove any existing event listeners first
+                const newContinueBtn = continueBtn.cloneNode(true);
+                continueBtn.parentNode.replaceChild(newContinueBtn, continueBtn);
+                
+                // Add the event listener to the new button
+                newContinueBtn.addEventListener('click', () => {
+                    console.log('Continue button clicked');
+                    // Remove level complete message
+                    const levelCompleteToRemove = document.querySelector('.level-complete');
+                    if (levelCompleteToRemove) {
+                        levelCompleteToRemove.remove();
+                    }
+                    
+                    // Show quiz container
+                    quizContainer.classList.remove('hidden');
+                    
+                    // Get next question
+                    getNextQuestion();
+                });
+            } else {
+                console.error('Continue button not found in the DOM');
+            }
+        }, 100);
     }
 
     // Confetti effect
@@ -1380,21 +1397,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear existing timeline
         timeline.innerHTML = '';
         
-        // Define level data
-        const levels = [
-            { name: "Novice", icon: "🔰", description: "Basic market concepts" },
-            { name: "Apprentice", icon: "📊", description: "Understanding stocks" },
-            { name: "Trader", icon: "��", description: "Trading strategies" },
-            { name: "Analyst", icon: "📈", description: "Technical analysis" },
-            { name: "Expert", icon: "🏆", description: "Advanced concepts" },
-            { name: "Master", icon: "🌟", description: "Market mastery" }
-        ];
-        
-        // Create timeline items
-        levels.forEach((level, index) => {
+        // Create timeline items using the LEVELS array
+        LEVELS.forEach((level, index) => {
             const levelNum = index + 1;
-            const status = levelNum < currentLevel ? 'completed' : 
-                          levelNum === currentLevel ? 'current' : 'future';
+            const status = index < currentLevel ? 'completed' : 
+                          index === currentLevel ? 'current' : 'future';
             
             const item = document.createElement('div');
             item.className = 'timeline-item';
@@ -1405,7 +1412,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 marker.innerHTML = '✓';
             } else if (status === 'current') {
                 // Show progress within current level
-                const progress = Math.min(Math.round((questionsCompletedInLevel / QUESTIONS_PER_LEVEL) * 100), 100);
+                const questionsRequired = level.questionsRequired || 3; // Default to 3 if not specified
+                const progress = Math.min(Math.round((questionsCompletedInLevel / questionsRequired) * 100), 100);
                 marker.innerHTML = `<span style="font-size: 0.7em;">${progress}%</span>`;
             } else {
                 marker.innerHTML = levelNum;
@@ -1419,7 +1427,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             const levelIcon = document.createElement('span');
             levelIcon.className = 'timeline-level-icon';
-            levelIcon.textContent = level.icon;
+            levelIcon.textContent = level.badge;
             
             const levelName = document.createElement('span');
             levelName.textContent = level.name;
