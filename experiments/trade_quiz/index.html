@@ -4,26 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Stock Market Trade Quiz</title>
+    <!-- 
+        Note: For production, replace this CDN with a proper Tailwind CSS build:
+        1. Install Tailwind via npm: npm install -D tailwindcss
+        2. Initialize config: npx tailwindcss init
+        3. Build CSS: npx tailwindcss -i ./src/input.css -o ./dist/output.css
+        See: https://tailwindcss.com/docs/installation
+    -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Flowbite CSS and JS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.2.1/flowbite.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <link rel="stylesheet" href="style.css">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3711910121540204"
-     crossorigin="anonymous"></script>
+    <script>
+        // Safely load Google Ads
+        try {
+            (function() {
+                var script = document.createElement('script');
+                script.async = true;
+                script.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3711910121540204";
+                script.crossOrigin = "anonymous";
+                script.onerror = function() {
+                    console.warn('Google Ads failed to load. This is normal in local development or when ad blockers are active.');
+                };
+                document.head.appendChild(script);
+            })();
+        } catch (error) {
+            console.warn('Error initializing ads:', error);
+        }
+    </script>
 </head>
 <body class="min-h-screen font-sans">
     <div class="container mx-auto px-4 sm:px-6 py-6 sm:py-10 max-w-3xl">
+        
+        <!-- Header Section -->
+        <header class="text-center mb-8 sm:mb-12">
+            <h1 class="text-3xl sm:text-4xl font-semibold mb-2 sm:mb-3 text-black">Stock Market Quiz</h1>
+            <p class="text-gray-500 text-base sm:text-lg mb-4 sm:mb-6">Test your knowledge of stock market trading concepts</p>
+        </header>
+
         <!-- Timeline section -->
         <div id="timeline-container" class="mt-6">
             <div class="flex items-center justify-between px-4 py-2 border-b border-gray-200">
                 <h3 class="text-lg font-semibold">Your Trading Journey</h3>
                 <div class="flex space-x-2">
-                    <button id="timeline-prev" class="timeline-nav-btn" aria-label="Previous">
+                    <button id="timeline-prev" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg p-2.5 inline-flex items-center" aria-label="Previous">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0z"/>
                         </svg>
                     </button>
-                    <button id="timeline-next" class="timeline-nav-btn" aria-label="Next">
+                    <button id="timeline-next" class="text-gray-500 bg-white hover:bg-gray-100 focus:ring-4 focus:outline-none focus:ring-gray-200 rounded-lg p-2.5 inline-flex items-center" aria-label="Next">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708z"/>
                         </svg>
@@ -36,11 +68,6 @@
                 </div>
             </div>
         </div>
-
-        <header class="text-center mb-8 sm:mb-12">
-            <h1 class="text-3xl sm:text-4xl font-semibold mb-2 sm:mb-3 text-black">Stock Market Quiz</h1>
-            <p class="text-gray-500 text-base sm:text-lg mb-4 sm:mb-6">Test your knowledge of stock market trading concepts</p>
-        </header>
 
         <!-- Start Quiz Container -->
         <div id="difficulty-container" class="theme-card p-6 sm:p-8 mb-6 sm:mb-8">
@@ -70,66 +97,69 @@
                 <div class="feature-card">
                     <div class="feature-card-icon">📊</div>
                     <h3 class="feature-card-title">Track Progress</h3>
-                    <p class="feature-card-description">Monitor your performance and see how far you've come</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-card-icon">🎓</div>
-                    <h3 class="feature-card-title">Get Certified</h3>
-                    <p class="feature-card-description">Earn shareable certificates for each completed level</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-card-icon">📱</div>
-                    <h3 class="feature-card-title">Resume Anytime</h3>
-                    <p class="feature-card-description">Your progress is saved automatically for convenience</p>
+                    <p class="feature-card-description">Follow your journey from novice to expert trader</p>
                 </div>
             </div>
         </div>
 
-        <div id="quiz-main-container" class="hidden theme-card p-6 sm:p-8 mb-6 sm:mb-8">
+        <!-- Quiz Main Container -->
+        <div id="quiz-main-container" class="hidden">
             <!-- Achievement Toast -->
-            <div id="achievement-toast" class="fixed bottom-4 right-4 hidden">
-                <div class="bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-lg shadow-lg">
-                    <div class="flex items-center">
-                        <span id="achievement-icon" class="text-2xl mr-3">🏆</span>
-                        <div>
-                            <h4 class="font-bold" id="achievement-title">Achievement Unlocked!</h4>
-                            <p class="text-sm" id="achievement-description">You've reached a new milestone!</p>
-                        </div>
+            <div id="achievement-toast" class="fixed bottom-4 right-4 hidden z-50">
+                <div id="toast-success" class="flex items-center w-full max-w-xs p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800" role="alert">
+                    <div id="achievement-icon" class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 text-green-500 bg-green-100 rounded-lg dark:bg-green-800 dark:text-green-200">
+                        🏆
                     </div>
-                    <div class="mt-3 flex space-x-2 justify-end" id="achievement-share">
-                        <button class="share-btn" data-platform="twitter">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
-                            </svg>
-                        </button>
-                        <button class="share-btn" data-platform="linkedin">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path>
-                            </svg>
-                        </button>
-                        <button class="share-btn" data-platform="whatsapp">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"></path>
-                            </svg>
-                        </button>
+                    <div class="ms-3 text-sm font-normal">
+                        <h4 class="font-bold" id="achievement-title">Achievement Unlocked!</h4>
+                        <p class="text-sm" id="achievement-description">You've reached a new milestone!</p>
                     </div>
+                </div>
+                <div id="achievement-share" class="flex space-x-2 justify-end mt-2">
+                    <button class="share-btn text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" data-platform="twitter">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84"></path>
+                        </svg>
+                        <span class="sr-only">Share on Twitter</span>
+                    </button>
+                    <button class="share-btn text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm p-2.5 text-center inline-flex items-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800" data-platform="linkedin">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"></path>
+                        </svg>
+                        <span class="sr-only">Share on LinkedIn</span>
+                    </button>
+                    <button class="share-btn text-white bg-green-700 hover:bg-green-800 focus:ring-4 focus:outline-none focus:ring-green-300 font-medium rounded-lg text-sm p-2.5 text-center inline-flex items-center dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800" data-platform="whatsapp">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"></path>
+                        </svg>
+                        <span class="sr-only">Share on WhatsApp</span>
+                    </button>
                 </div>
             </div>
             
             <!-- Progress Summary (hidden by default) -->
-            <div id="progress-summary" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                <div class="bg-white rounded-xl p-6 max-w-md mx-4">
-                    <h3 class="text-xl font-bold mb-4">Your Progress</h3>
-                    <div id="progress-stats" class="space-y-3">
-                        <!-- Stats will be inserted here -->
+            <div id="progress-summary" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div class="relative p-4 w-full max-w-md max-h-full">
+                    <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                        <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                                Your Progress
+                            </h3>
+                            <button id="close-progress" type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                                </svg>
+                                <span class="sr-only">Close modal</span>
+                            </button>
+                        </div>
+                        <div class="p-4 md:p-5">
+                            <div id="progress-stats" class="space-y-3">
+                                <!-- Stats will be inserted here -->
+                            </div>
+                            <button id="close-progress-btn" class="mt-4 w-full text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">Close</button>
+                        </div>
                     </div>
-                    <button id="close-progress" class="mt-4 w-full secondary-btn py-2">Close</button>
                 </div>
-            </div>
-
-            <!-- Level Progress Bar -->
-            <div id="level-progress" class="mb-4 relative h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div id="progress-bar" class="absolute top-0 left-0 h-full transition-all duration-500 ease-out"></div>
             </div>
 
             <div id="stats" class="flex flex-wrap sm:flex-nowrap justify-between mb-6 sm:mb-8 border-b border-gray-200 pb-4 gap-2 sm:gap-0">
@@ -148,7 +178,13 @@
             </div>
 
             <div id="loading-container" class="hidden text-center py-8 sm:py-10">
-                <div class="loader"></div>
+                <div role="status" class="flex justify-center">
+                    <svg aria-hidden="true" class="w-8 h-8 text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z" fill="currentColor"/>
+                        <path d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z" fill="currentFill"/>
+                    </svg>
+                    <span class="sr-only">Loading...</span>
+                </div>
                 <p class="text-gray-500 mt-4 text-sm sm:text-base">Generating your next question...</p>
             </div>
 
@@ -160,47 +196,59 @@
                     </div>
                 </div>
 
-                <div id="feedback-container" class="hidden mb-6 sm:mb-8 p-4 sm:p-6 rounded-2xl">
-                    <p id="feedback-text" class="text-base sm:text-lg"></p>
+                <div id="feedback-container" class="hidden mb-6 sm:mb-8">
+                    <div class="p-4 mb-4 text-sm text-blue-800 rounded-lg bg-blue-50 dark:bg-gray-800 dark:text-blue-400" role="alert">
+                        <p id="feedback-text" class="text-base sm:text-lg"></p>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div id="error-container" class="hidden bg-red-50 text-red-600 p-4 sm:p-6 rounded-2xl mb-6 sm:mb-8">
+        <div id="error-container" class="hidden p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
             <p id="error-message" class="text-sm sm:text-base"></p>
         </div>
 
         <!-- Certificate Modal -->
         <div id="certificate-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div class="bg-white rounded-xl p-6 max-w-3xl w-full mx-4 relative">
-                <button id="close-certificate" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
-                </button>
-                <div id="certificate-content" class="bg-gradient-to-r from-gray-100 to-white p-8 rounded-lg text-center border border-gray-200">
-                    <h2 class="text-4xl font-bold mb-8 text-black">Certificate of Achievement</h2>
-                    <div class="mb-8 space-y-4">
-                        <p class="text-2xl text-gray-700">This certifies that</p>
-                        <p id="certificate-trader-name" class="text-3xl font-bold text-green-600 my-4"></p>
-                        <p class="text-2xl text-gray-700">has successfully completed</p>
-                        <p id="certificate-level" class="text-3xl font-bold text-green-600 my-4"></p>
+            <div class="relative p-4 w-full max-w-4xl max-h-full">
+                <div class="relative bg-white rounded-lg shadow dark:bg-gray-700">
+                    <div class="flex items-center justify-between p-4 md:p-5 border-b rounded-t dark:border-gray-600">
+                        <h3 class="text-xl font-semibold text-gray-900 dark:text-white">
+                            Your Achievement Certificate
+                        </h3>
+                        <button id="close-certificate" type="button" class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm w-8 h-8 ms-auto inline-flex justify-center items-center dark:hover:bg-gray-600 dark:hover:text-white">
+                            <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                            </svg>
+                            <span class="sr-only">Close modal</span>
+                        </button>
                     </div>
-                    <div class="flex justify-center mb-8">
-                        <div id="certificate-badge" class="text-7xl"></div>
+                    <div class="p-4 md:p-5">
+                        <div id="certificate-content" class="bg-gradient-to-r from-gray-100 to-white p-8 rounded-lg text-center border border-gray-200">
+                            <h2 class="text-4xl font-bold mb-8 text-black">Certificate of Achievement</h2>
+                            <div class="mb-8 space-y-4">
+                                <p class="text-2xl text-gray-700">This certifies that</p>
+                                <p id="certificate-trader-name" class="text-3xl font-bold text-green-600 my-4"></p>
+                                <p class="text-2xl text-gray-700">has successfully completed</p>
+                                <p id="certificate-level" class="text-3xl font-bold text-green-600 my-4"></p>
+                            </div>
+                            <div class="flex justify-center mb-8">
+                                <div id="certificate-badge" class="text-7xl"></div>
+                            </div>
+                            <div class="text-lg text-gray-700 space-y-2">
+                                <p>Achieved on <span id="certificate-date" class="font-semibold"></span></p>
+                                <p>With an accuracy of <span id="certificate-accuracy" class="font-semibold"></span></p>
+                            </div>
+                        </div>
+                        <div class="mt-6 flex justify-center space-x-4">
+                            <button id="download-certificate" class="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
+                                Download Certificate
+                            </button>
+                            <button id="share-certificate" class="text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700">
+                                Share Certificate
+                            </button>
+                        </div>
                     </div>
-                    <div class="text-lg text-gray-700 space-y-2">
-                        <p>Achieved on <span id="certificate-date" class="font-semibold"></span></p>
-                        <p>With an accuracy of <span id="certificate-accuracy" class="font-semibold"></span></p>
-                    </div>
-                </div>
-                <div class="mt-6 flex justify-center space-x-4">
-                    <button id="download-certificate" class="secondary-btn py-2 px-4">
-                        Download Certificate
-                    </button>
-                    <button id="share-certificate" class="secondary-btn py-2 px-4">
-                        Share Certificate
-                    </button>
                 </div>
             </div>
         </div>

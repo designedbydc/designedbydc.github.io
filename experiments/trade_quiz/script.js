@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeYouTubePlayer = null;
     let activeThinkingMusicPlayer = null;
 
-    // Quiz state
+    // Initialize state variables
     let currentLevel = 0; // Index into LEVELS array
     let questionsCompletedInLevel = 0;
     let currentQuestionIndex = 0;
@@ -154,19 +154,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let userPerformance = [];
     let currentQuestion = null;
     let consecutiveCorrectAnswers = 0;
-    
-    // Track all previously asked questions to prevent repetition - now using localStorage
-    let askedQuestions = JSON.parse(localStorage.getItem('askedQuestions') || '[]');
+    let currentQuestionData = null;
+    let askedQuestions = [];
+    let earnedBadges = [];
+    let bestScores = {};
+    let lastQuizState = null;
     
     // Track retry attempts to prevent infinite loops
     let retryAttempts = 0;
     const MAX_RETRY_ATTEMPTS = 3;
     const MAX_STORED_QUESTIONS = 500;
-
-    // Track earned badges and best scores
-    let earnedBadges = JSON.parse(localStorage.getItem('earnedBadges') || '[]');
-    let bestScores = JSON.parse(localStorage.getItem('bestScores') || '{}');
-    let lastQuizState = JSON.parse(localStorage.getItem('lastQuizState') || null);
 
     // Mock questions for local testing
     const MOCK_QUESTIONS = [
@@ -205,11 +202,75 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check if we're in a local environment
     const isLocalEnvironment = window.location.hostname === 'localhost' || 
                               window.location.hostname === '127.0.0.1';
+    
+    // In-memory fallback storage when localStorage is not available
+    const memoryStorage = new Map();
+    
+    // Safe localStorage wrapper functions
+    function safeGetItem(key) {
+        try {
+            return localStorage.getItem(key);
+        } catch (error) {
+            console.warn(`Error accessing localStorage for key ${key}:`, error);
+            return memoryStorage.get(key) || null;
+        }
+    }
+
+    function safeSetItem(key, value) {
+        try {
+            localStorage.setItem(key, value);
+            return true;
+        } catch (error) {
+            console.warn(`Error setting localStorage for key ${key}:`, error);
+            return false;
+        }
+    }
+
+    // Try to load saved data from localStorage
+    try {
+        const savedAskedQuestions = safeGetItem('askedQuestions');
+        if (savedAskedQuestions) {
+            try {
+                askedQuestions = JSON.parse(savedAskedQuestions);
+            } catch (e) {
+                console.warn('Failed to parse askedQuestions from localStorage');
+            }
+        }
+        
+        const savedEarnedBadges = safeGetItem('earnedBadges');
+        if (savedEarnedBadges) {
+            try {
+                earnedBadges = JSON.parse(savedEarnedBadges);
+            } catch (e) {
+                console.warn('Failed to parse earnedBadges from localStorage');
+            }
+        }
+        
+        const savedBestScores = safeGetItem('bestScores');
+        if (savedBestScores) {
+            try {
+                bestScores = JSON.parse(savedBestScores);
+            } catch (e) {
+                console.warn('Failed to parse bestScores from localStorage');
+            }
+        }
+        
+        const savedLastQuizState = safeGetItem('lastQuizState');
+        if (savedLastQuizState) {
+            try {
+                lastQuizState = JSON.parse(savedLastQuizState);
+            } catch (e) {
+                console.warn('Failed to parse lastQuizState from localStorage');
+            }
+        }
+    } catch (error) {
+        console.warn('Error loading saved data from localStorage:', error);
+    }
 
     // Start quiz button handler
     startQuizBtn.addEventListener('click', () => {
         const traderName = document.getElementById('trader-name').value.trim() || 'Trader';
-        localStorage.setItem('traderName', traderName);
+        safeSetItem('traderName', traderName);
         
         difficultyContainer.classList.add('hidden');
         quizMainContainer.classList.remove('hidden');
@@ -314,29 +375,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Store a new question in history
     function storeAskedQuestion(question) {
-        askedQuestions.push(question);
-        
-        // Remove oldest questions if we exceed the maximum
-        if (askedQuestions.length > MAX_STORED_QUESTIONS) {
-            askedQuestions = askedQuestions.slice(-MAX_STORED_QUESTIONS);
+        try {
+            // Add to asked questions array
+            askedQuestions.push({
+                question: question.question,
+                timestamp: Date.now()
+            });
+            
+            // Limit the size of the array to prevent localStorage issues
+            if (askedQuestions.length > 100) {
+                askedQuestions = askedQuestions.slice(-100);
+            }
+            
+            // Save to localStorage
+            safeSetItem('askedQuestions', JSON.stringify(askedQuestions));
+        } catch (error) {
+            console.error('Error storing asked question:', error);
         }
-        
-        // Save to localStorage
-        localStorage.setItem('askedQuestions', JSON.stringify(askedQuestions));
     }
 
     // Update the level display
     function updateLevelDisplay() {
-        currentDifficultyElement.textContent = LEVELS[currentLevel].name;
-        
-        // Update progress bar
-        const progressBar = document.getElementById('progress-bar');
-        const progressPercentage = (questionsCompletedInLevel / LEVELS[currentLevel].questionsRequired) * 100;
-        progressBar.style.width = `${progressPercentage}%`;
-        progressBar.style.backgroundColor = LEVELS[currentLevel].theme.primary;
+        if (currentDifficultyElement) {
+            currentDifficultyElement.textContent = LEVELS[currentLevel].name;
+        }
         
         // Update timeline to reflect current level
-        initTimeline();
+        updateTimeline(currentLevel, questionsCompletedInLevel);
     }
 
     // Check if level progression is needed
@@ -481,27 +546,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show achievement toast with sharing
     function showAchievementToast(title, description, icon = '🏆') {
-        const toast = document.getElementById('achievement-toast');
-        const iconElement = document.getElementById('achievement-icon');
-        const titleElement = document.getElementById('achievement-title');
-        const descriptionElement = document.getElementById('achievement-description');
-        
-        // Set content
-        iconElement.textContent = icon;
-        titleElement.textContent = title;
-        descriptionElement.textContent = description;
-        
-        // Show toast
-        toast.classList.remove('hidden');
-        
-        // Auto hide after 5 seconds
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.5s forwards';
+        try {
+            const toast = document.getElementById('achievement-toast');
+            const iconElement = document.getElementById('achievement-icon');
+            const titleElement = document.getElementById('achievement-title');
+            const descriptionElement = document.getElementById('achievement-description');
+            
+            if (!toast || !iconElement || !titleElement || !descriptionElement) {
+                console.error('Achievement toast elements not found');
+                return;
+            }
+            
+            // Set content
+            iconElement.textContent = icon;
+            titleElement.textContent = title;
+            descriptionElement.textContent = description;
+            
+            // Show toast
+            toast.classList.remove('hidden');
+            
+            // Add share buttons event listeners
+            const shareButtons = document.querySelectorAll('.share-btn');
+            shareButtons.forEach(button => {
+                const platform = button.dataset.platform;
+                button.addEventListener('click', () => {
+                    shareAchievement(platform, `${title}: ${description}`);
+                });
+            });
+            
+            // Auto-hide after 5 seconds
             setTimeout(() => {
                 toast.classList.add('hidden');
-                toast.style.animation = '';
-            }, 500);
-        }, 5000);
+            }, 5000);
+        } catch (error) {
+            console.error('Error showing achievement toast:', error);
+        }
     }
 
     // Show progress summary
@@ -736,91 +815,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show question
     function showQuestion(questionData) {
-        // Hide loading and feedback
-        showLoading(false);
-        feedbackContainer.classList.add('hidden');
-        
-        const questionElement = document.getElementById('question');
-        const optionsContainer = document.getElementById('options-container');
-        
-        // Clear previous options
-        optionsContainer.innerHTML = '';
-        
-        // Set question text
-        questionElement.textContent = questionData.question;
-        
-        // Handle the correct answer based on the data structure
-        let correctAnswer, correctIndex;
-        
-        if (questionData.correctAnswer !== undefined) {
-            // For mock data format (correctAnswer is the index)
-            correctAnswer = questionData.options[questionData.correctAnswer];
-            correctIndex = questionData.correctAnswer;
-        } else {
-            // For API response format (first option is assumed correct)
-            correctAnswer = questionData.options[0];
-            correctIndex = 0;
-        }
-        
-        // Create a copy of all options
-        const allOptions = [...questionData.options];
-        
-        // Shuffle the options array
-        const shuffledOptions = shuffleArray(allOptions);
-        
-        // Find the new index of the correct answer after shuffling
-        const newCorrectIndex = shuffledOptions.indexOf(correctAnswer);
-        
-        // Create option buttons with shuffled order
-        shuffledOptions.forEach((option, index) => {
-            const button = document.createElement('button');
-            button.className = 'option-btn';
-            button.textContent = option;
-            button.dataset.index = index;
+        try {
+            // Store current question data
+            currentQuestionData = questionData;
             
-            // Ensure text color is visible - set explicitly
-            button.style.color = 'var(--color-black)';
-            button.style.backgroundColor = 'var(--color-white)';
+            // Display the question
+            questionElement.textContent = questionData.question;
             
-            button.addEventListener('click', () => {
-                // Remove selected class from all buttons
-                document.querySelectorAll('.option-btn').forEach(btn => {
-                    btn.classList.remove('selected');
+            // Clear previous options
+            optionsContainer.innerHTML = '';
+            
+            // Handle different data formats (mock data vs API data)
+            let allOptions = [];
+            
+            if (questionData.incorrectAnswers && Array.isArray(questionData.incorrectAnswers)) {
+                // API format with incorrectAnswers array
+                allOptions = [questionData.correctAnswer, ...questionData.incorrectAnswers];
+            } else if (questionData.options && Array.isArray(questionData.options)) {
+                // Mock data format with options array
+                allOptions = [...questionData.options];
+            } else {
+                // Fallback for unexpected data format
+                console.error('Invalid question data format:', questionData);
+                showError('Question data is in an invalid format. Please try again.');
+                return;
+            }
+            
+            // Shuffle the options
+            const shuffledOptions = shuffleArray(allOptions);
+            
+            // Store the index of the correct answer after shuffling
+            const correctAnswerIndex = shuffledOptions.indexOf(questionData.correctAnswer);
+            
+            // Create and add option buttons
+            shuffledOptions.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'w-full text-gray-900 bg-white border border-gray-300 focus:outline-none hover:bg-gray-100 focus:ring-4 focus:ring-gray-200 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-gray-800 dark:text-white dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:border-gray-600 dark:focus:ring-gray-700';
+                button.textContent = option;
+                
+                // Add event listener to check answer
+                button.addEventListener('click', () => {
+                    // Disable all buttons to prevent multiple answers
+                    const buttons = optionsContainer.querySelectorAll('button');
+                    buttons.forEach(btn => {
+                        btn.disabled = true;
+                        
+                        // Add visual feedback for correct/incorrect answers
+                        if (btn === button) {
+                            if (index === correctAnswerIndex) {
+                                btn.className = 'w-full text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800';
+                            } else {
+                                btn.className = 'w-full text-white bg-red-700 hover:bg-red-800 focus:outline-none focus:ring-4 focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-red-600 dark:hover:bg-red-700 dark:focus:ring-red-900';
+                            }
+                        } else if (index === correctAnswerIndex) {
+                            // Highlight the correct answer
+                            btn.className = 'w-full text-white bg-green-700 hover:bg-green-800 focus:outline-none focus:ring-4 focus:ring-green-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 dark:bg-green-600 dark:hover:bg-green-700 dark:focus:ring-green-800';
+                        }
+                    });
+                    
+                    // Check if the answer is correct
+                    checkAnswer(index === correctAnswerIndex);
                 });
                 
-                // Add selected class to clicked button
-                button.classList.add('selected');
-                
-                // Check if the selected option is the correct answer
-                const isCorrect = index === newCorrectIndex;
-                
-                // Provide immediate visual feedback
-                if (isCorrect) {
-                    button.style.borderColor = 'var(--color-green)';
-                    button.style.backgroundColor = 'var(--color-accent-light)';
-                } else {
-                    button.style.borderColor = 'var(--color-error)';
-                    button.style.backgroundColor = '#FFEBEE'; // Light red background
-                }
-                
-                checkAnswer(isCorrect);
+                optionsContainer.appendChild(button);
             });
             
-            optionsContainer.appendChild(button);
-        });
-        
-        // Store the correct index for reference
-        currentQuestionData = {
-            ...questionData,
-            correctIndex: newCorrectIndex,
-            shuffledOptions: shuffledOptions
-        };
-        
-        // Show question container with animation
-        quizContainer.classList.add('fade-in');
-        
-        // Update the timeline to reflect progress within the level
-        updateTimeline(currentLevel, questionsCompletedInLevel);
+            // Show the quiz container
+            showLoading(false);
+            
+        } catch (error) {
+            console.error('Error showing question:', error);
+            showError('Failed to display the question. Please try again.');
+        }
     }
     
     // Function to shuffle an array (Fisher-Yates algorithm)
@@ -835,64 +901,60 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Check answer
     function checkAnswer(isCorrect) {
-        // Track user performance for level progression
-        if (isCorrect) {
-            consecutiveCorrectAnswers++;
+        try {
+            // Show feedback
+            const feedbackContainer = document.getElementById('feedback-container');
+            const feedbackText = document.getElementById('feedback-text');
+            
+            if (!feedbackContainer || !feedbackText) {
+                console.error('Feedback elements not found');
+                return;
+            }
+            
+            feedbackContainer.classList.remove('hidden');
+            
+            // Set feedback text and style based on correctness
+            if (isCorrect) {
+                feedbackText.textContent = 'Correct! Well done!';
+                feedbackContainer.querySelector('div').className = 'p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800 dark:text-green-400';
+                
+                // Update score
+                score++;
+                scoreElement.textContent = score;
+                
+                // Increment consecutive correct answers
+                consecutiveCorrectAnswers++;
+                
+                // Update best score
+                updateBestScore();
+            } else {
+                feedbackText.textContent = 'Incorrect. The correct answer is: ' + currentQuestionData.correctAnswer;
+                feedbackContainer.querySelector('div').className = 'p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400';
+                
+                // Reset consecutive correct answers
+                consecutiveCorrectAnswers = 0;
+            }
+            
+            // Increment questions completed in this level
             questionsCompletedInLevel++;
-        } else {
-            consecutiveCorrectAnswers = 0;
-        }
-        
-        // Update progress bar
-        const progressBar = document.getElementById('progress-bar');
-        progressBar.style.width = `${(questionsCompletedInLevel / LEVELS[currentLevel].questionsRequired) * 100}%`;
-        
-        // Disable all option buttons
-        const optionButtons = document.querySelectorAll('.option-btn');
-        optionButtons.forEach(button => {
-            button.disabled = true;
             
-            // Highlight the correct answer
-            if (parseInt(button.dataset.index) === currentQuestionData.correctIndex) {
-                button.style.borderColor = 'var(--color-green)';
-                button.style.backgroundColor = 'var(--color-accent-light)';
-            }
+            // Update the current question display
+            currentQuestionElement.textContent = currentQuestionIndex + 1;
             
-            // Highlight the selected incorrect answer in red
-            if (!isCorrect && button.classList.contains('selected')) {
-                button.style.borderColor = 'var(--color-error)';
-                button.style.backgroundColor = '#FFEBEE'; // Light red background
-            }
-        });
-        
-        // Update feedback based on answer correctness
-        feedbackContainer.classList.remove('hidden', 'feedback-correct', 'feedback-incorrect');
-        feedbackContainer.classList.add(isCorrect ? 'feedback-correct' : 'feedback-incorrect');
-        
-        // Update score if correct
-        if (isCorrect) {
-            score++;
-            document.getElementById('score').textContent = score;
+            // Save quiz state
+            saveQuizState();
+            
+            // Check if we should progress to the next level
+            checkLevelProgression();
+            
+            // Get next question after a delay
+            setTimeout(() => {
+                getNextQuestion();
+            }, 2000);
+        } catch (error) {
+            console.error('Error checking answer:', error);
+            showError('An error occurred while checking your answer. Please try again.');
         }
-        
-        // Super simple approach with basic HTML and direct onclick attribute
-        feedbackText.innerHTML = `
-            <div class="flex items-center mb-2">
-                <span class="text-2xl mr-2">${isCorrect ? '✓' : '✗'}</span>
-                <span class="font-semibold">${isCorrect ? 'Correct!' : 'Incorrect'}</span>
-            </div>
-            ${!isCorrect ? `<p>The correct answer is: ${currentQuestionData.shuffledOptions[currentQuestionData.correctIndex]}</p>` : ''}
-            <p class="${!isCorrect ? 'mt-2' : ''}">${currentQuestionData.explanation || (isCorrect ? 'Great job!' : 'Better luck next time!')}</p>
-            <div class="text-center mt-6">
-                <button onclick="goToNextQuestion()" id="next-question-btn" class="mt-4 next-btn py-2 px-6 text-white font-bold">Next Question</button>
-            </div>
-        `;
-        
-        // Add animation
-        feedbackContainer.classList.add('fade-in');
-        
-        // Update the timeline to reflect progress within the level
-        updateTimeline(currentLevel, questionsCompletedInLevel);
     }
     
     // Super simple global function to go to next question
@@ -920,24 +982,54 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show/hide loading spinner
     function showLoading(show) {
-        if (show) {
-            loadingContainer.classList.remove('hidden');
-            quizContainer.classList.add('hidden');
-        } else {
-            loadingContainer.classList.add('hidden');
-            quizContainer.classList.remove('hidden');
+        try {
+            const loadingContainer = document.getElementById('loading-container');
+            const quizContainer = document.getElementById('quiz-container');
+            
+            if (!loadingContainer || !quizContainer) {
+                console.error('Loading or quiz container elements not found');
+                return;
+            }
+            
+            if (show) {
+                loadingContainer.classList.remove('hidden');
+                quizContainer.classList.add('hidden');
+            } else {
+                loadingContainer.classList.add('hidden');
+                quizContainer.classList.remove('hidden');
+            }
+        } catch (error) {
+            console.error('Error toggling loading state:', error);
         }
     }
 
     // Show error message
     function showError(message) {
-        errorMessage.textContent = message;
-        errorContainer.classList.remove('hidden');
-        
-        // Hide error after 5 seconds
-        setTimeout(() => {
-            errorContainer.classList.add('hidden');
-        }, 5000);
+        try {
+            const errorContainer = document.getElementById('error-container');
+            const errorMessage = document.getElementById('error-message');
+            
+            if (!errorContainer || !errorMessage) {
+                console.error('Error container elements not found');
+                return;
+            }
+            
+            // Set error message
+            errorMessage.textContent = message;
+            
+            // Show error container
+            errorContainer.classList.remove('hidden');
+            
+            // Hide loading indicator
+            showLoading(false);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                errorContainer.classList.add('hidden');
+            }, 5000);
+        } catch (error) {
+            console.error('Error showing error message:', error);
+        }
     }
 
     // Initialize timeline display (replacing badges)
@@ -963,24 +1055,19 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Determine the status class
             let statusClass = '';
-            let statusIcon = '';
             
             if (isCompleted) {
                 statusClass = 'completed';
-                statusIcon = '✓';
             } else if (isCurrent) {
                 statusClass = 'current';
-                statusIcon = '';
             } else {
                 statusClass = 'future';
-                statusIcon = '';
             }
             
             timelineItem.innerHTML = `
-                <div class="timeline-marker ${statusClass}">${statusIcon}</div>
+                <div class="timeline-marker ${statusClass}">${level.badge}</div>
                 <div class="timeline-content">
                     <div class="timeline-level ${statusClass}">
-                        <span class="timeline-level-icon">${level.badge}</span>
                         <span>${level.name}</span>
                     </div>
                     <div class="timeline-description">
@@ -1071,7 +1158,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 currentQuestionIndex,
                 score
             };
-            localStorage.setItem('lastQuizState', JSON.stringify(quizState));
+            
+            safeSetItem('quizState', JSON.stringify(quizState));
+            lastQuizState = quizState;
         } catch (error) {
             console.error('Error saving quiz state:', error);
         }
@@ -1094,7 +1183,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 
                 // Save to localStorage
-                localStorage.setItem('bestScores', JSON.stringify(bestScores));
+                safeSetItem('bestScores', JSON.stringify(bestScores));
             }
         } catch (error) {
             console.error('Error updating best score:', error);
@@ -1104,30 +1193,94 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check for saved quiz state and show resume option
     function checkForResumeState() {
         try {
-            // Get fresh references to DOM elements
-            const resumeQuizContainer = document.getElementById('resume-quiz-container');
-            const resumeLevel = document.getElementById('resume-level');
-            const resumeScore = document.getElementById('resume-score');
-            
-            if (!resumeQuizContainer || !resumeLevel || !resumeScore) {
-                console.error('Resume quiz elements not found in the DOM');
+            // Check if we have a saved quiz state
+            const savedState = safeGetItem('quizState');
+            if (!savedState) {
                 return;
             }
             
-            if (lastQuizState) {
+            try {
+                // Parse the saved state
+                lastQuizState = JSON.parse(savedState);
+                if (!lastQuizState || typeof lastQuizState !== 'object') {
+                    console.warn('Invalid quiz state format:', lastQuizState);
+                    return;
+                }
+            } catch (parseError) {
+                console.error('Error parsing saved quiz state:', parseError);
+                return;
+            }
+            
+            // Get fresh references to DOM elements
+            const difficultyContainer = document.getElementById('difficulty-container');
+            if (!difficultyContainer) {
+                console.warn('Difficulty container not found, cannot add resume option');
+                return; // No container to add to
+            }
+            
+            // Check if resume container already exists
+            let resumeQuizContainer = document.getElementById('resume-quiz-container');
+            
+            // If the resume container doesn't exist, we'll add it dynamically
+            if (!resumeQuizContainer) {
+                // Create resume section
+                const resumeSection = document.createElement('div');
+                resumeSection.id = 'resume-quiz-container';
+                resumeSection.className = 'mb-8 p-4 border border-green-200 bg-green-50 rounded-lg';
+                
                 const level = LEVELS[lastQuizState.currentLevel];
-                const traderName = localStorage.getItem('traderName') || 'Trader';
-                resumeLevel.textContent = `${traderName} - Level: ${level.name}`;
-                resumeScore.textContent = `Score: ${lastQuizState.score}`;
-                resumeQuizContainer.classList.remove('hidden');
+                if (!level) {
+                    console.warn('Invalid level in saved state:', lastQuizState.currentLevel);
+                    return;
+                }
+                
+                const traderName = safeGetItem('traderName') || 'Trader';
+                
+                resumeSection.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-2">Resume Your Quiz</h3>
+                    <p id="resume-level" class="mb-1">${traderName} - Level: ${level.name}</p>
+                    <p id="resume-score" class="mb-3">Score: ${lastQuizState.score}</p>
+                    <button id="resume-quiz-btn" class="secondary-btn py-2 px-4 w-full">Resume Previous Quiz</button>
+                `;
+                
+                // Insert at the beginning of the difficulty container
+                difficultyContainer.insertBefore(resumeSection, difficultyContainer.firstChild);
+                
+                // Add event listener for the resume button
+                document.getElementById('resume-quiz-btn').addEventListener('click', () => {
+                    difficultyContainer.classList.add('hidden');
+                    quizMainContainer.classList.remove('hidden');
+                    
+                    // Initialize quiz with resume state
+                    initQuiz(true);
+                    
+                    // Get next question
+                    getNextQuestion();
+                });
                 
                 // Pre-fill the name input if resuming
                 const traderNameInput = document.getElementById('trader-name');
                 if (traderNameInput) {
                     traderNameInput.value = traderName;
                 }
-            } else if (resumeQuizContainer) {
-                resumeQuizContainer.classList.add('hidden');
+            } else {
+                // If the container exists, update it
+                const resumeLevel = document.getElementById('resume-level');
+                const resumeScore = document.getElementById('resume-score');
+                
+                if (resumeLevel && resumeScore) {
+                    const level = LEVELS[lastQuizState.currentLevel];
+                    const traderName = safeGetItem('traderName') || 'Trader';
+                    resumeLevel.textContent = `${traderName} - Level: ${level.name}`;
+                    resumeScore.textContent = `Score: ${lastQuizState.score}`;
+                    resumeQuizContainer.classList.remove('hidden');
+                    
+                    // Pre-fill the name input if resuming
+                    const traderNameInput = document.getElementById('trader-name');
+                    if (traderNameInput) {
+                        traderNameInput.value = traderName;
+                    }
+                }
             }
         } catch (error) {
             console.error('Error checking for resume state:', error);
@@ -1137,47 +1290,116 @@ document.addEventListener('DOMContentLoaded', () => {
     // Display best scores in the preview section
     function displayBestScores() {
         try {
+            // If no best scores, nothing to display
+            if (Object.keys(bestScores).length === 0) {
+                return;
+            }
+            
             // Get fresh reference to DOM elements
             const bestScoresPreview = document.getElementById('best-scores-preview');
-            const bestScoresList = document.getElementById('best-scores-list');
             
-            if (!bestScoresPreview || !bestScoresList) {
-                console.error('Best scores elements not found in the DOM');
-                return;
-            }
-            
-            if (Object.keys(bestScores).length === 0) {
-                bestScoresPreview.classList.add('hidden');
-                return;
-            }
-
-            bestScoresPreview.classList.remove('hidden');
-            bestScoresList.innerHTML = '';
-
-            // Sort levels by their order in LEVELS array
-            const sortedLevels = Object.keys(bestScores).sort((a, b) => {
-                const indexA = LEVELS.findIndex(level => level.name === a);
-                const indexB = LEVELS.findIndex(level => level.name === b);
-                return indexA - indexB;
-            });
-
-            // Display top 4 best scores
-            sortedLevels.slice(0, 4).forEach(levelName => {
-                const score = bestScores[levelName];
-                const scoreElement = document.createElement('div');
-                scoreElement.className = 'flex justify-between items-center text-gray-600 dark:text-gray-400';
-                scoreElement.innerHTML = `
-                    <span>${levelName}:</span>
-                    <span class="font-medium">${score.accuracy}%</span>
+            // If the best scores preview doesn't exist, we'll add it dynamically
+            if (!bestScoresPreview) {
+                // We'll check if the difficulty container exists to add the best scores
+                const difficultyContainer = document.getElementById('difficulty-container');
+                if (!difficultyContainer) {
+                    return; // No container to add to
+                }
+                
+                // Create best scores section
+                const bestScoresSection = document.createElement('div');
+                bestScoresSection.id = 'best-scores-preview';
+                bestScoresSection.className = 'mt-8 p-4 border border-blue-200 bg-blue-50 rounded-lg';
+                
+                bestScoresSection.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-3">Your Best Scores</h3>
+                    <div id="best-scores-list" class="space-y-2">
+                        <!-- Best scores will be inserted here -->
+                    </div>
                 `;
-                bestScoresList.appendChild(scoreElement);
-            });
-
-            if (sortedLevels.length > 4) {
-                const moreElement = document.createElement('div');
-                moreElement.className = 'text-center text-gray-500 dark:text-gray-400 mt-2';
-                moreElement.textContent = `+${sortedLevels.length - 4} more levels`;
-                bestScoresList.appendChild(moreElement);
+                
+                // Insert before the feature cards
+                const featureCards = difficultyContainer.querySelector('.grid');
+                if (featureCards) {
+                    difficultyContainer.insertBefore(bestScoresSection, featureCards);
+                } else {
+                    difficultyContainer.appendChild(bestScoresSection);
+                }
+                
+                // Now populate the best scores
+                const bestScoresList = document.getElementById('best-scores-list');
+                if (bestScoresList) {
+                    // Sort levels by their order in LEVELS array
+                    const sortedLevels = Object.keys(bestScores).sort((a, b) => {
+                        const indexA = LEVELS.findIndex(level => level.name === a);
+                        const indexB = LEVELS.findIndex(level => level.name === b);
+                        return indexA - indexB;
+                    });
+                    
+                    // Display top 4 best scores
+                    const topScores = sortedLevels.slice(0, 4);
+                    
+                    topScores.forEach(levelName => {
+                        const score = bestScores[levelName];
+                        const levelIndex = LEVELS.findIndex(level => level.name === levelName);
+                        const levelBadge = levelIndex >= 0 ? LEVELS[levelIndex].badge : '🏆';
+                        
+                        const scoreItem = document.createElement('div');
+                        scoreItem.className = 'flex items-center justify-between';
+                        scoreItem.innerHTML = `
+                            <div class="flex items-center">
+                                <span class="text-xl mr-2">${levelBadge}</span>
+                                <span class="font-medium">${levelName}</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-semibold">${score.accuracy}%</div>
+                                <div class="text-xs text-gray-500">${score.date}</div>
+                            </div>
+                        `;
+                        
+                        bestScoresList.appendChild(scoreItem);
+                    });
+                }
+            } else {
+                // If the container exists, update it
+                const bestScoresList = document.getElementById('best-scores-list');
+                
+                if (bestScoresList) {
+                    bestScoresList.innerHTML = '';
+                    
+                    // Sort levels by their order in LEVELS array
+                    const sortedLevels = Object.keys(bestScores).sort((a, b) => {
+                        const indexA = LEVELS.findIndex(level => level.name === a);
+                        const indexB = LEVELS.findIndex(level => level.name === b);
+                        return indexA - indexB;
+                    });
+                    
+                    // Display top 4 best scores
+                    const topScores = sortedLevels.slice(0, 4);
+                    
+                    topScores.forEach(levelName => {
+                        const score = bestScores[levelName];
+                        const levelIndex = LEVELS.findIndex(level => level.name === levelName);
+                        const levelBadge = levelIndex >= 0 ? LEVELS[levelIndex].badge : '🏆';
+                        
+                        const scoreItem = document.createElement('div');
+                        scoreItem.className = 'flex items-center justify-between';
+                        scoreItem.innerHTML = `
+                            <div class="flex items-center">
+                                <span class="text-xl mr-2">${levelBadge}</span>
+                                <span class="font-medium">${levelName}</span>
+                            </div>
+                            <div class="text-right">
+                                <div class="font-semibold">${score.accuracy}%</div>
+                                <div class="text-xs text-gray-500">${score.date}</div>
+                            </div>
+                        `;
+                        
+                        bestScoresList.appendChild(scoreItem);
+                    });
+                    
+                    bestScoresPreview.classList.remove('hidden');
+                }
             }
         } catch (error) {
             console.error('Error displaying best scores:', error);
@@ -1337,133 +1559,166 @@ document.addEventListener('DOMContentLoaded', () => {
      * Initialize the timeline navigation
      */
     function initTimelineNavigation() {
-        const timeline = document.getElementById('timeline');
-        const prevBtn = document.getElementById('timeline-prev');
-        const nextBtn = document.getElementById('timeline-next');
-        const scrollContainer = document.querySelector('.timeline-scroll-container');
-        
-        if (!timeline || !prevBtn || !nextBtn || !scrollContainer) {
-            console.error('Timeline navigation elements not found');
-            return;
-        }
-        
-        let scrollPosition = 0;
-        const scrollStep = 300; // pixels to scroll each time
-        
-        // Initial button state
-        updateNavButtons();
-        
-        // Add event listeners to the buttons
-        prevBtn.addEventListener('click', () => {
-            scrollPosition = Math.max(scrollPosition - scrollStep, 0);
-            timeline.style.transform = `translateX(-${scrollPosition}px)`;
-            updateNavButtons();
-        });
-        
-        nextBtn.addEventListener('click', () => {
-            const maxScroll = timeline.scrollWidth - scrollContainer.clientWidth;
-            scrollPosition = Math.min(scrollPosition + scrollStep, maxScroll);
-            timeline.style.transform = `translateX(-${scrollPosition}px)`;
-            updateNavButtons();
-        });
-        
-        // Update button states based on scroll position
-        function updateNavButtons() {
-            prevBtn.disabled = scrollPosition <= 0;
-            nextBtn.disabled = scrollPosition >= timeline.scrollWidth - scrollContainer.clientWidth;
+        try {
+            const timeline = document.getElementById('timeline');
+            const timelineContainer = document.querySelector('.timeline-scroll-container');
+            const prevButton = document.getElementById('timeline-prev');
+            const nextButton = document.getElementById('timeline-next');
             
-            // Visual feedback for disabled state
-            prevBtn.style.opacity = prevBtn.disabled ? '0.5' : '1';
-            nextBtn.style.opacity = nextBtn.disabled ? '0.5' : '1';
-        }
-        
-        // Handle window resize
-        window.addEventListener('resize', () => {
-            // Reset position if we're scrolled too far after resize
-            const maxScroll = timeline.scrollWidth - scrollContainer.clientWidth;
-            if (scrollPosition > maxScroll) {
-                scrollPosition = maxScroll > 0 ? maxScroll : 0;
-                timeline.style.transform = `translateX(-${scrollPosition}px)`;
+            if (!timeline || !timelineContainer || !prevButton || !nextButton) {
+                console.error('Timeline navigation elements not found');
+                return;
             }
+            
+            // Scroll to the current level
+            const currentItem = timeline.querySelector('.timeline-marker.current');
+            if (currentItem) {
+                const itemRect = currentItem.getBoundingClientRect();
+                const containerRect = timelineContainer.getBoundingClientRect();
+                const scrollLeft = itemRect.left - containerRect.left - (containerRect.width / 2) + (itemRect.width / 2);
+                
+                timelineContainer.scrollLeft = scrollLeft;
+            }
+            
+            // Update navigation buttons
             updateNavButtons();
-        });
+            
+            // Add event listeners for navigation buttons
+            prevButton.addEventListener('click', () => {
+                timelineContainer.scrollBy({
+                    left: -200,
+                    behavior: 'smooth'
+                });
+                setTimeout(updateNavButtons, 300);
+            });
+            
+            nextButton.addEventListener('click', () => {
+                timelineContainer.scrollBy({
+                    left: 200,
+                    behavior: 'smooth'
+                });
+                setTimeout(updateNavButtons, 300);
+            });
+            
+            // Add scroll event listener to update buttons
+            timelineContainer.addEventListener('scroll', updateNavButtons);
+            
+            function updateNavButtons() {
+                const scrollLeft = timelineContainer.scrollLeft;
+                const maxScrollLeft = timelineContainer.scrollWidth - timelineContainer.clientWidth;
+                
+                prevButton.disabled = scrollLeft <= 0;
+                nextButton.disabled = scrollLeft >= maxScrollLeft;
+                
+                prevButton.classList.toggle('opacity-50', scrollLeft <= 0);
+                nextButton.classList.toggle('opacity-50', scrollLeft >= maxScrollLeft);
+            }
+        } catch (error) {
+            console.error('Error initializing timeline navigation:', error);
+        }
     }
 
     // Update the updateTimeline function to work with horizontal layout
     function updateTimeline(currentLevel, questionsCompletedInLevel) {
-        const timeline = document.getElementById('timeline');
-        if (!timeline) return;
-        
-        // Clear existing timeline
-        timeline.innerHTML = '';
-        
-        // Create timeline items using the LEVELS array
-        LEVELS.forEach((level, index) => {
-            const levelNum = index + 1;
-            const status = index < currentLevel ? 'completed' : 
-                          index === currentLevel ? 'current' : 'future';
+        try {
+            const timeline = document.getElementById('timeline');
             
-            const item = document.createElement('div');
-            item.className = 'timeline-item';
-            
-            const marker = document.createElement('div');
-            marker.className = `timeline-marker ${status}`;
-            if (status === 'completed') {
-                marker.innerHTML = '✓';
-            } else if (status === 'current') {
-                // Show progress within current level
-                const questionsRequired = level.questionsRequired || 3; // Default to 3 if not specified
-                const progress = Math.min(Math.round((questionsCompletedInLevel / questionsRequired) * 100), 100);
-                marker.innerHTML = `<span style="font-size: 0.7em;">${progress}%</span>`;
-            } else {
-                marker.innerHTML = levelNum;
+            if (!timeline) {
+                console.error('Timeline element not found');
+                return;
             }
             
-            const content = document.createElement('div');
-            content.className = 'timeline-content';
+            timeline.innerHTML = '';
             
-            const levelEl = document.createElement('div');
-            levelEl.className = `timeline-level ${status}`;
+            // Determine which levels are completed based on earned badges
+            LEVELS.forEach((level, index) => {
+                const isCompleted = earnedBadges.includes(index);
+                const isCurrent = index === currentLevel;
+                const isFuture = index > currentLevel;
+                
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item';
+                
+                // Determine the status class
+                let statusClass = '';
+                
+                if (isCompleted) {
+                    statusClass = 'completed';
+                } else if (isCurrent) {
+                    statusClass = 'current';
+                } else {
+                    statusClass = 'future';
+                }
+                
+                timelineItem.innerHTML = `
+                    <div class="timeline-marker ${statusClass}">${level.badge}</div>
+                    <div class="timeline-content">
+                        <div class="timeline-level ${statusClass}">
+                            <span>${level.name}</span>
+                        </div>
+                        <div class="timeline-description">
+                            ${level.description}
+                            ${isCompleted ? '<span class="text-green-500 ml-1">Completed</span>' : ''}
+                            ${isCurrent ? '<span class="text-blue-500 ml-1">In Progress</span>' : ''}
+                        </div>
+                    </div>
+                `;
+                
+                timeline.appendChild(timelineItem);
+            });
             
-            const levelIcon = document.createElement('span');
-            levelIcon.className = 'timeline-level-icon';
-            levelIcon.textContent = level.badge;
-            
-            const levelName = document.createElement('span');
-            levelName.textContent = level.name;
-            
-            levelEl.appendChild(levelIcon);
-            levelEl.appendChild(levelName);
-            
-            const description = document.createElement('div');
-            description.className = 'timeline-description';
-            description.textContent = level.description;
-            
-            content.appendChild(levelEl);
-            content.appendChild(description);
-            
-            item.appendChild(marker);
-            item.appendChild(content);
-            timeline.appendChild(item);
-        });
-        
-        // Initialize timeline navigation after updating the timeline
-        initTimelineNavigation();
+            // Initialize timeline navigation
+            initTimelineNavigation();
+        } catch (error) {
+            console.error('Error updating timeline:', error);
+        }
     }
 
-    // Update showDifficultySelection function to show the timeline
+    // Show difficulty selection
     function showDifficultySelection() {
-        // ... existing code ...
-        
-        // Show the timeline container
-        const timelineContainer = document.getElementById('timeline-container');
-        if (timelineContainer) {
+        try {
+            // Get fresh references to DOM elements
+            const difficultyContainer = document.getElementById('difficulty-container');
+            const quizMainContainer = document.getElementById('quiz-main-container');
+            const timelineContainer = document.getElementById('timeline-container');
+            
+            if (!difficultyContainer || !quizMainContainer || !timelineContainer) {
+                console.error('Required containers not found');
+                return;
+            }
+            
+            // Reset quiz state
+            currentLevel = 0;
+            questionsCompletedInLevel = 0;
+            currentQuestionIndex = 0;
+            score = 0;
+            consecutiveCorrectAnswers = 0;
+            
+            // Update the timeline with the current state
+            updateTimeline(currentLevel, questionsCompletedInLevel);
+            
+            // Show difficulty selection, hide quiz container
+            difficultyContainer.classList.remove('hidden');
+            quizMainContainer.classList.add('hidden');
             timelineContainer.style.display = 'block';
+            
+            // Check for resume state and display best scores
+            checkForResumeState();
+            displayBestScores();
+        } catch (error) {
+            console.error('Error showing difficulty selection:', error);
         }
-        
-        // Update the timeline with initial state
+    }
+
+    // Check for resume state and display best scores after DOM is loaded
+    document.addEventListener('DOMContentLoaded', () => {
+        // Initialize timeline
         updateTimeline(currentLevel, questionsCompletedInLevel);
         
-        // ... existing code ...
-    }
+        // Check for resume state and display best scores
+        setTimeout(() => {
+            checkForResumeState();
+            displayBestScores();
+        }, 100);
+    });
 }); 
