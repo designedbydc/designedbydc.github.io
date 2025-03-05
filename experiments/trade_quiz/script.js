@@ -3,18 +3,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const difficultyContainer = document.getElementById('difficulty-container');
     const quizMainContainer = document.getElementById('quiz-main-container');
     const questionContainer = document.getElementById('question-container');
-    const questionElement = document.getElementById('question');
-    const optionsContainer = document.getElementById('options-container');
-    const feedbackContainer = document.getElementById('feedback-container');
+    let questionElement;
+    let optionsContainer;
+    let feedbackContainer;
     const feedbackText = document.getElementById('feedback-text');
     const currentQuestionSpan = document.getElementById('current-question');
     const currentDifficultySpan = document.getElementById('current-difficulty');
     const startQuizBtn = document.getElementById('start-quiz-btn');
     const loadingContainer = document.getElementById('loading-container');
-    const errorContainer = document.getElementById('error-container');
-    const errorMessage = document.getElementById('error-message');
+    let errorContainer;
+    let errorMessage;
     const quizContainer = document.getElementById('quiz-container');
-    const scoreOdometer = document.getElementById('score-odometer');
+    let scoreOdometer;
     const scoreContainer = document.getElementById('score-container');
     const finalScoreContainer = document.getElementById('final-score-container');
     const finalScoreMessage = document.getElementById('final-score-message');
@@ -22,6 +22,16 @@ document.addEventListener('DOMContentLoaded', function() {
     const restartButton = document.getElementById('restart-button');
     const shareContainer = document.getElementById('share-container');
     const toggleMusicButton = document.getElementById('toggle-music');
+    
+    // Initialize variables
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let currentLevel = 0;
+    let questionCache = {}; // Cache for questions from API
+    let questionsCompletedInLevel = 0;
+    let currentQuestion = null;
+    let currentDifficulty = 'easy';
+    let odometerInstance;
     
     // Initialize music player
     function initMusicPlayer() {
@@ -124,21 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // Initialize Odometer
-    let odometerInstance = new Odometer({
-        el: scoreOdometer,
-        value: 0,
-        format: 'd',
-        theme: 'minimal'
-    });
-    
-    // Initialize variables
-    let currentQuestionIndex = 0;
-    let score = 0;
-    let currentLevel = 0;
-    let questionCache = {}; // Cache for questions from API
-    let questionsCompletedInLevel = 0;
-    let currentQuestion = null;
+    // Odometer will be initialized in the initQuiz function
     
     // Define the levels
     const LEVELS = [
@@ -708,12 +704,28 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize the quiz
     function initQuiz() {
         // Initialize elements
-        scoreOdometer = document.querySelector('.score-odometer');
+        scoreOdometer = document.getElementById('score-odometer');
         questionElement = document.getElementById('question');
         optionsContainer = document.getElementById('options-container');
         feedbackContainer = document.getElementById('feedback-container');
         errorContainer = document.getElementById('error-container');
         errorMessage = document.getElementById('error-message');
+        
+        // Initialize Odometer if the element exists
+        if (scoreOdometer) {
+            try {
+                odometerInstance = new Odometer({
+                    el: scoreOdometer,
+                    value: 0,
+                    format: 'd',
+                    theme: 'minimal'
+                });
+            } catch (error) {
+                console.error('Error initializing Odometer:', error);
+                // Fallback if Odometer fails to initialize
+                scoreOdometer.textContent = '0';
+            }
+        }
         
         // Initialize music player
         initMusicPlayer();
@@ -856,15 +868,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Display question
     function displayQuestion(questionData) {
+        // Store current question
+        currentQuestion = questionData;
+        
         // Clear previous question
-        document.getElementById('question').textContent = questionData.question;
+        questionElement.textContent = questionData.question;
         
         // Clear previous options
-        const optionsContainer = document.getElementById('options-container');
         optionsContainer.innerHTML = '';
         
         // Get shuffled options
-        const shuffledOptions = [...questionData.options];
+        const shuffledOptions = shuffleArray([...questionData.options]);
         
         // Add options to the container
         shuffledOptions.forEach((option, index) => {
@@ -918,18 +932,15 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         // Show the quiz container and hide loading
-        document.getElementById('quiz-container').classList.remove('hidden');
-        document.getElementById('loading-container').classList.add('hidden');
+        quizContainer.classList.remove('hidden');
+        loadingContainer.classList.add('hidden');
         
         // Hide any previous feedback
-        document.getElementById('feedback-container').classList.add('hidden');
+        feedbackContainer.classList.add('hidden');
     }
     
     // Show feedback for the answer
     function showFeedback(isCorrect, explanation) {
-        const feedbackContainer = document.getElementById('feedback-container');
-        const feedbackText = document.getElementById('feedback-text');
-        
         feedbackContainer.classList.remove('hidden');
         
         if (isCorrect) {
@@ -947,12 +958,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function checkAnswer(isCorrect) {
         if (isCorrect) {
             // Correct answer
-            score++;
+            updateScore(score + 1);
             questionsCompletedInLevel++;
             currentQuestionIndex++;
-            
-            // Update score display
-            scoreOdometer.innerHTML = score;
             
             // Check if level is complete
             if (questionsCompletedInLevel >= LEVELS[currentLevel].questionsRequired) {
@@ -985,24 +993,23 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show final score
     function showFinalScore() {
-        // Hide quiz container and show final score container
+        // Hide quiz container
         quizContainer.classList.add('hidden');
-        finalScoreContainer.classList.remove('hidden');
+        loadingContainer.classList.add('hidden');
         
-        // Hide the score container since we're showing the final score
-        scoreContainer.classList.add('hidden');
-        
-        // Set final score message
-        finalScoreMessage.innerHTML = `You've completed the Trading Setups Quiz!`;
-        finalScoreValue.innerHTML = `${score} of 30`;
+        // Update final score message
+        finalScoreValue.textContent = `${score} of 30`;
         
         // Show restart button
         restartButton.classList.remove('hidden');
         
-        // Show share buttons
+        // Show share container
         shareContainer.classList.remove('hidden');
         
-        // Trigger confetti for scores above 20
+        // Show final score container
+        finalScoreContainer.classList.remove('hidden');
+        
+        // Add confetti effect for good scores
         if (score > 20) {
             confetti({
                 particleCount: 100,
@@ -1057,7 +1064,7 @@ document.addEventListener('DOMContentLoaded', function() {
         errorContainer.classList.add('bg-red-900', 'text-red-100');
         errorMessage.textContent = message;
         
-        document.getElementById('loading-container').classList.add('hidden');
+        loadingContainer.classList.add('hidden');
         
         // Hide error after 5 seconds
         setTimeout(() => {
@@ -1077,4 +1084,32 @@ document.addEventListener('DOMContentLoaded', function() {
         // Restart quiz
         initQuiz();
     });
+
+    // Update score
+    function updateScore(newScore) {
+        score = newScore;
+        if (odometerInstance) {
+            odometerInstance.update(score);
+        } else if (scoreOdometer) {
+            scoreOdometer.innerHTML = score;
+        }
+    }
+
+    // Restart the quiz
+    function restartQuiz() {
+        // Hide final score container
+        finalScoreContainer.classList.add('hidden');
+        
+        // Reset quiz state
+        currentQuestionIndex = 0;
+        updateScore(0);
+        currentLevel = 0;
+        questionsCompletedInLevel = 0;
+        
+        // Update level display
+        updateLevelDisplay();
+        
+        // Get first question
+        getNextQuestion();
+    }
 });
