@@ -455,6 +455,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
     
+    // Mock questions by difficulty
+    const MOCK_QUESTIONS_EASY = mockQuestions.slice(0, 10);
+    const MOCK_QUESTIONS_MEDIUM = mockQuestions.slice(10, 20);
+    const MOCK_QUESTIONS_HARD = mockQuestions.slice(20);
+    
     // Configuration
     const CONFIG = {
         // Set to true in production environment
@@ -540,40 +545,55 @@ document.addEventListener('DOMContentLoaded', function() {
                     temperature: CONFIG.openAI.temperature
                 })
             });
-
+            
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`OpenAI API error: ${errorData.error?.message || response.status}`);
+                throw new Error(`API request failed with status ${response.status}`);
             }
-
+            
             const data = await response.json();
             
-            // Parse the response to extract questions
-            const content = data.choices[0].message.content;
-            let questions;
+            // Extract the content from the response
+            const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
             
+            if (!content) {
+                throw new Error('No content in API response');
+            }
+            
+            // Try to parse the JSON from the content
             try {
-                // Try to parse if the response is already JSON
-                questions = JSON.parse(content);
-            } catch (e) {
-                // If not JSON, try to extract JSON from the text
-                const jsonMatch = content.match(/\[[\s\S]*\]/);
-                if (jsonMatch) {
-                    questions = JSON.parse(jsonMatch[0]);
-                } else {
-                    throw new Error('Could not parse questions from OpenAI response');
+                // Find JSON in the response - it might be wrapped in markdown code blocks
+                let jsonStr = content;
+                
+                // If the content contains markdown code blocks, extract the JSON
+                const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                if (jsonMatch && jsonMatch[1]) {
+                    jsonStr = jsonMatch[1];
                 }
+                
+                // Parse the JSON
+                const questionData = JSON.parse(jsonStr);
+                
+                // Validate the question data
+                if (!questionData.question || !Array.isArray(questionData.options) || !questionData.correctAnswer) {
+                    console.error('Invalid question data format from API:', questionData);
+                    return getQuestionFromMockData(difficulty);
+                }
+                
+                // Ensure correctAnswer is one of the options
+                if (!questionData.options.includes(questionData.correctAnswer)) {
+                    console.error('Correct answer not found in options:', questionData);
+                    return getQuestionFromMockData(difficulty);
+                }
+                
+                return questionData;
+            } catch (parseError) {
+                console.error('Error parsing question data from API:', parseError);
+                console.log('Raw content:', content);
+                return getQuestionFromMockData(difficulty);
             }
-            
-            // Validate questions format
-            if (!Array.isArray(questions)) {
-                throw new Error('OpenAI did not return an array of questions');
-            }
-            
-            return questions;
         } catch (error) {
             console.error('Error fetching questions from OpenAI:', error);
-            return null;
+            return getQuestionFromMockData(difficulty);
         }
     }
 
@@ -688,31 +708,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Get question from mock data
     function getQuestionFromMockData(difficultyLevel) {
-        // Categorize the mock questions by difficulty
-        const easyQuestions = mockQuestions.slice(0, 10);
-        const mediumQuestions = mockQuestions.slice(10, 20);
-        const hardQuestions = mockQuestions.slice(20, 30);
+        let mockQuestions;
         
-        // Select the appropriate question pool based on difficulty
-        let questionPool;
+        // Select questions based on difficulty
         switch (difficultyLevel) {
             case 'easy':
-                questionPool = easyQuestions;
+                mockQuestions = MOCK_QUESTIONS_EASY;
                 break;
             case 'medium':
-                questionPool = mediumQuestions;
+                mockQuestions = MOCK_QUESTIONS_MEDIUM;
                 break;
             case 'hard':
-                questionPool = hardQuestions;
+                mockQuestions = MOCK_QUESTIONS_HARD;
                 break;
             default:
-                questionPool = easyQuestions;
+                mockQuestions = MOCK_QUESTIONS_EASY;
         }
         
-        // Select a question from the appropriate pool
-        // Use modulo to cycle through the available questions in each difficulty level
-        const selectedQuestion = questionPool[currentQuestionIndex % 10];
-        displayQuestion(selectedQuestion);
+        // Shuffle the questions to get a random one
+        const shuffledQuestions = shuffleArray([...mockQuestions]);
+        
+        // Return the first question
+        return shuffledQuestions[0];
     }
 
     // Display question
