@@ -454,6 +454,118 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     ];
     
+    // Configuration
+    const CONFIG = {
+        // Set to true in production environment
+        isProduction: window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1'),
+        openAI: {
+            apiKey: '', // Your OpenAI API key - set this securely in production
+            model: 'gpt-4o', // Using the latest GPT-4 model for better quality questions
+            maxTokens: 500,
+            temperature: 0.7
+        },
+        questionsPerDifficulty: 10,
+        totalQuestions: 30
+    };
+
+    // Function to fetch questions from OpenAI API
+    async function fetchQuestionsFromOpenAI(difficulty) {
+        try {
+            // Don't make actual API calls if API key is not set
+            if (!CONFIG.openAI.apiKey && CONFIG.isProduction) {
+                console.warn('OpenAI API key not set. Falling back to mock questions.');
+                return null;
+            }
+            
+            // In development without API key, return mock data
+            if (!CONFIG.openAI.apiKey && !CONFIG.isProduction) {
+                return null;
+            }
+
+            // Create prompt based on difficulty
+            let prompt = `Generate ${CONFIG.questionsPerDifficulty} multiple-choice questions about trading setups`;
+            
+            switch(difficulty) {
+                case 'easy':
+                    prompt += ` focusing on basic trade setups like support/resistance, trend following, and simple candlestick patterns. Make these suitable for beginners.`;
+                    break;
+                case 'medium':
+                    prompt += ` focusing on intermediate concepts like chart patterns, indicator-based entries, and multi-candlestick formations. These should be moderately challenging.`;
+                    break;
+                case 'hard':
+                    prompt += ` focusing on advanced concepts like order blocks, liquidity grabs, smart money concepts, and institutional trading patterns. These should be challenging for experienced traders.`;
+                    break;
+            }
+            
+            prompt += ` Format each question as a JSON object with 'question', 'options' (array of 4 choices), and 'correctAnswer' (matching one of the options exactly). Return an array of these objects.`;
+
+            // Make API request to OpenAI
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${CONFIG.openAI.apiKey}`
+                },
+                body: JSON.stringify({
+                    model: CONFIG.openAI.model,
+                    messages: [
+                        {
+                            role: "system",
+                            content: "You are a trading expert who creates educational quiz questions about trading setups and strategies."
+                        },
+                        {
+                            role: "user",
+                            content: prompt
+                        }
+                    ],
+                    max_tokens: CONFIG.openAI.maxTokens,
+                    temperature: CONFIG.openAI.temperature
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`OpenAI API error: ${errorData.error?.message || response.status}`);
+            }
+
+            const data = await response.json();
+            
+            // Parse the response to extract questions
+            const content = data.choices[0].message.content;
+            let questions;
+            
+            try {
+                // Try to parse if the response is already JSON
+                questions = JSON.parse(content);
+            } catch (e) {
+                // If not JSON, try to extract JSON from the text
+                const jsonMatch = content.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    questions = JSON.parse(jsonMatch[0]);
+                } else {
+                    throw new Error('Could not parse questions from OpenAI response');
+                }
+            }
+            
+            // Validate questions format
+            if (!Array.isArray(questions)) {
+                throw new Error('OpenAI did not return an array of questions');
+            }
+            
+            return questions;
+        } catch (error) {
+            console.error('Error fetching questions from OpenAI:', error);
+            return null;
+        }
+    }
+
+    // Cache for API questions
+    const questionCache = {
+        easy: [],
+        medium: [],
+        hard: []
+    };
+    
     // Initialize quiz
     function initQuiz() {
         // Reset quiz state
@@ -515,45 +627,92 @@ document.addEventListener('DOMContentLoaded', function() {
                 difficultyLevel = 'hard';
             }
             
-            // Categorize the mock questions by difficulty
-            const easyQuestions = mockQuestions.slice(0, 10);
-            const mediumQuestions = mockQuestions.slice(10, 20);
-            const hardQuestions = mockQuestions.slice(20, 30);
-            
-            // Select the appropriate question pool based on difficulty
-            let questionPool;
-            switch (difficultyLevel) {
-                case 'easy':
-                    questionPool = easyQuestions;
-                    break;
-                case 'medium':
-                    questionPool = mediumQuestions;
-                    break;
-                case 'hard':
-                    questionPool = hardQuestions;
-                    break;
-                default:
-                    questionPool = easyQuestions;
+            if (CONFIG.isProduction) {
+                // In production: Use API questions
+                getQuestionFromAPIOrCache(difficultyLevel);
+            } else {
+                // In development/testing: Use mock questions
+                getQuestionFromMockData(difficultyLevel);
             }
-            
-            // Select a question from the appropriate pool
-            // Use modulo to cycle through the available questions in each difficulty level
-            const selectedQuestion = questionPool[currentQuestionIndex % 10];
-            
-            // Use setTimeout to simulate loading
-            setTimeout(() => {
-                showQuestion({
-                    question: selectedQuestion.question,
-                    options: selectedQuestion.options,
-                    correctAnswer: selectedQuestion.correctAnswer
-                });
-                showLoading(false);
-            }, 500);
         } catch (error) {
             console.error('Error getting next question:', error);
             showError('Failed to get the next question. Please try refreshing the page.');
             showLoading(false);
         }
+    }
+    
+    // Get question from API or cache
+    function getQuestionFromAPIOrCache(difficultyLevel) {
+        // If we have cached questions for this difficulty, use them
+        if (questionCache[difficultyLevel].length > 0) {
+            const questionIndex = currentQuestionIndex % 10;
+            if (questionIndex < questionCache[difficultyLevel].length) {
+                const selectedQuestion = questionCache[difficultyLevel][questionIndex];
+                displayQuestion(selectedQuestion);
+                return;
+            }
+        }
+        
+        // Otherwise fetch from OpenAI
+        fetchQuestionsFromOpenAI(difficultyLevel)
+            .then(questions => {
+                if (questions && questions.length > 0) {
+                    // Cache the questions
+                    questionCache[difficultyLevel] = questions;
+                    const questionIndex = currentQuestionIndex % 10;
+                    const selectedQuestion = questions[questionIndex % questions.length];
+                    displayQuestion(selectedQuestion);
+                } else {
+                    // Fallback to mock questions if API fails
+                    getQuestionFromMockData(difficultyLevel);
+                }
+            })
+            .catch(error => {
+                console.error('Error in OpenAI question fetch:', error);
+                // Fallback to mock questions
+                getQuestionFromMockData(difficultyLevel);
+            });
+    }
+
+    // Get question from mock data
+    function getQuestionFromMockData(difficultyLevel) {
+        // Categorize the mock questions by difficulty
+        const easyQuestions = mockQuestions.slice(0, 10);
+        const mediumQuestions = mockQuestions.slice(10, 20);
+        const hardQuestions = mockQuestions.slice(20, 30);
+        
+        // Select the appropriate question pool based on difficulty
+        let questionPool;
+        switch (difficultyLevel) {
+            case 'easy':
+                questionPool = easyQuestions;
+                break;
+            case 'medium':
+                questionPool = mediumQuestions;
+                break;
+            case 'hard':
+                questionPool = hardQuestions;
+                break;
+            default:
+                questionPool = easyQuestions;
+        }
+        
+        // Select a question from the appropriate pool
+        // Use modulo to cycle through the available questions in each difficulty level
+        const selectedQuestion = questionPool[currentQuestionIndex % 10];
+        displayQuestion(selectedQuestion);
+    }
+
+    // Display the question to the user
+    function displayQuestion(questionData) {
+        setTimeout(() => {
+            showQuestion({
+                question: questionData.question,
+                options: questionData.options,
+                correctAnswer: questionData.correctAnswer
+            });
+            showLoading(false);
+        }, 500);
     }
     
     // Show question
@@ -725,7 +884,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create content without mentioning levels
         finalScoreContainer.innerHTML = `
             <h2 class="text-2xl font-bold mb-4">Quiz Complete!</h2>
-            <p class="mb-2">You've completed the Stock Market Trade Quiz!</p>
+            <p class="mb-2">You've completed the Trading Setups Quiz!</p>
             <div class="my-6">
                 <div class="final-score">${score} of 30</div>
                 <p class="text-gray-600">Score</p>
@@ -772,12 +931,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // Restart quiz
             initQuiz();
         });
+        
+        // Trigger confetti for scores above 20
+        if (score > 20) {
+            confetti({
+                particleCount: 100,
+                spread: 70,
+                origin: { y: 0.6 }
+            });
+        }
     }
     
-    // Share result function
+    // Share result on social media
     function shareResult(platform) {
-        const shareText = `I scored ${score} of 30 in the Stock Market Trade Quiz! Can you beat my score?`;
         const shareUrl = window.location.href;
+        const shareText = `I scored ${score} of 30 on the Trading Setups Quiz! Test your trading knowledge too!`;
         
         let shareLink = '';
         
@@ -798,10 +966,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         window.open(shareLink, '_blank');
     }
-    
+
     // Make share function available globally
     window.shareResult = shareResult;
-    
+
     // Show/hide loading container
     function showLoading(show) {
         if (show) {
@@ -812,7 +980,7 @@ document.addEventListener('DOMContentLoaded', function() {
             quizContainer.classList.remove('hidden');
         }
     }
-    
+
     // Show error message
     function showError(message) {
         errorMessage.textContent = message;
@@ -823,7 +991,7 @@ document.addEventListener('DOMContentLoaded', function() {
             errorContainer.classList.add('hidden');
         }, 5000);
     }
-    
+
     // Auto-start quiz instead of showing the difficulty selection screen
     initQuiz();
-}); 
+});
