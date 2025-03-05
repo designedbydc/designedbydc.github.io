@@ -21,6 +21,108 @@ document.addEventListener('DOMContentLoaded', function() {
     const finalScoreValue = document.getElementById('final-score-value');
     const restartButton = document.getElementById('restart-button');
     const shareContainer = document.getElementById('share-container');
+    const toggleMusicButton = document.getElementById('toggle-music');
+    
+    // Initialize music player
+    function initMusicPlayer() {
+        const toggleButton = document.getElementById('toggle-music');
+        
+        // Initialize YouTube player
+        let player;
+        let isPlaying = false;
+        
+        // Create YouTube player when API is ready
+        window.onYouTubeIframeAPIReady = function() {
+            player = new YT.Player('youtube-player', {
+                height: '0',
+                width: '0',
+                videoId: 'jfKfPfyJRdk', // lofi beats
+                playerVars: {
+                    'playsinline': 1,
+                    'autoplay': 0,
+                    'controls': 0,
+                    'disablekb': 1,
+                    'fs': 0,
+                    'modestbranding': 1,
+                    'rel': 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        };
+        
+        function onPlayerReady(event) {
+            // Set volume to 30%
+            event.target.setVolume(30);
+            
+            // Add click event listener to toggle button
+            toggleButton.addEventListener('click', function() {
+                if (isPlaying) {
+                    player.pauseVideo();
+                    toggleButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
+                        </svg>
+                        <span class="text-sm">Music Off</span>
+                    `;
+                } else {
+                    player.playVideo();
+                    toggleButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
+                        </svg>
+                        <span class="text-sm">Music On</span>
+                    `;
+                }
+                isPlaying = !isPlaying;
+            });
+            
+            // Try to autoplay on first user interaction with the page
+            document.addEventListener('click', function initialPlay() {
+                // Only try to play if not already playing
+                if (!isPlaying) {
+                    player.playVideo();
+                    toggleButton.innerHTML = `
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
+                        </svg>
+                        <span class="text-sm">Music On</span>
+                    `;
+                    isPlaying = true;
+                }
+                // Remove this event listener after first click
+                document.removeEventListener('click', initialPlay);
+            }, { once: true });
+        }
+        
+        function onPlayerStateChange(event) {
+            // Update isPlaying based on player state
+            if (event.data === YT.PlayerState.PLAYING) {
+                isPlaying = true;
+                toggleButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
+                    </svg>
+                    <span class="text-sm">Music On</span>
+                `;
+            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
+                isPlaying = false;
+                toggleButton.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
+                    </svg>
+                    <span class="text-sm">Music Off</span>
+                `;
+            }
+            
+            // If video ended, replay it for continuous background music
+            if (event.data === YT.PlayerState.ENDED) {
+                player.playVideo();
+            }
+        }
+    }
     
     // Initialize Odometer
     let odometerInstance = new Odometer({
@@ -603,8 +705,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Initialize quiz
+    // Initialize the quiz
     function initQuiz() {
+        // Initialize elements
+        scoreOdometer = document.querySelector('.score-odometer');
+        questionElement = document.getElementById('question');
+        optionsContainer = document.getElementById('options-container');
+        feedbackContainer = document.getElementById('feedback-container');
+        errorContainer = document.getElementById('error-container');
+        errorMessage = document.getElementById('error-message');
+        
+        // Initialize music player
+        initMusicPlayer();
+        
         // Reset quiz state
         currentQuestionIndex = 0;
         score = 0;
@@ -615,12 +728,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update level display
         updateLevelDisplay();
         
-        // Get first question
+        // Start the quiz
         getNextQuestion();
+        
+        // Add event listener for restart button
+        document.getElementById('restart-button').addEventListener('click', restartQuiz);
     }
     
-    // Event listener for start quiz button
-    startQuizBtn.addEventListener('click', initQuiz);
+    // Start the quiz when the page loads
+    document.addEventListener('DOMContentLoaded', initQuiz);
     
     // Update the level display - function kept for compatibility but no longer updates UI
     function updateLevelDisplay() {
@@ -740,107 +856,95 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Display question
     function displayQuestion(questionData) {
-        // Hide loading spinner
-        showLoading(false);
+        // Clear previous question
+        document.getElementById('question').textContent = questionData.question;
         
-        // If we have a valid question, display it
-        if (questionData && questionData.question) {
-            showQuestion(questionData);
-        } else {
-            console.error('Invalid question data:', questionData);
-            showError('Failed to load a valid question. Please try again.');
-        }
-    }
-    
-    // Show question
-    function showQuestion(questionData) {
-        try {
-            // Store current question
-            currentQuestion = questionData;
+        // Clear previous options
+        const optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+        
+        // Get shuffled options
+        const shuffledOptions = [...questionData.options];
+        
+        // Add options to the container
+        shuffledOptions.forEach((option, index) => {
+            const button = document.createElement('button');
+            button.textContent = option;
+            button.classList.add('option-btn', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'border', 'border-gray-600', 
+                'hover:border-indigo-500', 'focus:outline-none', 'focus:ring-2', 'focus:ring-indigo-500', 'transition-colors');
             
-            // Set question text
-            questionElement.textContent = questionData.question;
-            
-            // Clear previous options
-            optionsContainer.innerHTML = '';
-            
-            // Handle different data formats (mock data vs API data)
-            let allOptions = [];
-            
-            if (questionData.incorrectAnswers && Array.isArray(questionData.incorrectAnswers)) {
-                // API format with incorrectAnswers array
-                allOptions = [questionData.correctAnswer, ...questionData.incorrectAnswers];
-            } else if (questionData.options && Array.isArray(questionData.options)) {
-                // Mock data format with options array
-                allOptions = [...questionData.options];
-            } else {
-                // Fallback for unexpected data format
-                console.error('Invalid question data format:', questionData);
-                showError('Question data is in an invalid format. Please try again.');
-                return;
-            }
-            
-            // Shuffle the options
-            const shuffledOptions = shuffleArray(allOptions);
-            
-            // Create and add option buttons
-            shuffledOptions.forEach((option, index) => {
-                const button = document.createElement('button');
-                button.className = 'option-btn';
-                button.textContent = option;
-                
-                // Add event listener to check answer
-                button.addEventListener('click', () => {
-                    // Disable all buttons to prevent multiple answers
-                    const buttons = optionsContainer.querySelectorAll('button');
-                    buttons.forEach(btn => {
-                        btn.disabled = true;
-                    });
-                    
-                    // Add visual feedback for the selected button
-                    button.classList.add('selected');
-                    
-                    // Check if answer is correct
-                    const isCorrect = option === questionData.correctAnswer;
-                    
-                    // Apply appropriate styling
-                    if (isCorrect) {
-                        button.classList.add('correct');
-                    } else {
-                        button.classList.add('incorrect');
-                        
-                        // Highlight the correct answer
-                        buttons.forEach(btn => {
-                            if (btn.textContent === questionData.correctAnswer) {
-                                btn.classList.add('correct');
-                            }
-                        });
-                    }
-                    
-                    // Process the answer
-                    checkAnswer(isCorrect);
+            // Add event listener to check answer
+            button.addEventListener('click', () => {
+                // Disable all buttons to prevent multiple answers
+                const buttons = optionsContainer.querySelectorAll('button');
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.remove('hover:border-indigo-500');
                 });
                 
-                optionsContainer.appendChild(button);
+                // Add visual feedback for the selected button
+                button.classList.add('selected');
+                
+                // Check if answer is correct
+                const isCorrect = option === questionData.correctAnswer;
+                
+                // Apply appropriate styling
+                if (isCorrect) {
+                    button.classList.remove('border-gray-600');
+                    button.classList.add('correct', 'border-green-500', 'bg-green-900', 'text-green-100');
+                } else {
+                    button.classList.remove('border-gray-600');
+                    button.classList.add('incorrect', 'border-red-500', 'bg-red-900', 'text-red-100');
+                    
+                    // Highlight the correct answer
+                    buttons.forEach(btn => {
+                        if (btn.textContent === questionData.correctAnswer) {
+                            btn.classList.remove('border-gray-600');
+                            btn.classList.add('correct', 'border-green-500', 'bg-green-900', 'text-green-100');
+                        }
+                    });
+                }
+                
+                // Show feedback if explanation exists
+                if (questionData.explanation) {
+                    showFeedback(isCorrect, questionData.explanation);
+                }
+                
+                // Process the answer
+                checkAnswer(isCorrect);
             });
             
-            // Hide feedback if it was visible
-            feedbackContainer.classList.add('hidden');
-            
-        } catch (error) {
-            console.error('Error displaying question:', error);
-            showError('Failed to display the question. Please try refreshing the page.');
-        }
-    }
-    
-    // Check if the answer is correct
-    function checkAnswer(isCorrect) {
-        // Disable all option buttons to prevent multiple selections
-        const optionButtons = optionsContainer.querySelectorAll('button');
-        optionButtons.forEach(button => {
-            button.disabled = true;
+            optionsContainer.appendChild(button);
         });
         
+        // Show the quiz container and hide loading
+        document.getElementById('quiz-container').classList.remove('hidden');
+        document.getElementById('loading-container').classList.add('hidden');
+        
+        // Hide any previous feedback
+        document.getElementById('feedback-container').classList.add('hidden');
+    }
+    
+    // Show feedback for the answer
+    function showFeedback(isCorrect, explanation) {
+        const feedbackContainer = document.getElementById('feedback-container');
+        const feedbackText = document.getElementById('feedback-text');
+        
+        feedbackContainer.classList.remove('hidden');
+        
+        if (isCorrect) {
+            feedbackContainer.querySelector('div').classList.remove('bg-red-100', 'text-red-800');
+            feedbackContainer.querySelector('div').classList.add('bg-green-900', 'text-green-100');
+            feedbackText.innerHTML = `<span class="font-bold">Correct!</span> ${explanation || ''}`;
+        } else {
+            feedbackContainer.querySelector('div').classList.remove('bg-green-100', 'text-green-800');
+            feedbackContainer.querySelector('div').classList.add('bg-red-900', 'text-red-100');
+            feedbackText.innerHTML = `<span class="font-bold">Incorrect.</span> ${explanation || ''}`;
+        }
+    }
+
+    // Check if the answer is correct
+    function checkAnswer(isCorrect) {
         if (isCorrect) {
             // Correct answer
             score++;
@@ -870,16 +974,12 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get next question after a short delay
             setTimeout(() => {
                 getNextQuestion();
-            }, 1000);
+            }, 2000);
         } else {
-            // Incorrect answer - reset score to zero
-            score = 0;
-            scoreOdometer.innerHTML = score;
-            
-            // Show game over message
+            // Incorrect answer - game over
             setTimeout(() => {
                 showFinalScore();
-            }, 1000);
+            }, 2000);
         }
     }
     
@@ -914,27 +1014,27 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Share result on social media
     function shareResult(platform) {
-        const shareUrl = window.location.href;
-        const shareText = `I scored ${score} of 30 on the Trading Setups Quiz! Test your trading knowledge too!`;
+        const score = document.getElementById('final-score-value').textContent;
+        const text = `I scored ${score} in the Trading Setups Quiz! Test your trading knowledge too!`;
+        const url = window.location.href;
         
-        let shareLink = '';
+        let shareUrl;
         
         switch (platform) {
             case 'twitter':
-                shareLink = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
+                shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
                 break;
             case 'linkedin':
-                shareLink = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}&title=${encodeURIComponent(shareText)}`;
+                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent('Trading Setups Quiz')}&summary=${encodeURIComponent(text)}`;
                 break;
             case 'whatsapp':
-                shareLink = `https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`;
+                shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
                 break;
             default:
-                console.error('Unknown share platform:', platform);
                 return;
         }
         
-        window.open(shareLink, '_blank');
+        window.open(shareUrl, '_blank');
     }
 
     // Make share function available globally
@@ -953,8 +1053,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Show error message
     function showError(message) {
-        errorMessage.textContent = message;
         errorContainer.classList.remove('hidden');
+        errorContainer.classList.add('bg-red-900', 'text-red-100');
+        errorMessage.textContent = message;
+        
+        document.getElementById('loading-container').classList.add('hidden');
         
         // Hide error after 5 seconds
         setTimeout(() => {
@@ -974,7 +1077,4 @@ document.addEventListener('DOMContentLoaded', function() {
         // Restart quiz
         initQuiz();
     });
-
-    // Auto-start quiz instead of showing the difficulty selection screen
-    initQuiz();
 });
