@@ -1177,10 +1177,10 @@ function onYouTubeIframeAPIReady() {
     player = new YT.Player('youtube-player', {
         height: '0',
         width: '0',
-        videoId: 'jfKfPfyJRdk', // Lo-fi beats
+        videoId: '6Wi9_QKJ_8A', // Trading music as requested
         playerVars: {
             'playsinline': 1,
-            'autoplay': 0,
+            'autoplay': 1,
             'controls': 0
         },
         events: {
@@ -1191,6 +1191,9 @@ function onYouTubeIframeAPIReady() {
 }
 
 function onPlayerReady(event) {
+    // Autoplay the video/music when ready
+    event.target.playVideo();
+    
     const toggleButton = document.getElementById('toggle-music');
     toggleButton.addEventListener('click', function() {
         if (isPlaying) {
