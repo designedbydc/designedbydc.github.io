@@ -3,18 +3,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const difficultyContainer = document.getElementById('difficulty-container');
     const quizMainContainer = document.getElementById('quiz-main-container');
     const questionContainer = document.getElementById('question-container');
-    let questionElement;
-    let optionsContainer;
-    let feedbackContainer;
+    const questionElement = document.getElementById('question');
+    const optionsContainer = document.getElementById('options-container');
+    const feedbackContainer = document.getElementById('feedback-container');
     const feedbackText = document.getElementById('feedback-text');
     const currentQuestionSpan = document.getElementById('current-question');
     const currentDifficultySpan = document.getElementById('current-difficulty');
     const startQuizBtn = document.getElementById('start-quiz-btn');
     const loadingContainer = document.getElementById('loading-container');
-    let errorContainer;
-    let errorMessage;
+    const errorContainer = document.getElementById('error-container');
+    const errorMessage = document.getElementById('error-message');
     const quizContainer = document.getElementById('quiz-container');
-    let scoreOdometer;
+    const scoreOdometer = document.getElementById('score-odometer');
     const scoreContainer = document.getElementById('score-container');
     const finalScoreContainer = document.getElementById('final-score-container');
     const finalScoreMessage = document.getElementById('final-score-message');
@@ -32,109 +32,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentQuestion = null;
     let currentDifficulty = 'easy';
     let odometerInstance;
+    let questionsAnswered = 0;
+    let totalQuestions = 30;
     
     // Initialize music player
-    function initMusicPlayer() {
-        const toggleButton = document.getElementById('toggle-music');
-        
-        // Initialize YouTube player
-        let player;
-        let isPlaying = false;
-        
-        // Create YouTube player when API is ready
-        window.onYouTubeIframeAPIReady = function() {
-            player = new YT.Player('youtube-player', {
-                height: '0',
-                width: '0',
-                videoId: 'jfKfPfyJRdk', // lofi beats
-                playerVars: {
-                    'playsinline': 1,
-                    'autoplay': 0,
-                    'controls': 0,
-                    'disablekb': 1,
-                    'fs': 0,
-                    'modestbranding': 1,
-                    'rel': 0
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        };
-        
-        function onPlayerReady(event) {
-            // Set volume to 30%
-            event.target.setVolume(30);
-            
-            // Add click event listener to toggle button
-            toggleButton.addEventListener('click', function() {
-                if (isPlaying) {
-                    player.pauseVideo();
-                    toggleButton.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
-                        </svg>
-                        <span class="text-sm">Music Off</span>
-                    `;
-                } else {
-                    player.playVideo();
-                    toggleButton.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
-                        </svg>
-                        <span class="text-sm">Music On</span>
-                    `;
-                }
-                isPlaying = !isPlaying;
-            });
-            
-            // Try to autoplay on first user interaction with the page
-            document.addEventListener('click', function initialPlay() {
-                // Only try to play if not already playing
-                if (!isPlaying) {
-                    player.playVideo();
-                    toggleButton.innerHTML = `
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
-                        </svg>
-                        <span class="text-sm">Music On</span>
-                    `;
-                    isPlaying = true;
-                }
-                // Remove this event listener after first click
-                document.removeEventListener('click', initialPlay);
-            }, { once: true });
-        }
-        
-        function onPlayerStateChange(event) {
-            // Update isPlaying based on player state
-            if (event.data === YT.PlayerState.PLAYING) {
-                isPlaying = true;
-                toggleButton.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
-                    </svg>
-                    <span class="text-sm">Music On</span>
-                `;
-            } else if (event.data === YT.PlayerState.PAUSED || event.data === YT.PlayerState.ENDED) {
-                isPlaying = false;
-                toggleButton.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
-                    </svg>
-                    <span class="text-sm">Music Off</span>
-                `;
-            }
-            
-            // If video ended, replay it for continuous background music
-            if (event.data === YT.PlayerState.ENDED) {
-                player.playVideo();
-            }
-        }
-    }
-    
-    // Odometer will be initialized in the initQuiz function
+    initMusicPlayer();
     
     // Define the levels
     const LEVELS = [
@@ -703,15 +605,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Initialize the quiz
     function initQuiz() {
-        // Initialize elements
-        scoreOdometer = document.getElementById('score-odometer');
-        questionElement = document.getElementById('question');
-        optionsContainer = document.getElementById('options-container');
-        feedbackContainer = document.getElementById('feedback-container');
-        errorContainer = document.getElementById('error-container');
-        errorMessage = document.getElementById('error-message');
+        // Reset variables
+        score = 0;
+        questionsAnswered = 0;
         
-        // Initialize Odometer if the element exists
+        // Initialize score display
         if (scoreOdometer) {
             try {
                 odometerInstance = new Odometer({
@@ -722,29 +620,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             } catch (error) {
                 console.error('Error initializing Odometer:', error);
-                // Fallback if Odometer fails to initialize
                 scoreOdometer.textContent = '0';
             }
         }
         
-        // Initialize music player
-        initMusicPlayer();
+        // Show quiz container and hide final score
+        quizMainContainer.classList.remove('hidden');
+        scoreContainer.classList.remove('hidden');
+        finalScoreContainer.classList.add('hidden');
         
-        // Reset quiz state
-        currentQuestionIndex = 0;
-        score = 0;
-        currentLevel = 0;
-        questionsCompletedInLevel = 0;
-        questionCache = {};
-        
-        // Update level display
-        updateLevelDisplay();
-        
-        // Start the quiz
+        // Get first question
         getNextQuestion();
-        
-        // Add event listener for restart button
-        document.getElementById('restart-button').addEventListener('click', restartQuiz);
     }
     
     // Start the quiz when the page loads
@@ -772,247 +658,201 @@ document.addEventListener('DOMContentLoaded', function() {
         return shuffled;
     }
     
-    // Get next question
-    async function getNextQuestion() {
-        // Determine difficulty level based on current question index
-        let difficultyLevel;
-        if (currentQuestionIndex < 10) {
-            difficultyLevel = 'easy';
-        } else if (currentQuestionIndex < 20) {
-            difficultyLevel = 'medium';
-        } else {
-            difficultyLevel = 'hard';
+    // Get the next question
+    function getNextQuestion() {
+        // Show loading indicator
+        loadingContainer.classList.remove('hidden');
+        quizContainer.classList.add('hidden');
+        
+        // Check if we've reached the end of the quiz
+        if (questionsAnswered >= totalQuestions) {
+            showFinalScore();
+            return;
         }
         
-        try {
-            // Get question from API or cache
-            const questionData = await getQuestionFromAPIOrCache(difficultyLevel);
-            
-            // Display the question
-            if (questionData) {
-                displayQuestion(questionData);
-            } else {
-                showError('Failed to load question. Please try again.');
-            }
-        } catch (error) {
-            console.error('Error getting next question:', error);
-            showError('Failed to load question. Please try again.');
-        }
-    }
-    
-    // Get question from API or cache
-    async function getQuestionFromAPIOrCache(difficultyLevel) {
-        // If we're in development mode or API is not available, use mock data
-        if (!CONFIG.isProduction) {
-            return getQuestionFromMockData(difficultyLevel);
-        }
-        
-        // Check if we have cached questions for this difficulty
-        if (!questionCache[difficultyLevel] || questionCache[difficultyLevel].length === 0) {
-            // Fetch new questions from API
-            showLoading(true);
-            try {
-                const apiQuestion = await fetchQuestionsFromOpenAI(difficultyLevel);
-                
-                // If API call failed or returned no questions, use mock data
-                if (!apiQuestion) {
-                    showLoading(false);
-                    return getQuestionFromMockData(difficultyLevel);
+        // Fetch a new question
+        fetchQuestion()
+            .then(question => {
+                if (question) {
+                    displayQuestion(question);
+                } else {
+                    console.error("Failed to load question from API, using mock question");
+                    
+                    // Use a mock question as fallback
+                    const randomIndex = Math.floor(Math.random() * mockQuestions.length);
+                    const fallbackQuestion = mockQuestions[randomIndex];
+                    
+                    displayQuestion(fallbackQuestion);
                 }
+            })
+            .catch(error => {
+                console.error("Error getting next question:", error);
                 
-                // Initialize cache for this difficulty if needed
-                if (!questionCache[difficultyLevel]) {
-                    questionCache[difficultyLevel] = [];
-                }
+                // Use a mock question as fallback
+                const randomIndex = Math.floor(Math.random() * mockQuestions.length);
+                const fallbackQuestion = mockQuestions[randomIndex];
                 
-                // Add the question to cache
-                questionCache[difficultyLevel].push(apiQuestion);
-            } catch (error) {
-                console.error('Error fetching questions from API:', error);
-                showError('Failed to load questions. Using backup questions instead.');
-                showLoading(false);
-                return getQuestionFromMockData(difficultyLevel);
-            }
-            showLoading(false);
-        }
-        
-        // Return and remove the first question from cache
-        return questionCache[difficultyLevel].shift();
+                displayQuestion(fallbackQuestion);
+            });
     }
 
-    // Get question from mock data
-    function getQuestionFromMockData(difficultyLevel) {
-        let mockQuestions;
+    // Fetch a question from the API or use mock questions
+    function fetchQuestion() {
+        // For testing, use mock questions directly
+        const useLocalMockQuestions = true;
         
-        // Select questions based on difficulty
-        switch (difficultyLevel) {
-            case 'easy':
-                mockQuestions = MOCK_QUESTIONS_EASY;
-                break;
-            case 'medium':
-                mockQuestions = MOCK_QUESTIONS_MEDIUM;
-                break;
-            case 'hard':
-                mockQuestions = MOCK_QUESTIONS_HARD;
-                break;
-            default:
-                mockQuestions = MOCK_QUESTIONS_EASY;
+        if (useLocalMockQuestions) {
+            const randomIndex = Math.floor(Math.random() * mockQuestions.length);
+            return Promise.resolve(mockQuestions[randomIndex]);
         }
         
-        // Shuffle the questions to get a random one
-        const shuffledQuestions = shuffleArray([...mockQuestions]);
-        
-        // Return the first question
-        return shuffledQuestions[0];
+        return fetch('https://opentdb.com/api.php?amount=1&category=9&difficulty=medium&type=multiple')
+            .then(response => response.json())
+            .then(data => {
+                if (data.response_code === 0 && data.results && data.results.length > 0) {
+                    const questionData = data.results[0];
+                    return {
+                        question: questionData.question,
+                        options: [...questionData.incorrect_answers, questionData.correct_answer],
+                        correctAnswer: questionData.correct_answer
+                    };
+                }
+                
+                // If API didn't return valid question, use a mock question
+                const randomIndex = Math.floor(Math.random() * mockQuestions.length);
+                return mockQuestions[randomIndex];
+            })
+            .catch(error => {
+                console.error("Error fetching question:", error);
+                
+                // If API call fails, use a mock question
+                const randomIndex = Math.floor(Math.random() * mockQuestions.length);
+                return mockQuestions[randomIndex];
+            });
     }
 
     // Display question
     function displayQuestion(questionData) {
-        // Store current question
-        currentQuestion = questionData;
+        console.log("Displaying question:", questionData);
         
-        // Clear previous question
-        questionElement.textContent = questionData.question;
+        if (!questionData) {
+            console.error("No question data provided");
+            showError("Failed to load question. Please try again.");
+            return;
+        }
+
+        // Hide loading and show quiz container
+        loadingContainer.classList.add('hidden');
+        quizContainer.classList.remove('hidden');
+        
+        // Display the question - decode HTML entities
+        questionElement.innerHTML = decodeHtmlEntities(questionData.question);
+        console.log("Question content set to:", questionElement.innerHTML);
         
         // Clear previous options
         optionsContainer.innerHTML = '';
         
-        // Get shuffled options
-        const shuffledOptions = shuffleArray([...questionData.options]);
+        // Shuffle options for randomness
+        const options = [...questionData.options];
+        shuffleArray(options);
         
-        // Add options to the container
-        shuffledOptions.forEach((option, index) => {
+        console.log("Adding option buttons for:", options);
+        
+        // Create and append option buttons with updated styling
+        options.forEach(option => {
             const button = document.createElement('button');
-            button.textContent = option;
-            button.classList.add('option-btn', 'w-full', 'text-left', 'p-4', 'rounded-lg', 'border', 'border-gray-600', 
-                'hover:border-indigo-500', 'focus:outline-none', 'focus:ring-2', 'focus:ring-indigo-500', 'transition-colors');
-            
-            // Add event listener to check answer
-            button.addEventListener('click', () => {
-                // Disable all buttons to prevent multiple answers
-                const buttons = optionsContainer.querySelectorAll('button');
-                buttons.forEach(btn => {
-                    btn.disabled = true;
-                    btn.classList.remove('hover:border-indigo-500');
-                });
-                
-                // Add visual feedback for the selected button
-                button.classList.add('selected');
-                
-                // Check if answer is correct
-                const isCorrect = option === questionData.correctAnswer;
-                
-                // Apply appropriate styling
-                if (isCorrect) {
-                    button.classList.remove('border-gray-600');
-                    button.classList.add('correct', 'border-green-500', 'bg-green-900', 'text-green-100');
-                } else {
-                    button.classList.remove('border-gray-600');
-                    button.classList.add('incorrect', 'border-red-500', 'bg-red-900', 'text-red-100');
-                    
-                    // Highlight the correct answer
-                    buttons.forEach(btn => {
-                        if (btn.textContent === questionData.correctAnswer) {
-                            btn.classList.remove('border-gray-600');
-                            btn.classList.add('correct', 'border-green-500', 'bg-green-900', 'text-green-100');
-                        }
-                    });
-                }
-                
-                // Show feedback if explanation exists
-                if (questionData.explanation) {
-                    showFeedback(isCorrect, questionData.explanation);
-                }
-                
-                // Process the answer
-                checkAnswer(isCorrect);
-            });
-            
+            button.innerHTML = decodeHtmlEntities(option);
+            button.className = 'option-btn w-full py-3 px-4 text-lg font-bold rounded-lg border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-colors';
+            button.addEventListener('click', () => checkAnswer(option, questionData.correctAnswer));
             optionsContainer.appendChild(button);
         });
         
-        // Show the quiz container and hide loading
-        quizContainer.classList.remove('hidden');
-        loadingContainer.classList.add('hidden');
+        console.log("Option buttons added, count:", optionsContainer.children.length);
         
         // Hide any previous feedback
         feedbackContainer.classList.add('hidden');
     }
     
+    // Helper function to decode HTML entities
+    function decodeHtmlEntities(text) {
+        const textArea = document.createElement('textarea');
+        textArea.innerHTML = text;
+        return textArea.value;
+    }
+    
     // Show feedback for the answer
-    function showFeedback(isCorrect, explanation) {
+    function showFeedback(isCorrect, correctAnswer) {
         feedbackContainer.classList.remove('hidden');
         
         if (isCorrect) {
-            feedbackContainer.querySelector('div').classList.remove('bg-red-100', 'text-red-800');
-            feedbackContainer.querySelector('div').classList.add('bg-green-900', 'text-green-100');
-            feedbackText.innerHTML = `<span class="font-bold">Correct!</span> ${explanation || ''}`;
+            feedbackContainer.firstElementChild.className = 'p-4 mb-4 text-black bg-white border-2 border-black rounded-lg';
+            feedbackText.textContent = "Correct! Well done!";
         } else {
-            feedbackContainer.querySelector('div').classList.remove('bg-green-100', 'text-green-800');
-            feedbackContainer.querySelector('div').classList.add('bg-red-900', 'text-red-100');
-            feedbackText.innerHTML = `<span class="font-bold">Incorrect.</span> ${explanation || ''}`;
+            feedbackContainer.firstElementChild.className = 'p-4 mb-4 text-white bg-black border-2 border-black rounded-lg';
+            feedbackText.innerHTML = `Incorrect. The correct answer is: <strong>${decodeHtmlEntities(correctAnswer)}</strong>`;
         }
+        
+        // Disable all option buttons after an answer is selected
+        const optionButtons = document.querySelectorAll('.option-btn');
+        optionButtons.forEach(button => {
+            button.disabled = true;
+            if (decodeHtmlEntities(button.innerHTML) === decodeHtmlEntities(correctAnswer)) {
+                button.className = 'option-btn w-full py-3 px-4 text-lg font-bold rounded-lg border-2 border-black bg-black text-white';
+            } else if (decodeHtmlEntities(button.innerHTML) !== decodeHtmlEntities(correctAnswer) && !isCorrect && button.disabled) {
+                button.className = 'option-btn w-full py-3 px-4 text-lg font-bold rounded-lg border-2 border-black bg-white text-black opacity-50';
+            }
+        });
+        
+        // Get next question after a delay
+        setTimeout(() => {
+            getNextQuestion();
+        }, 2000);
     }
 
     // Check if the answer is correct
-    function checkAnswer(isCorrect) {
+    function checkAnswer(selectedAnswer, correctAnswer) {
+        const isCorrect = decodeHtmlEntities(selectedAnswer) === decodeHtmlEntities(correctAnswer);
+        
         if (isCorrect) {
             // Correct answer
             updateScore(score + 1);
-            questionsCompletedInLevel++;
-            currentQuestionIndex++;
             
-            // Check if level is complete
-            if (questionsCompletedInLevel >= LEVELS[currentLevel].questionsRequired) {
-                // Level complete, move to next level
-                currentLevel++;
-                questionsCompletedInLevel = 0;
-                
-                // Check if all levels are complete
-                if (currentLevel >= LEVELS.length) {
-                    // Quiz complete
+            // Check if we've reached the target number of questions
+            if (questionsAnswered >= totalQuestions) {
+                setTimeout(() => {
                     showFinalScore();
-                    return;
-                }
-                
-                // Update level display for the new level
-                updateLevelDisplay();
+                }, 2000);
+                return;
             }
-            
-            // Get next question after a short delay
-            setTimeout(() => {
-                getNextQuestion();
-            }, 2000);
-        } else {
-            // Incorrect answer - game over
-            setTimeout(() => {
-                showFinalScore();
-            }, 2000);
         }
+        
+        // Increment questions answered counter
+        questionsAnswered++;
+        
+        // Show feedback
+        showFeedback(isCorrect, correctAnswer);
     }
     
     // Show final score
     function showFinalScore() {
         // Hide quiz container
-        quizContainer.classList.add('hidden');
-        loadingContainer.classList.add('hidden');
-        
-        // Update final score message
-        finalScoreValue.textContent = `${score} of 30`;
-        
-        // Show restart button
-        restartButton.classList.remove('hidden');
-        
-        // Show share container
-        shareContainer.classList.remove('hidden');
+        quizMainContainer.classList.add('hidden');
+        scoreContainer.classList.add('hidden');
         
         // Show final score container
         finalScoreContainer.classList.remove('hidden');
         
-        // Add confetti effect for good scores
+        // Update final score
+        finalScoreValue.textContent = `${score} of 30`;
+        
+        // Show restart button and share container
+        restartButton.classList.remove('hidden');
+        shareContainer.classList.remove('hidden');
+        
+        // Show confetti for scores above 20
         if (score > 20) {
             confetti({
-                particleCount: 100,
+                particleCount: 150,
                 spread: 70,
                 origin: { y: 0.6 }
             });
@@ -1020,19 +860,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Share result on social media
-    function shareResult(platform) {
-        const score = document.getElementById('final-score-value').textContent;
-        const text = `I scored ${score} in the Trading Setups Quiz! Test your trading knowledge too!`;
+    window.shareResult = function(platform) {
+        const score = finalScoreValue.textContent;
+        const text = `I scored ${score} on the Trading Setups Quiz! Can you beat my score?`;
         const url = window.location.href;
         
         let shareUrl;
         
-        switch (platform) {
+        switch(platform) {
             case 'twitter':
                 shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
                 break;
             case 'linkedin':
-                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}&title=${encodeURIComponent('Trading Setups Quiz')}&summary=${encodeURIComponent(text)}`;
+                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
                 break;
             case 'whatsapp':
                 shareUrl = `https://wa.me/?text=${encodeURIComponent(text + ' ' + url)}`;
@@ -1042,74 +882,93 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         window.open(shareUrl, '_blank');
-    }
-
-    // Make share function available globally
-    window.shareResult = shareResult;
-
-    // Show/hide loading container
-    function showLoading(show) {
-        if (show) {
-            loadingContainer.classList.remove('hidden');
-            quizContainer.classList.add('hidden');
-        } else {
-            loadingContainer.classList.add('hidden');
-            quizContainer.classList.remove('hidden');
-        }
-    }
-
+    };
+    
     // Show error message
     function showError(message) {
         errorContainer.classList.remove('hidden');
-        errorContainer.classList.add('bg-red-900', 'text-red-100');
+        errorContainer.className = 'p-4 mb-4 text-white bg-black border-2 border-black rounded-lg';
         errorMessage.textContent = message;
         
+        // Hide quiz container when showing error
+        quizContainer.classList.add('hidden');
         loadingContainer.classList.add('hidden');
-        
-        // Hide error after 5 seconds
-        setTimeout(() => {
-            errorContainer.classList.add('hidden');
-        }, 5000);
     }
-
-    // Add event listener for restart button
-    restartButton.addEventListener('click', () => {
-        // Hide final score container
-        finalScoreContainer.classList.add('hidden');
-        
-        // Show score container and quiz container
-        scoreContainer.classList.remove('hidden');
-        quizContainer.classList.remove('hidden');
-        
-        // Restart quiz
-        initQuiz();
-    });
-
+    
     // Update score
     function updateScore(newScore) {
         score = newScore;
         if (odometerInstance) {
             odometerInstance.update(score);
         } else if (scoreOdometer) {
-            scoreOdometer.innerHTML = score;
+            scoreOdometer.textContent = score;
         }
     }
-
+    
     // Restart the quiz
     function restartQuiz() {
-        // Hide final score container
-        finalScoreContainer.classList.add('hidden');
-        
-        // Reset quiz state
-        currentQuestionIndex = 0;
-        updateScore(0);
-        currentLevel = 0;
-        questionsCompletedInLevel = 0;
-        
-        // Update level display
-        updateLevelDisplay();
-        
-        // Get first question
-        getNextQuestion();
+        initQuiz();
+    }
+
+    // Initialize music player
+    function initMusicPlayer() {
+        // YouTube player will be initialized when API is ready
     }
 });
+
+// YouTube API callback
+let player;
+let isPlaying = false;
+
+function onYouTubeIframeAPIReady() {
+    player = new YT.Player('youtube-player', {
+        height: '0',
+        width: '0',
+        videoId: 'jfKfPfyJRdk', // Lo-fi beats
+        playerVars: {
+            'playsinline': 1,
+            'autoplay': 0,
+            'controls': 0
+        },
+        events: {
+            'onReady': onPlayerReady,
+            'onStateChange': onPlayerStateChange
+        }
+    });
+}
+
+function onPlayerReady(event) {
+    const toggleButton = document.getElementById('toggle-music');
+    toggleButton.addEventListener('click', function() {
+        if (isPlaying) {
+            player.pauseVideo();
+        } else {
+            player.playVideo();
+        }
+    });
+}
+
+function onPlayerStateChange(event) {
+    const toggleButton = document.getElementById('toggle-music');
+    
+    if (event.data == YT.PlayerState.PLAYING) {
+        isPlaying = true;
+        toggleButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="text-sm">Pause Music</span>
+        `;
+    } else if (event.data == YT.PlayerState.PAUSED) {
+        isPlaying = false;
+        toggleButton.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15.536a5 5 0 001.414 1.414m2.828-9.9a9 9 0 012.728-2.728" />
+            </svg>
+            <span class="text-sm">Background Music</span>
+        `;
+    } else if (event.data == YT.PlayerState.ENDED) {
+        // Replay when ended
+        player.playVideo();
+    }
+}
