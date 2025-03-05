@@ -24,11 +24,12 @@ document.addEventListener('DOMContentLoaded', function() {
         theme: 'minimal'
     });
     
-    // Quiz State
-    let currentLevel = 0; // 0-based index for the levels array
-    let questionsCompletedInLevel = 0;
+    // Initialize variables
     let currentQuestionIndex = 0;
     let score = 0;
+    let currentLevel = 0;
+    let questionCache = {}; // Cache for questions from API
+    let questionsCompletedInLevel = 0;
     let currentQuestion = null;
     
     // Define the levels
@@ -459,7 +460,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // Set to true in production environment
         isProduction: window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1'),
         openAI: {
-            apiKey: '', // Your OpenAI API key - set this securely in production
             model: 'gpt-4o', // Using the latest GPT-4 model for better quality questions
             maxTokens: 500,
             temperature: 0.7
@@ -468,50 +468,68 @@ document.addEventListener('DOMContentLoaded', function() {
         totalQuestions: 30
     };
 
+    // Function to get OpenAI API key
+    async function getOpenAIApiKey() {
+        if (!CONFIG.isProduction) {
+            return ''; // In development, we'll use mock questions
+        }
+        
+        try {
+            // In production, fetch the API key from a server endpoint
+            // This endpoint should be implemented on your server to securely provide the API key
+            const response = await fetch('/api/openai-key');
+            if (!response.ok) {
+                throw new Error('Failed to fetch API key');
+            }
+            const data = await response.json();
+            return data.apiKey || '';
+        } catch (error) {
+            console.error('Error fetching API key:', error);
+            return '';
+        }
+    }
+
     // Function to fetch questions from OpenAI API
     async function fetchQuestionsFromOpenAI(difficulty) {
         try {
-            // Don't make actual API calls if API key is not set
-            if (!CONFIG.openAI.apiKey && CONFIG.isProduction) {
-                console.warn('OpenAI API key not set. Falling back to mock questions.');
-                return null;
+            // Get API key from server
+            const apiKey = await getOpenAIApiKey();
+            
+            // Don't make actual API calls if API key is not available
+            if (!apiKey) {
+                console.log('OpenAI API key not available. Falling back to mock questions.');
+                return getQuestionFromMockData(difficulty);
             }
             
-            // In development without API key, return mock data
-            if (!CONFIG.openAI.apiKey && !CONFIG.isProduction) {
-                return null;
-            }
-
-            // Create prompt based on difficulty
-            let prompt = `Generate ${CONFIG.questionsPerDifficulty} multiple-choice questions about trading setups`;
-            
-            switch(difficulty) {
+            // Construct prompt based on difficulty
+            let prompt = '';
+            switch (difficulty) {
                 case 'easy':
-                    prompt += ` focusing on basic trade setups like support/resistance, trend following, and simple candlestick patterns. Make these suitable for beginners.`;
+                    prompt = 'Create 1 basic trading setup question for beginners about stock market trading. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
                     break;
                 case 'medium':
-                    prompt += ` focusing on intermediate concepts like chart patterns, indicator-based entries, and multi-candlestick formations. These should be moderately challenging.`;
+                    prompt = 'Create 1 intermediate trading setup question about stock market trading strategies or technical analysis. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
                     break;
                 case 'hard':
-                    prompt += ` focusing on advanced concepts like order blocks, liquidity grabs, smart money concepts, and institutional trading patterns. These should be challenging for experienced traders.`;
+                    prompt = 'Create 1 advanced trading setup question about complex trading strategies, market psychology, or professional trading setups. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
                     break;
+                default:
+                    prompt = 'Create 1 trading setup question about stock market trading. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
             }
             
-            prompt += ` Format each question as a JSON object with 'question', 'options' (array of 4 choices), and 'correctAnswer' (matching one of the options exactly). Return an array of these objects.`;
-
             // Make API request to OpenAI
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${CONFIG.openAI.apiKey}`
+                    'Authorization': `Bearer ${apiKey}`
                 },
                 body: JSON.stringify({
                     model: CONFIG.openAI.model,
                     messages: [
                         {
                             role: "system",
-                            content: "You are a trading expert who creates educational quiz questions about trading setups and strategies."
+                            content: "You are a trading expert creating quiz questions about trading setups and strategies."
                         },
                         {
                             role: "user",
@@ -559,29 +577,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Cache for API questions
-    const questionCache = {
-        easy: [],
-        medium: [],
-        hard: []
-    };
-    
     // Initialize quiz
     function initQuiz() {
         // Reset quiz state
-        currentLevel = 0;
-        questionsCompletedInLevel = 0;
         currentQuestionIndex = 0;
         score = 0;
+        currentLevel = 0;
+        questionsCompletedInLevel = 0;
+        questionCache = {};
         
-        // Apply theme of the first level
-        applyLevelTheme(LEVELS[currentLevel]);
+        // Update level display
+        updateLevelDisplay();
         
-        // Hide difficulty container and show quiz container
-        difficultyContainer.classList.add('hidden');
-        quizMainContainer.classList.remove('hidden');
-        
-        // Start with first question
+        // Get first question
         getNextQuestion();
     }
     
@@ -610,68 +618,72 @@ document.addEventListener('DOMContentLoaded', function() {
         return shuffled;
     }
     
-    // Get next question with progressive difficulty
-    function getNextQuestion() {
+    // Get next question
+    async function getNextQuestion() {
+        // Determine difficulty level based on current question index
+        let difficultyLevel;
+        if (currentQuestionIndex < 10) {
+            difficultyLevel = 'easy';
+        } else if (currentQuestionIndex < 20) {
+            difficultyLevel = 'medium';
+        } else {
+            difficultyLevel = 'hard';
+        }
+        
         try {
-            // Show loading spinner
-            showLoading(true);
+            // Get question from API or cache
+            const questionData = await getQuestionFromAPIOrCache(difficultyLevel);
             
-            // Calculate question difficulty based on current index
-            // First 10 questions are easy, next 10 are medium, last 10 are hard
-            let difficultyLevel;
-            if (currentQuestionIndex < 10) {
-                difficultyLevel = 'easy';
-            } else if (currentQuestionIndex < 20) {
-                difficultyLevel = 'medium';
+            // Display the question
+            if (questionData) {
+                displayQuestion(questionData);
             } else {
-                difficultyLevel = 'hard';
-            }
-            
-            if (CONFIG.isProduction) {
-                // In production: Use API questions
-                getQuestionFromAPIOrCache(difficultyLevel);
-            } else {
-                // In development/testing: Use mock questions
-                getQuestionFromMockData(difficultyLevel);
+                showError('Failed to load question. Please try again.');
             }
         } catch (error) {
             console.error('Error getting next question:', error);
-            showError('Failed to get the next question. Please try refreshing the page.');
-            showLoading(false);
+            showError('Failed to load question. Please try again.');
         }
     }
     
     // Get question from API or cache
-    function getQuestionFromAPIOrCache(difficultyLevel) {
-        // If we have cached questions for this difficulty, use them
-        if (questionCache[difficultyLevel].length > 0) {
-            const questionIndex = currentQuestionIndex % 10;
-            if (questionIndex < questionCache[difficultyLevel].length) {
-                const selectedQuestion = questionCache[difficultyLevel][questionIndex];
-                displayQuestion(selectedQuestion);
-                return;
-            }
+    async function getQuestionFromAPIOrCache(difficultyLevel) {
+        // If we're in development mode or API is not available, use mock data
+        if (!CONFIG.isProduction) {
+            return getQuestionFromMockData(difficultyLevel);
         }
         
-        // Otherwise fetch from OpenAI
-        fetchQuestionsFromOpenAI(difficultyLevel)
-            .then(questions => {
-                if (questions && questions.length > 0) {
-                    // Cache the questions
-                    questionCache[difficultyLevel] = questions;
-                    const questionIndex = currentQuestionIndex % 10;
-                    const selectedQuestion = questions[questionIndex % questions.length];
-                    displayQuestion(selectedQuestion);
-                } else {
-                    // Fallback to mock questions if API fails
-                    getQuestionFromMockData(difficultyLevel);
+        // Check if we have cached questions for this difficulty
+        if (!questionCache[difficultyLevel] || questionCache[difficultyLevel].length === 0) {
+            // Fetch new questions from API
+            showLoading(true);
+            try {
+                const apiQuestion = await fetchQuestionsFromOpenAI(difficultyLevel);
+                
+                // If API call failed or returned no questions, use mock data
+                if (!apiQuestion) {
+                    showLoading(false);
+                    return getQuestionFromMockData(difficultyLevel);
                 }
-            })
-            .catch(error => {
-                console.error('Error in OpenAI question fetch:', error);
-                // Fallback to mock questions
-                getQuestionFromMockData(difficultyLevel);
-            });
+                
+                // Initialize cache for this difficulty if needed
+                if (!questionCache[difficultyLevel]) {
+                    questionCache[difficultyLevel] = [];
+                }
+                
+                // Add the question to cache
+                questionCache[difficultyLevel].push(apiQuestion);
+            } catch (error) {
+                console.error('Error fetching questions from API:', error);
+                showError('Failed to load questions. Using backup questions instead.');
+                showLoading(false);
+                return getQuestionFromMockData(difficultyLevel);
+            }
+            showLoading(false);
+        }
+        
+        // Return and remove the first question from cache
+        return questionCache[difficultyLevel].shift();
     }
 
     // Get question from mock data
@@ -703,16 +715,18 @@ document.addEventListener('DOMContentLoaded', function() {
         displayQuestion(selectedQuestion);
     }
 
-    // Display the question to the user
+    // Display question
     function displayQuestion(questionData) {
-        setTimeout(() => {
-            showQuestion({
-                question: questionData.question,
-                options: questionData.options,
-                correctAnswer: questionData.correctAnswer
-            });
-            showLoading(false);
-        }, 500);
+        // Hide loading spinner
+        showLoading(false);
+        
+        // If we have a valid question, display it
+        if (questionData && questionData.question) {
+            showQuestion(questionData);
+        } else {
+            console.error('Invalid question data:', questionData);
+            showError('Failed to load a valid question. Please try again.');
+        }
     }
     
     // Show question
