@@ -905,20 +905,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (isCorrect) {
             // Correct answer
             updateScore(score + 1);
-            
-            // Check if we've reached the target number of questions
-            if (questionsAnswered >= totalQuestions) {
-                console.log("DEBUG: Reached total questions after correct answer, showing final score soon");
-                setTimeout(() => {
-                    showFinalScore();
-                }, 2000);
-                return;
-            }
         }
         
         // Increment questions answered counter
         questionsAnswered++;
         console.log("DEBUG: Questions answered incremented to:", questionsAnswered);
+        
+        // Check if we've reached the total questions limit - moved outside the isCorrect block
+        // so it works for both correct and incorrect answers
+        if (questionsAnswered >= totalQuestions) {
+            console.log("DEBUG: Reached total questions limit, showing final score soon");
+            setTimeout(() => {
+                showFinalScore();
+            }, isCorrect ? 900 : 2000); // Use appropriate delay based on correctness
+            return;
+        }
         
         // Show feedback
         showFeedback(isCorrect, correctAnswer);
