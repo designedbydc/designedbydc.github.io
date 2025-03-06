@@ -1,0 +1,289 @@
+:root {
+  --paytm-blue: #00BAF2;
+  --paytm-dark-blue: #002E6E;
+  --paytm-light-blue: #e6f7fc;
+  --paytm-gray: #f5f7fa;
+  --paytm-text: #333333;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: white;
+  color: var(--paytm-text);
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0;
+  text-align: center;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: white;
+}
+
+.app-header {
+  background-color: white;
+  padding: 2rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.app-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--paytm-blue);
+  letter-spacing: -0.5px;
+}
+
+.app-subtitle {
+  font-size: 1.4rem;
+  margin-top: 0.5rem;
+  color: var(--paytm-dark-blue);
+  font-weight: 400;
+}
+
+.app-content {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  background-color: white;
+}
+
+.intro-text {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.intro-text h2 {
+  font-size: 2.2rem;
+  color: var(--paytm-dark-blue);
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.intro-text p {
+  font-size: 1.2rem;
+  color: #666;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.app-footer {
+  background-color: var(--paytm-dark-blue);
+  color: white;
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 1rem;
+}
+
+/* Results styling */
+.results-display {
+  width: 100%;
+  max-width: 800px;
+  margin-top: 2rem;
+}
+
+.results-title {
+  color: var(--paytm-dark-blue);
+  font-size: 2.2rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  font-weight: 700;
+}
+
+.result-item {
+  background-color: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f0f0f0;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.result-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--paytm-light-blue);
+  padding-bottom: 0.8rem;
+}
+
+.result-header h3 {
+  margin: 0;
+  color: var(--paytm-dark-blue);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.result-price {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--paytm-blue);
+}
+
+.price-period {
+  font-size: 0.9rem;
+  font-weight: normal;
+  opacity: 0.7;
+}
+
+.result-details {
+  margin-bottom: 1.2rem;
+}
+
+/* Flight specific styling */
+.flight-route {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 1rem 0;
+}
+
+.flight-point {
+  text-align: center;
+  flex: 0 0 auto;
+}
+
+.flight-code {
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: var(--paytm-dark-blue);
+}
+
+.flight-time {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 0.3rem;
+}
+
+.flight-duration {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0 1rem;
+  position: relative;
+}
+
+.flight-line {
+  height: 2px;
+  background-color: var(--paytm-blue);
+  width: 100%;
+  position: relative;
+}
+
+.flight-line::before, .flight-line::after {
+  content: "•";
+  position: absolute;
+  top: -8px;
+  color: var(--paytm-blue);
+  font-size: 1.2rem;
+}
+
+.flight-line::before {
+  left: 0;
+}
+
+.flight-line::after {
+  right: 0;
+}
+
+.flight-duration-text {
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.5rem;
+}
+
+/* Hotel specific styling */
+.hotel-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.5rem 0;
+}
+
+.hotel-location {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.hotel-rating {
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+/* Book button */
+.book-button {
+  background-color: var(--paytm-blue);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  padding: 0.8rem 1.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: block;
+  margin-left: auto;
+  margin-top: 1rem;
+}
+
+.book-button:hover {
+  background-color: var(--paytm-dark-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
