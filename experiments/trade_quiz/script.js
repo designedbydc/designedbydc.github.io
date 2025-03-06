@@ -731,40 +731,55 @@ document.addEventListener('DOMContentLoaded', function() {
     // Fetch a question from the API or use mock questions
     function fetchQuestion() {
         console.log("DEBUG: Entering fetchQuestion function");
+        
+        // Get difficulty based on progress
+        let difficulty = 'easy';
+        let questionPool;
+        
+        // Progressive difficulty logic
+        // First 10 questions are easy, next 10 are medium, last 10 are hard
+        if (questionsAnswered < 10) {
+            difficulty = 'easy';
+            questionPool = MOCK_QUESTIONS_EASY;
+            console.log("DEBUG: Using EASY difficulty for question", questionsAnswered + 1);
+        } else if (questionsAnswered < 20) {
+            difficulty = 'medium';
+            questionPool = MOCK_QUESTIONS_MEDIUM;
+            console.log("DEBUG: Using MEDIUM difficulty for question", questionsAnswered + 1);
+        } else {
+            difficulty = 'hard';
+            questionPool = MOCK_QUESTIONS_HARD;
+            console.log("DEBUG: Using HARD difficulty for question", questionsAnswered + 1);
+        }
+        
+        // Update UI to reflect current difficulty (optional)
+        if (currentDifficultySpan) {
+            currentDifficultySpan.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+        }
+        
         // For testing, use mock questions directly
         const useLocalMockQuestions = true;
         
         if (useLocalMockQuestions) {
-            console.log("DEBUG: Using local mock questions");
-            const randomIndex = Math.floor(Math.random() * mockQuestions.length);
-            const question = mockQuestions[randomIndex];
+            console.log(`DEBUG: Using local ${difficulty.toUpperCase()} questions`);
+            
+            // Ensure we have questions in the pool
+            if (!questionPool || questionPool.length === 0) {
+                console.error(`DEBUG: No ${difficulty} questions available, using general pool`);
+                questionPool = mockQuestions;
+            }
+            
+            // Get random question from the difficulty-specific pool
+            const randomIndex = Math.floor(Math.random() * questionPool.length);
+            const question = questionPool[randomIndex];
             console.log("DEBUG: Selected mock question:", question);
             return Promise.resolve(question);
         }
         
-        return fetch('https://opentdb.com/api.php?amount=1&category=9&difficulty=medium&type=multiple')
-            .then(response => response.json())
-            .then(data => {
-                if (data.response_code === 0 && data.results && data.results.length > 0) {
-                    const questionData = data.results[0];
-                    return {
-                        question: questionData.question,
-                        options: [...questionData.incorrect_answers, questionData.correct_answer],
-                        correctAnswer: questionData.correct_answer
-                    };
-                }
-                
-                // If API didn't return valid question, use a mock question
-                const randomIndex = Math.floor(Math.random() * mockQuestions.length);
-                return mockQuestions[randomIndex];
-            })
-            .catch(error => {
-                console.error("Error fetching question:", error);
-                
-                // If API call fails, use a mock question
-                const randomIndex = Math.floor(Math.random() * mockQuestions.length);
-                return mockQuestions[randomIndex];
-            });
+        // If not using local questions, would need to adjust API call to use the current difficulty
+        // For now, just return a mock question based on difficulty
+        const randomIndex = Math.floor(Math.random() * questionPool.length);
+        return Promise.resolve(questionPool[randomIndex]);
     }
 
     // Display question
@@ -792,6 +807,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Hide loading and show quiz container
         loadingContainer.classList.add('hidden');
         quizContainer.classList.remove('hidden');
+        
+        // Update question counter and difficulty indicator
+        updateDifficultyIndicator();
         
         // Display the question - decode HTML entities
         questionElement.innerHTML = decodeHtmlEntities(questionData.question);
@@ -831,6 +849,59 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Hide any previous feedback
         feedbackContainer.classList.add('hidden');
+    }
+    
+    // New function to update the difficulty indicator
+    function updateDifficultyIndicator() {
+        // Get current difficulty based on questions answered
+        let difficulty = 'easy';
+        let color = '#10B981'; // Green for easy
+        
+        if (questionsAnswered < 10) {
+            difficulty = 'Easy';
+            color = '#10B981'; // Green
+        } else if (questionsAnswered < 20) {
+            difficulty = 'Medium';
+            color = '#F59E0B'; // Amber
+        } else {
+            difficulty = 'Hard';
+            color = '#EF4444'; // Red
+        }
+        
+        // Update UI to show current question number and difficulty
+        if (currentQuestionSpan) {
+            currentQuestionSpan.textContent = `${questionsAnswered + 1}`;
+        }
+        
+        if (currentDifficultySpan) {
+            currentDifficultySpan.textContent = difficulty;
+            currentDifficultySpan.style.color = color;
+        }
+        
+        // Add a small indicator at the top of the quiz
+        const difficultyIndicator = document.createElement('div');
+        difficultyIndicator.className = 'text-center mb-4';
+        difficultyIndicator.innerHTML = `
+            <span class="text-sm font-medium" style="color: ${color}">
+                Question ${questionsAnswered + 1}/30 - ${difficulty} Difficulty
+            </span>
+        `;
+        
+        // Remove any existing indicator
+        const existingIndicator = document.querySelector('.difficulty-indicator');
+        if (existingIndicator) {
+            existingIndicator.remove();
+        }
+        
+        // Add class for easier removal later
+        difficultyIndicator.classList.add('difficulty-indicator');
+        
+        // Insert at the beginning of the question container
+        if (questionContainer && questionContainer.firstChild) {
+            questionContainer.insertBefore(difficultyIndicator, questionContainer.firstChild);
+        } else if (questionContainer) {
+            questionContainer.appendChild(difficultyIndicator);
+        }
     }
     
     // Helper function to decode HTML entities
@@ -939,6 +1010,25 @@ document.addEventListener('DOMContentLoaded', function() {
         // Update final score
         finalScoreValue.textContent = `${score} of 30`;
         console.log("DEBUG: Final score set to:", finalScoreValue.textContent);
+        
+        // Create a more descriptive final message based on score
+        let finalMessage = '';
+        if (score >= 25) {
+            finalMessage = "Exceptional! You're a master of trading setups across all difficulty levels!";
+        } else if (score >= 20) {
+            finalMessage = "Impressive! You handled the progressive difficulty with great skill!";
+        } else if (score >= 15) {
+            finalMessage = "Well done! You showed good knowledge as the questions got harder!";
+        } else if (score >= 10) {
+            finalMessage = "Good effort! You did well on the easier questions and faced the challenge of harder ones.";
+        } else {
+            finalMessage = "Thanks for taking the quiz! Trading setups get complex as difficulty increases.";
+        }
+        
+        // Update the final message
+        if (finalScoreMessage) {
+            finalScoreMessage.textContent = finalMessage;
+        }
         
         // Show restart button and share container
         restartButton.classList.remove('hidden');
