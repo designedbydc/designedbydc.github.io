@@ -38,3 +38,4 @@ Temporary Items
 
 # Environment variables
 .env
+node_modules/
