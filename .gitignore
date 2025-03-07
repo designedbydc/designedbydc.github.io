@@ -39,3 +39,6 @@ Temporary Items
 # Environment variables
 .env
 node_modules/
+
+# Project specific
+travel-assistant/
