@@ -205,6 +205,20 @@
         .logo-container {
             padding-top: 100px; /* Add 50px padding above the logo */
         }
+        
+        /* Profile container styling */
+        .profile-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
     <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
@@ -224,54 +238,12 @@
         </div>
     </div>
 
-    <div class="logo-container">
-        <img src="img/logo.png" width="189px" height="103px" alt="designedbydc logo" />
-    </div>
-    <p>( Design + Develop + Invest ) <sup>AI</sup></p>
-    <br>
-    <p>Twitter: <a href="https://x.com/NextPercent" target="_blank">@NextPercent</a></p>
-
-    <div class="experiments-container">
-        <h2>Recent AI Experiments</h2>
-        <table id="experiments" class="experiments-table experiments-section">
-            <tbody>
-                <tr>
-                    <td>8-Mar-2025</td>
-                    <td>YouTube Summarizer</td>
-                    <td><a href="https://github.com/designedbydc/designedbydc.github.io/blob/master/Chrome%20Extensions/YouTube_Summarize" target="_blank">Download →</a></td>
-                </tr>
-                <tr>
-                    <td>1-Mar-2025</td>
-                    <td>Test Your Knowledge of the Stock Market</td>
-                    <td><a href="./experiments/trade_quiz/index.html" target="_blank">Play →</a></td>
-                </tr>
-                <tr>
-                    <td>28-Feb-2025</td>
-                    <td>Chrome Extension - Speed Shortcut</td>
-                    <td><a href="https://github.com/designedbydc/designedbydc.github.io/tree/master/Chrome%20Extensions/speed-yt" target="_blank">Download →</a></td>
-                </tr>
-                <tr>
-                    <td>22-Feb-2025</td>
-                    <td>Chrome Extension - Floating Video Player</td>
-                    <td><a href="https://github.com/designedbydc/designedbydc.github.io/tree/master/Chrome%20Extensions/floating-video-player" target="_blank">Download →</a></td>
-                </tr>
-                <tr>
-                    <td>13-Feb-2025</td>
-                    <td>Pomodoro Timer</td>
-                    <td><a href="./experiments/pomodoro.html" target="_blank">Try →</a></td>
-                </tr>
-                <tr>
-                    <td>12-Feb-2025</td>
-                    <td>Pacman Multiplayer</td>
-                    <td><a href="./experiments/pacman.html" target="_blank">Play →</a></td>
-                </tr>
-                <tr>
-                    <td>Late 2024</td>
-                    <td>Todo App</td>
-                    <td><a href="./experiments/todo.html" target="_blank">Try →</a></td>
-                </tr>
-            </tbody>
-        </table>
+    <div class="profile-container">
+        <div class="logo-container">
+            <img src="img/logo.png" width="189px" height="103px" alt="designedbydc logo" />
+        </div>
+        <p>( Design + Develop + Invest ) <sup>AI</sup></p>
+        <p><a href="https://x.com/NextPercent" target="_blank">Twitter</a> • <a href="https://github.com/NextPercent" target="_blank">GitHub</a></p>
     </div>
 
     <script>
