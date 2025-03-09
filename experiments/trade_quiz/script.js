@@ -75,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
     let odometerInstance;
     let questionsAnswered = 0;
     let livesRemaining = CONFIG.maxLives;
+    let totalQuestions = 30; // Set a default total number of questions
     
     // Initialize music player
     initMusicPlayer();
@@ -544,6 +545,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Function to fetch questions from OpenAI API
     async function fetchQuestionsFromOpenAI(difficulty) {
         debugOpenAI.logAPICall('fetchQuestionsFromOpenAI', { difficulty, isProduction: CONFIG.isProduction });
+        console.log("Fetching question with difficulty:", difficulty);
         
         try {
             // Get API key (now used in both dev and production)
@@ -570,6 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
             
             try {
+                console.log("Making API request to OpenAI...");
                 const response = await fetch('https://api.openai.com/v1/chat/completions', {
                     method: 'POST',
                     headers: {
@@ -604,13 +607,17 @@ document.addEventListener('DOMContentLoaded', function() {
                         error: errorData
                     });
                     
+                    let errorMessage = `API request failed: ${response.status} ${response.statusText}`;
+                    
                     // Show a specific error for rate limiting
                     if (response.status === 429) {
-                        console.error('OpenAI API rate limit exceeded');
-                        showError('Rate limit exceeded. Using mock questions as fallback.');
+                        errorMessage = 'OpenAI API rate limit exceeded';
+                        console.error(errorMessage);
                     } else {
-                        console.error(`API request failed: ${response.status} ${response.statusText}`);
+                        console.error(errorMessage);
                     }
+                    
+                    showError(errorMessage + '. Using mock questions as fallback.');
                     
                     // Fall back to mock questions
                     return getQuestionFromMockData(difficulty);
@@ -618,16 +625,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const data = await response.json();
                 debugOpenAI.logAPIResponse(data);
+                console.log("API response received:", data);
                 
                 // Extract the content from the response
                 const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
                 
                 if (!content) {
+                    console.error("No content in API response");
+                    showError("Error: API returned empty content. Using mock questions.");
                     throw new Error('No content in API response');
                 }
                 
                 // Try to parse the JSON from the content
                 try {
+                    console.log("Parsing content:", content);
                     // Find JSON in the response - it might be wrapped in markdown code blocks
                     let jsonStr = content;
                     
@@ -635,14 +646,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
                     if (jsonMatch && jsonMatch[1]) {
                         jsonStr = jsonMatch[1];
+                        console.log("Extracted JSON from markdown:", jsonStr);
                     }
                     
                     // Parse the JSON
                     const questionData = JSON.parse(jsonStr);
                     debugOpenAI.logAPIResponse({ parsed: questionData });
+                    console.log("Successfully parsed question data:", questionData);
                     
                     // Validate the question data
                     if (!questionData.question || !Array.isArray(questionData.options) || !questionData.correctAnswer) {
+                        console.error("Invalid question format from API:", questionData);
+                        showError("Error: API returned invalid question format. Using mock questions.");
                         throw new Error('Invalid question data format from API');
                     }
                     
@@ -674,35 +689,62 @@ document.addEventListener('DOMContentLoaded', function() {
                         content: content
                     });
                     console.error('Failed to parse API response:', parseError);
+                    showError("Error parsing API response. Using mock questions.");
                     return getQuestionFromMockData(difficulty);
                 }
             } catch (fetchError) {
                 clearTimeout(timeoutId);
                 
+                let errorMessage = "Error making API request";
+                
                 if (fetchError.name === 'AbortError') {
-                    console.error('API request timed out');
-                    showError('API request timed out. Using mock questions.');
+                    errorMessage = 'API request timed out';
+                    console.error(errorMessage);
                 } else {
-                    console.error('Fetch error:', fetchError);
+                    errorMessage = 'Fetch error: ' + fetchError.message;
+                    console.error(errorMessage, fetchError);
                 }
                 
+                showError(errorMessage + ". Using mock questions.");
                 return getQuestionFromMockData(difficulty);
             }
         } catch (error) {
             debugOpenAI.logAPIResponse(null, error);
             console.error('Unhandled error in fetchQuestionsFromOpenAI:', error);
+            showError("Unexpected error occurred. Using mock questions.");
             return getQuestionFromMockData(difficulty);
         }
     }
 
     // Initialize the quiz
     function initQuiz() {
-        // console.log("DEBUG: Initializing quiz");
+        console.log("Initializing quiz");
+        
         // Reset variables
         score = 0;
         questionsAnswered = 0;
         currentDifficulty = 0;
         livesRemaining = CONFIG.maxLives;
+        
+        // Check for missing elements
+        const requiredElements = [
+            { name: 'quizMainContainer', element: quizMainContainer },
+            { name: 'quizContainer', element: quizContainer },
+            { name: 'questionContainer', element: questionContainer },
+            { name: 'questionElement', element: questionElement },
+            { name: 'optionsContainer', element: optionsContainer },
+            { name: 'scoreContainer', element: scoreContainer }
+        ];
+        
+        const missingElements = requiredElements.filter(item => !item.element);
+        
+        if (missingElements.length > 0) {
+            console.error("Missing required elements:", missingElements.map(e => e.name).join(', '));
+            
+            // Show error with missing elements
+            showError(`Quiz initialization failed. Missing UI elements: ${missingElements.map(e => e.name).join(', ')}`);
+            return;
+        }
         
         // Show notification about dynamic questions
         showNotification('Using dynamic AI-generated questions for a unique experience!', 5000);
@@ -710,7 +752,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize score display
         if (scoreOdometer) {
             try {
-                // console.log("DEBUG: Initializing Odometer for score display");
+                console.log("Initializing Odometer for score display");
                 odometerInstance = new Odometer({
                     el: scoreOdometer,
                     value: 0,
@@ -718,17 +760,25 @@ document.addEventListener('DOMContentLoaded', function() {
                     theme: 'minimal'
                 });
             } catch (error) {
-                // console.error('DEBUG: Error initializing Odometer:', error);
+                console.error('Error initializing Odometer:', error);
                 scoreOdometer.textContent = '0';
             }
         }
         
+        // Make sure all containers have the correct visibility state
         // Show quiz container and hide final score
         quizMainContainer.classList.remove('hidden');
         scoreContainer.classList.remove('hidden');
         finalScoreContainer.classList.add('hidden');
+        feedbackContainer.classList.add('hidden');
+        errorContainer.classList.add('hidden');
         
-        // console.log("DEBUG: About to get first question");
+        // Start with the loading container visible
+        loadingContainer.classList.remove('hidden');
+        quizContainer.classList.add('hidden');
+        
+        console.log("Quiz initialized, getting first question");
+        
         // Get first question
         getNextQuestion();
     }
@@ -832,7 +882,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Display question
     function displayQuestion(questionData) {
-        // console.log("DEBUG: Displaying question:", questionData);
+        console.log("Displaying question:", questionData);
+        
+        // Check if elements exist
+        if (!questionElement || !optionsContainer) {
+            console.error("Critical elements missing - cannot display question");
+            showError("Unable to display question - UI elements missing");
+            return;
+        }
         
         // Clear previous options
         optionsContainer.innerHTML = '';
@@ -950,16 +1007,56 @@ document.addEventListener('DOMContentLoaded', function() {
             optionsContainer.appendChild(button);
         });
         
-        // Show the quiz container and hide loading
-        quizContainer.classList.remove('hidden');
-        loadingContainer.classList.add('hidden');
+        // Update current question number display
+        if (currentQuestionSpan) {
+            currentQuestionSpan.textContent = questionsAnswered + 1;
+        }
+        
+        // Make sure to update the lives display
+        updateLivesDisplay();
+        
+        // Debug the container visibility
+        console.log("Container visibility before showing quiz:", {
+            quizContainer: quizContainer ? quizContainer.classList.contains('hidden') : 'not found',
+            loadingContainer: loadingContainer ? loadingContainer.classList.contains('hidden') : 'not found'
+        });
+        
+        // Ensure the quiz container is shown and loading is hidden
+        if (quizContainer) quizContainer.classList.remove('hidden');
+        if (loadingContainer) loadingContainer.classList.add('hidden');
+        
+        // Additional check to make sure the quiz container is visible
+        if (quizContainer && quizContainer.classList.contains('hidden')) {
+            console.error("Quiz container still hidden after attempting to show it!");
+            quizContainer.classList.remove('hidden');
+        }
+        
+        console.log("Container visibility after showing quiz:", {
+            quizContainer: quizContainer ? quizContainer.classList.contains('hidden') : 'not found',
+            loadingContainer: loadingContainer ? loadingContainer.classList.contains('hidden') : 'not found'
+        });
     }
     
     // New function to update the difficulty indicator
     function updateDifficultyIndicator() {
-        // Apply color styling based on the current level
-        let difficulty = currentDifficulty;
+        // Check if difficultyContainer exists
+        if (!difficultyContainer) {
+            console.warn('Difficulty container not found');
+            return;
+        }
+        
+        // Calculate which level this corresponds to based on currentDifficulty value (0-1)
+        // Map the 0-1 difficulty range to our LEVELS array
+        let calculatedLevel = Math.min(Math.floor(currentDifficulty * 10), LEVELS.length - 1);
+        currentLevel = calculatedLevel;
+        
+        // Get the level data
         let levelData = LEVELS[currentLevel];
+        
+        if (!levelData) {
+            console.warn('Level data not found for level:', currentLevel);
+            return;
+        }
 
         // Text for difficulty indicator
         let difficultyText = document.createElement('div');
@@ -981,12 +1078,14 @@ document.addEventListener('DOMContentLoaded', function() {
         let container = document.createElement('div');
         container.classList.add('flex', 'items-center', 'justify-center', 'mb-2');
         container.appendChild(badge);
-        container.appendChild(difficultyText);
+        container.appendChild(document.createTextNode(levelData.name));
         
         difficultyContainer.appendChild(container);
 
-        // Update current difficulty display
-        currentDifficultySpan.textContent = levelData.name;
+        // Update current difficulty display if it exists
+        if (currentDifficultySpan) {
+            currentDifficultySpan.textContent = levelData.name;
+        }
     }
     
     // Helper function to decode HTML entities
@@ -1182,15 +1281,44 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show error message
     function showError(message) {
-        // console.error("DEBUG: Showing error:", message);
+        console.error("ERROR:", message);
+        
+        // First notify the user
+        showNotification('Error: ' + message, 7000);
         
         if (!errorContainer || !errorMessage) {
-            // console.error("DEBUG: Error DOM elements missing");
-            // Display error in console as fallback
-            // console.error("CRITICAL ERROR:", message);
+            console.error("Error DOM elements missing");
+            
+            // Create an error element if it doesn't exist
+            const tempError = document.createElement('div');
+            tempError.style.position = 'fixed';
+            tempError.style.top = '10px';
+            tempError.style.left = '50%';
+            tempError.style.transform = 'translateX(-50%)';
+            tempError.style.backgroundColor = 'rgba(220, 38, 38, 0.9)';
+            tempError.style.color = 'white';
+            tempError.style.padding = '1rem';
+            tempError.style.borderRadius = '0.5rem';
+            tempError.style.zIndex = '9999';
+            tempError.style.maxWidth = '80%';
+            tempError.style.textAlign = 'center';
+            tempError.style.boxShadow = '0 4px 6px rgba(0, 0, 0, 0.1)';
+            tempError.textContent = message;
+            
+            document.body.appendChild(tempError);
+            
+            setTimeout(() => {
+                tempError.style.opacity = '0';
+                tempError.style.transition = 'opacity 0.5s ease';
+                setTimeout(() => {
+                    document.body.removeChild(tempError);
+                }, 500);
+            }, 5000);
+            
             return;
         }
         
+        // Display in the error container
         errorContainer.classList.remove('hidden');
         errorContainer.classList.add('text-red-400', 'bg-red-500', 'bg-opacity-10', 'border', 'border-red-500');
         errorMessage.textContent = message;
@@ -1199,10 +1327,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => {
             errorContainer.classList.add('hidden');
         }, 5000);
-        
-        // Hide quiz container when showing error
-        if (quizContainer) quizContainer.classList.add('hidden');
-        if (loadingContainer) loadingContainer.classList.add('hidden');
     }
     
     // Update score
