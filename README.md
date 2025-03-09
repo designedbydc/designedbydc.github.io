@@ -1,82 +1,56 @@
 # designedbyDC
 
-A personal website and collection of browser extensions and web experiments.
+A minimalist personal website showcasing my work in design, development, and investments with AI integration.
 
 ## Overview
 
-This repository contains my personal website and various web-based projects, including Chrome extensions and interactive web experiments.
+This repository contains my personal website at [designedbydc.com](https://designedbydc.com), featuring a clean, modern design with a retro grid background.
 
 ## Website
 
-The main website ([designedbydc.com](https://designedbydc.com)) showcases my work with a focus on:
+The main website focuses on:
 
 - Design
 - Development
 - Investments
 - AI integration
 
-## Browser Extensions
-
-### Floating Video Player
-A Chrome extension that enables picture-in-picture functionality for videos across websites.
-- [Source Code](https://github.com/designedbydc/designedbydc.github.io/tree/master/floating-video-player)
-- Features:
-  - PiP button integration with YouTube's player controls
-  - Keyboard shortcut support
-  - Custom floating player with controls
-
-### Speed YT
-A Chrome extension that adds enhanced playback speed controls to YouTube videos.
-- [Source Code](https://github.com/designedbydc/designedbydc.github.io/tree/master/speed-yt)
-- Features:
-  - Quick speed toggle button (1x, 1.5x, 2x)
-  - Seamless integration with YouTube's interface
-
-## Web Experiments
-
-### Stock Market Trade Quiz
-An interactive quiz to test and improve your stock trading skills with real market scenarios.
-- [Try it](https://designedbydc.com/experiments/trade_quiz/)
-- Features:
-  - Realistic market scenarios
-  - Performance tracking
-  - Dark/Light mode toggle
-
-### Pomodoro Timer
-A customizable Pomodoro timer application with multiple themes.
-- [Try it](https://designedbydc.com/experiments/pomodoro.html)
-
-### Pacman Multiplayer
-A multiplayer version of the classic Pacman game.
-- [Play](https://designedbydc.com/experiments/pacman.html)
-- Features:
-  - Two-player mode (Pacman and Ghost)
-  - AI-controlled ghosts
-
-### Todo App
-A simple, clean to-do list application.
-- [Try it](https://designedbydc.com/experiments/todo.html)
-
 ## Technologies Used
 
 - HTML5
 - CSS3 (with animations and 3D transforms)
 - JavaScript (Vanilla JS)
-- TailwindCSS
-- Chrome Extension API
-- Various Web APIs
+- Google Fonts (Share Tech Mono)
+- Custom grid background animation
 
-## Installation
+## Structure
 
-### Website
-The website is hosted using GitHub Pages. No installation required.
+```
+designedbydc.github.io/
+├── index.html         # Main webpage
+├── css/
+│   └── styles.css     # Main stylesheet
+├── js/
+│   └── main.js        # JavaScript functionality
+├── img/               # Logo and favicon files
+└── .github/           # GitHub configuration
+```
 
-### Chrome Extensions
-1. Download the extension folder
-2. Open Chrome and go to `chrome://extensions/`
-3. Enable "Developer mode"
-4. Click "Load unpacked" and select the extension folder
+## Features
+
+- Responsive design for all device sizes
+- Loading animation
+- 3D grid background effect
+- Minimalist interface
+- Social media links (Twitter, GitHub)
+
+## Deployment
+
+The website is deployed using:
+- GitHub Pages
+- Vercel integration
 
 ## Contact
 
 - Twitter: [@NextPercent](https://x.com/NextPercent)
+- GitHub: [designedbyDC](https://github.com/designedbyDC)
