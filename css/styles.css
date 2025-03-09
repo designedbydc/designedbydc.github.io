@@ -90,62 +90,6 @@ a:hover {
 }
 
 /* =================== 
-   Grid Background Animation
-   =================== */
-.grid-container {
-    --grid: 10rem;
-    width: 100%;
-    height: 100%;
-    position: fixed;
-    top: 0;
-    left: 0;
-    transform-style: preserve-3d;
-    perspective: 100rem;
-    animation: rotate 100s linear infinite forwards;
-}
-
-.plane {
-    --dir: 1;
-    width: 300%;
-    height: 150%;
-    min-height: 70rem;
-    position: absolute;
-    bottom: 0;
-    transform-style: preserve-3d;
-    transform-origin: bottom center;
-    transform: translateX(-50%) rotateX(85deg);
-}
-
-.grid {
-    transform-style: preserve-3d;
-    height: 100%;
-    width: 100%;
-    position: absolute;
-}
-
-.grid::before, .grid::after {
-    content: '';
-    display: block;
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-}
-
-.grid::before {
-    background-image: repeating-linear-gradient(to left, green, green 4px, transparent 4px, transparent var(--grid)), 
-                      repeating-linear-gradient(to bottom, green, green 4px, transparent 4px, transparent var(--grid));
-    animation: move 1s linear infinite forwards;
-}
-
-.grid::after {
-    background-image: linear-gradient(to bottom, rgba(0, 0, 0, 255) var(--grid), rgba(0, 0, 0, 0));
-    z-index: 1;
-    transform: translateZ(1px);
-}
-
-/* =================== 
    Profile Container
    =================== */
 .profile-container {
@@ -240,16 +184,6 @@ a:hover {
 @keyframes blink {
     0%, 50% { visibility: visible; }
     51%, 100% { visibility: hidden; }
-}
-
-@keyframes move {
-    from { transform: translateY(0px); }
-    to { transform: translateY(calc(var(--grid) * var(--dir))); }
-}
-
-@keyframes rotate {
-    from { transform: rotateZ(0deg); }
-    to { transform: rotateZ(360deg); }
 }
 
 /* =================== 
