@@ -18,27 +18,24 @@ document.addEventListener('DOMContentLoaded', function() {
     //     console.log(`DEBUG: Element check - ${item.name}: ${item.element ? 'Found' : 'MISSING'}`);
     // });
 
-    // Add OpenAI API debug logs
+    // Debug logging for OpenAI API calls
     const debugOpenAI = {
-        logAPICall: (endpoint, params) => {
-            console.log('🤖 OpenAI API Call:', {
-                endpoint,
-                params,
-                timestamp: new Date().toISOString()
-            });
+        isEnabled: true,
+        logAPICall: function(endpoint, params = {}) {
+            if (this.isEnabled) {
+                console.log('🤖 OpenAI API Call:', { endpoint, params, timestamp: new Date().toISOString() });
+            }
         },
-        logAPIResponse: (response, error = null) => {
-            if (error) {
-                console.error('❌ OpenAI API Error:', {
-                    error,
-                    timestamp: new Date().toISOString()
-                });
-            } else {
-                console.log('✅ OpenAI API Response:', {
-                    status: 'success',
-                    data: response,
-                    timestamp: new Date().toISOString()
-                });
+        logAPIResponse: function(response, error = null) {
+            if (this.isEnabled && error) {
+                console.log('❌ OpenAI API Error:', { error, timestamp: new Date().toISOString() });
+            } else if (this.isEnabled) {
+                console.log('✅ OpenAI API Response:', { timestamp: new Date().toISOString() });
+            }
+        },
+        logAPIError: function(message, error = null) {
+            if (this.isEnabled) {
+                console.log('❌ OpenAI API Error:', { error, timestamp: new Date().toISOString() });
             }
         }
     };
@@ -516,7 +513,8 @@ document.addEventListener('DOMContentLoaded', function() {
         openAI: {
             model: 'gpt-3.5-turbo',
             maxTokens: 500,
-            temperature: 0.7
+            temperature: 0.7,
+            useMockInProduction: false // Changed from true to false to use actual API in production
         },
         maxLives: 3,
         difficultyIncreaseFactor: 0.1
@@ -527,22 +525,18 @@ document.addEventListener('DOMContentLoaded', function() {
         debugOpenAI.logAPICall('getOpenAIApiKey', { isProduction: CONFIG.isProduction });
         
         try {
-            // In local development, use mock questions
-            if (!CONFIG.isProduction) {
-                return '';
-            }
-            
-            // Check for Vercel environment variables
+            // No longer using mock questions in production
+            // Instead, we'll use the API key from the environment
             if (window.__ENV && window.__ENV.QUIZ_OPENAI_API_KEY) {
                 return window.__ENV.QUIZ_OPENAI_API_KEY;
             }
             
-            throw new Error('API key not available');
+            // If no API key found, use mock questions as fallback
+            console.warn('No OpenAI API key found, falling back to mock questions');
+            return ''; // Return empty string to trigger mock questions
         } catch (error) {
             debugOpenAI.logAPIError('Error fetching API key:', error);
-            if (CONFIG.isProduction) {
-                console.warn('Falling back to mock questions in production due to missing API key');
-            }
+            console.warn('Falling back to mock questions');
             return ''; // Return empty string to trigger mock questions
         }
     }
@@ -552,15 +546,13 @@ document.addEventListener('DOMContentLoaded', function() {
         debugOpenAI.logAPICall('fetchQuestionsFromOpenAI', { difficulty, isProduction: CONFIG.isProduction });
         
         try {
-            // Get API key
+            // Get API key (now used in both dev and production)
             const apiKey = await getOpenAIApiKey();
             
-            // If no API key and in production, try mock questions as fallback
+            // If no API key, use mock questions as fallback
             if (!apiKey) {
-                if (CONFIG.isProduction) {
-                    console.warn('No API key available in production, falling back to mock questions');
-                }
-                return getQuestionFromMockData(Math.floor(difficulty * 3));
+                console.warn('No API key available, using mock questions');
+                return getQuestionFromMockData(difficulty);
             }
             
             debugOpenAI.logAPICall('apiKeyCheck', { hasKey: !!apiKey });
@@ -573,87 +565,133 @@ document.addEventListener('DOMContentLoaded', function() {
                 promptLength: prompt.length 
             });
             
-            // Make API request to OpenAI
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiKey}`
-                },
-                body: JSON.stringify({
-                    model: CONFIG.openAI.model,
-                    messages: [
-                        {
-                            role: "system",
-                            content: "You are a trading expert creating quiz questions about trading setups and strategies."
-                        },
-                        {
-                            role: "user",
-                            content: prompt
-                        }
-                    ],
-                    max_tokens: CONFIG.openAI.maxTokens,
-                    temperature: CONFIG.openAI.temperature
-                })
-            });
+            // Make API request to OpenAI with timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
             
-            if (!response.ok) {
-                const errorData = await response.json();
-                debugOpenAI.logAPIResponse(null, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    error: errorData
-                });
-                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-            }
-            
-            const data = await response.json();
-            debugOpenAI.logAPIResponse(data);
-            
-            // Extract the content from the response
-            const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
-            
-            if (!content) {
-                throw new Error('No content in API response');
-            }
-            
-            // Try to parse the JSON from the content
             try {
-                // Find JSON in the response - it might be wrapped in markdown code blocks
-                let jsonStr = content;
-                
-                // If the content contains markdown code blocks, extract the JSON
-                const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
-                if (jsonMatch && jsonMatch[1]) {
-                    jsonStr = jsonMatch[1];
-                }
-                
-                // Parse the JSON
-                const questionData = JSON.parse(jsonStr);
-                debugOpenAI.logAPIResponse({ parsed: questionData });
-                
-                // Validate the question data
-                if (!questionData.question || !Array.isArray(questionData.options) || !questionData.correctAnswer) {
-                    throw new Error('Invalid question data format from API');
-                }
-                
-                // Ensure correctAnswer is one of the options
-                if (!questionData.options.includes(questionData.correctAnswer)) {
-                    throw new Error('Correct answer not found in options');
-                }
-                
-                return questionData;
-                
-            } catch (parseError) {
-                debugOpenAI.logAPIResponse(null, {
-                    error: parseError,
-                    content: content
+                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: CONFIG.openAI.model,
+                        messages: [
+                            {
+                                role: "system",
+                                content: "You are a trading expert creating quiz questions about trading setups and strategies."
+                            },
+                            {
+                                role: "user",
+                                content: prompt
+                            }
+                        ],
+                        max_tokens: CONFIG.openAI.maxTokens,
+                        temperature: CONFIG.openAI.temperature
+                    }),
+                    signal: controller.signal
                 });
-                return getQuestionFromMockData(Math.floor(difficulty * 3));
+                
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    debugOpenAI.logAPIResponse(null, {
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorData
+                    });
+                    
+                    // Show a specific error for rate limiting
+                    if (response.status === 429) {
+                        console.error('OpenAI API rate limit exceeded');
+                        showError('Rate limit exceeded. Using mock questions as fallback.');
+                    } else {
+                        console.error(`API request failed: ${response.status} ${response.statusText}`);
+                    }
+                    
+                    // Fall back to mock questions
+                    return getQuestionFromMockData(difficulty);
+                }
+                
+                const data = await response.json();
+                debugOpenAI.logAPIResponse(data);
+                
+                // Extract the content from the response
+                const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+                
+                if (!content) {
+                    throw new Error('No content in API response');
+                }
+                
+                // Try to parse the JSON from the content
+                try {
+                    // Find JSON in the response - it might be wrapped in markdown code blocks
+                    let jsonStr = content;
+                    
+                    // If the content contains markdown code blocks, extract the JSON
+                    const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                    if (jsonMatch && jsonMatch[1]) {
+                        jsonStr = jsonMatch[1];
+                    }
+                    
+                    // Parse the JSON
+                    const questionData = JSON.parse(jsonStr);
+                    debugOpenAI.logAPIResponse({ parsed: questionData });
+                    
+                    // Validate the question data
+                    if (!questionData.question || !Array.isArray(questionData.options) || !questionData.correctAnswer) {
+                        throw new Error('Invalid question data format from API');
+                    }
+                    
+                    // Ensure correctAnswer is one of the options
+                    if (!questionData.options.includes(questionData.correctAnswer)) {
+                        console.warn('API returned a correct answer not in options, attempting to fix...');
+                        
+                        // Try to find a close match
+                        const closestOption = questionData.options.find(option => 
+                            option.toLowerCase().includes(questionData.correctAnswer.toLowerCase()) || 
+                            questionData.correctAnswer.toLowerCase().includes(option.toLowerCase())
+                        );
+                        
+                        if (closestOption) {
+                            console.warn('Found closest option match:', closestOption);
+                            questionData.correctAnswer = closestOption;
+                        } else {
+                            // If no match found, use the first option as correct (not ideal but prevents errors)
+                            console.warn('No match found, defaulting to first option');
+                            questionData.correctAnswer = questionData.options[0];
+                        }
+                    }
+                    
+                    return questionData;
+                    
+                } catch (parseError) {
+                    debugOpenAI.logAPIResponse(null, {
+                        error: parseError,
+                        content: content
+                    });
+                    console.error('Failed to parse API response:', parseError);
+                    return getQuestionFromMockData(difficulty);
+                }
+            } catch (fetchError) {
+                clearTimeout(timeoutId);
+                
+                if (fetchError.name === 'AbortError') {
+                    console.error('API request timed out');
+                    showError('API request timed out. Using mock questions.');
+                } else {
+                    console.error('Fetch error:', fetchError);
+                }
+                
+                return getQuestionFromMockData(difficulty);
             }
         } catch (error) {
             debugOpenAI.logAPIResponse(null, error);
-            return getQuestionFromMockData(Math.floor(difficulty * 3));
+            console.error('Unhandled error in fetchQuestionsFromOpenAI:', error);
+            return getQuestionFromMockData(difficulty);
         }
     }
 
@@ -665,6 +703,9 @@ document.addEventListener('DOMContentLoaded', function() {
         questionsAnswered = 0;
         currentDifficulty = 0;
         livesRemaining = CONFIG.maxLives;
+        
+        // Show notification about dynamic questions
+        showNotification('Using dynamic AI-generated questions for a unique experience!', 5000);
         
         // Initialize score display
         if (scoreOdometer) {
@@ -762,40 +803,31 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchQuestion() {
         debugOpenAI.logAPICall('fetchQuestion', { questionsAnswered });
         
-        // Get difficulty based on progress
-        let difficulty = 'easy';
-        let questionPool;
+        // Calculate difficulty based on progress (0-1 range)
+        const difficultyValue = Math.min(questionsAnswered * CONFIG.difficultyIncreaseFactor, 1);
+        
+        // Get difficulty category
+        let difficultyCategory = 'easy';
         
         // Progressive difficulty logic
-        if (questionsAnswered < 10) {
-            difficulty = 'easy';
-            questionPool = MOCK_QUESTIONS_EASY;
-        } else if (questionsAnswered < 20) {
-            difficulty = 'medium';
-            questionPool = MOCK_QUESTIONS_MEDIUM;
+        if (difficultyValue < 0.3) {
+            difficultyCategory = 'easy';
+        } else if (difficultyValue < 0.7) {
+            difficultyCategory = 'medium';
         } else {
-            difficulty = 'hard';
-            questionPool = MOCK_QUESTIONS_HARD;
+            difficultyCategory = 'hard';
         }
         
         // Update UI to reflect current difficulty
         if (currentDifficultySpan) {
-            currentDifficultySpan.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+            currentDifficultySpan.textContent = difficultyCategory.charAt(0).toUpperCase() + difficultyCategory.slice(1);
         }
         
-        // Set to false to use OpenAI API
-        const useLocalMockQuestions = false;
+        // Update difficulty indicator
+        updateDifficultyIndicator();
         
-        if (useLocalMockQuestions) {
-            debugOpenAI.logAPICall('mockQuestions', { difficulty });
-            const randomIndex = Math.floor(Math.random() * questionPool.length);
-            const question = questionPool[randomIndex];
-            debugOpenAI.logAPIResponse({ source: 'mock', question });
-            return Promise.resolve(question);
-        }
-        
-        // Use OpenAI API
-        return fetchQuestionsFromOpenAI(difficulty);
+        // Use OpenAI API as primary source
+        return fetchQuestionsFromOpenAI(difficultyValue);
     }
 
     // Display question
@@ -1193,27 +1225,37 @@ document.addEventListener('DOMContentLoaded', function() {
         // YouTube player will be initialized when API is ready
     }
 
-    // Add this function to check if getQuestionFromMockData exists or define it if missing
+    // Function to get mock questions as a fallback
     function getQuestionFromMockData(difficulty) {
         // console.log("DEBUG: Getting mock question for difficulty:", difficulty);
         
         let questionPool;
-        switch(difficulty) {
-            case 'easy':
-                // console.log("DEBUG: Using EASY mock questions");
+        
+        // Handle both numeric and string difficulty values
+        if (typeof difficulty === 'number') {
+            // Map 0-1 range to difficulty categories
+            if (difficulty < 0.3) {
                 questionPool = MOCK_QUESTIONS_EASY;
-                break;
-            case 'medium':
-                // console.log("DEBUG: Using MEDIUM mock questions");
+            } else if (difficulty < 0.7) {
                 questionPool = MOCK_QUESTIONS_MEDIUM;
-                break;
-            case 'hard':
-                // console.log("DEBUG: Using HARD mock questions");
+            } else {
                 questionPool = MOCK_QUESTIONS_HARD;
-                break;
-            default:
-                // console.log("DEBUG: Using default (all) mock questions");
-                questionPool = mockQuestions;
+            }
+        } else {
+            // Handle legacy string-based difficulties
+            switch(difficulty) {
+                case 'easy':
+                    questionPool = MOCK_QUESTIONS_EASY;
+                    break;
+                case 'medium':
+                    questionPool = MOCK_QUESTIONS_MEDIUM;
+                    break;
+                case 'hard':
+                    questionPool = MOCK_QUESTIONS_HARD;
+                    break;
+                default:
+                    questionPool = mockQuestions;
+            }
         }
         
         if (!questionPool || questionPool.length === 0) {
@@ -1359,16 +1401,113 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to get difficulty-appropriate prompt
     function getDifficultyPrompt(difficulty) {
-        // difficulty is now a number from 0 to 1
-        let basePrompt = 'Create 1 trading setup question about';
-        
+        // Format the question as JSON for easier parsing
+        const format = `
+Please create 1 multiple-choice question about trading setups and strategies. 
+Return the question in the following JSON format only, with no additional text:
+{
+  "question": "The question text goes here?",
+  "options": ["Option A", "Option B", "Option C", "Option D"],
+  "correctAnswer": "The correct option from the options array"
+}
+Ensure the correct answer is exactly the same as one of the options.`;
+
+        // Select difficulty-appropriate prompts
         if (difficulty < 0.3) {
-            return basePrompt + ' basic stock market trading concepts. Focus on fundamental patterns and simple setups.';
-        } else if (difficulty < 0.6) {
-            return basePrompt + ' intermediate trading strategies and technical analysis. Include more complex patterns and market dynamics.';
+            return `${format}
+
+Create a beginner-level question about stock market trading concepts. Focus on:
+- Basic candlestick patterns (like bullish/bearish engulfing, doji, etc.)
+- Simple support and resistance concepts
+- Fundamental trading terminology
+- Basic risk management principles
+- Common chart patterns for beginners
+- Simple moving averages and trend identification
+
+Make it challenging but appropriate for someone new to trading.`;
+        } else if (difficulty < 0.7) {
+            return `${format}
+
+Create an intermediate-level question about trading strategies and technical analysis. Focus on:
+- Intermediate chart patterns (head and shoulders, cup and handle, etc.)
+- Trading indicators and oscillators (RSI, MACD, Bollinger Bands, etc.)
+- Market structure and price action
+- Volume analysis and interpretation
+- Multiple timeframe analysis
+- Position sizing and advanced risk management
+
+Make it challenging but appropriate for someone with trading experience.`;
         } else {
-            return basePrompt + ' advanced trading concepts, complex market psychology, and professional trading setups. Focus on sophisticated strategies and advanced market mechanics.';
+            return `${format}
+
+Create an advanced-level question about sophisticated trading concepts. Focus on:
+- Complex market mechanics and institutional trading
+- Advanced volatility-based strategies
+- Market maker methods and order flow analysis
+- Statistical arbitrage and quantitative approaches
+- Inter-market correlations and global macro influence on trades
+- Advanced risk and portfolio management theories
+- Market psychology and behavioral finance in trading
+
+Make it very challenging and appropriate for experienced traders with deep market knowledge.`;
         }
+    }
+
+    // Add a notification function
+    function showNotification(message, duration = 3000) {
+        // Check if notification container exists, create if not
+        let notificationContainer = document.getElementById('notification-container');
+        if (!notificationContainer) {
+            notificationContainer = document.createElement('div');
+            notificationContainer.id = 'notification-container';
+            notificationContainer.classList.add('fixed', 'top-4', 'left-1/2', 'transform', '-translate-x-1/2', 'z-50');
+            document.body.appendChild(notificationContainer);
+        }
+        
+        // Create notification element
+        const notification = document.createElement('div');
+        notification.classList.add(
+            'bg-purple-700', 
+            'text-white', 
+            'px-4', 
+            'py-2', 
+            'rounded-lg', 
+            'shadow-lg', 
+            'flex', 
+            'items-center', 
+            'space-x-2',
+            'mb-2',
+            'transition-opacity',
+            'duration-300',
+            'opacity-0'
+        );
+        
+        // Add sparkle icon
+        notification.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            <span>${message}</span>
+        `;
+        
+        // Add to container
+        notificationContainer.appendChild(notification);
+        
+        // Animate in
+        setTimeout(() => {
+            notification.classList.remove('opacity-0');
+            notification.classList.add('opacity-100');
+        }, 10);
+        
+        // Remove after duration
+        setTimeout(() => {
+            notification.classList.remove('opacity-100');
+            notification.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 300);
+        }, duration);
     }
 });
 

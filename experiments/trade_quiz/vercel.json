@@ -1,0 +1,5 @@
+{
+  "buildCommand": "echo 'Building with mock data for security'",
+  "installCommand": "echo 'No dependencies to install'",
+  "outputDirectory": "."
+} 
