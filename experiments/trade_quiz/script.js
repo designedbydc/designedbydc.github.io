@@ -669,9 +669,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Apply theme based on current level
     function applyLevelTheme(level) {
-        document.documentElement.style.setProperty('--primary-color', level.theme.primary);
-        document.documentElement.style.setProperty('--secondary-color', level.theme.secondary);
-        document.documentElement.style.setProperty('--accent-color', level.theme.accent);
+        // Use Huly-inspired theme with purple accents
+        document.documentElement.style.setProperty('--accent-color', '#8b5cf6');
+        document.documentElement.style.setProperty('--accent-glow', 'rgba(139, 92, 246, 0.3)');
     }
 
     // Shuffle array (Fisher-Yates algorithm)
@@ -786,122 +786,159 @@ document.addEventListener('DOMContentLoaded', function() {
     function displayQuestion(questionData) {
         console.log("DEBUG: Displaying question:", questionData);
         
-        if (!questionData) {
-            console.error("DEBUG: No question data provided");
-            showError("Failed to load question. Please try again.");
-            return;
-        }
-
-        // Check if required DOM elements exist
-        if (!loadingContainer || !quizContainer || !questionElement || !optionsContainer) {
-            console.error("DEBUG: Required DOM elements missing:", {
-                loadingContainer: !!loadingContainer,
-                quizContainer: !!quizContainer,
-                questionElement: !!questionElement,
-                optionsContainer: !!optionsContainer
-            });
-            showError("Critical error: UI elements not found. Please reload the page.");
-            return;
-        }
-
-        // Hide loading and show quiz container
-        loadingContainer.classList.add('hidden');
-        quizContainer.classList.remove('hidden');
-        
-        // Update question counter and difficulty indicator
-        updateDifficultyIndicator();
-        
-        // Display the question - decode HTML entities
-        questionElement.innerHTML = decodeHtmlEntities(questionData.question);
-        console.log("DEBUG: Question content set to:", questionElement.innerHTML);
-        
         // Clear previous options
         optionsContainer.innerHTML = '';
         
-        // Shuffle options for randomness
-        const options = [...questionData.options];
-        shuffleArray(options);
+        // Set question text
+        questionElement.textContent = decodeHtmlEntities(questionData.question);
         
-        console.log("DEBUG: Adding option buttons for:", options);
+        // Get correct answer
+        let correctAnswer = questionData.correctAnswer;
         
-        if (!options || options.length === 0) {
-            console.error("DEBUG: No options available for question");
-            showError("Failed to load question options. Please try again.");
-            return;
-        }
+        // Get all options
+        let options = questionData.options.map(opt => decodeHtmlEntities(opt));
         
-        // Create and append option buttons with updated styling
+        // Create buttons for each option
         options.forEach((option, index) => {
-            console.log(`DEBUG: Creating button for option ${index + 1}:`, option);
             const button = document.createElement('button');
-            button.innerHTML = decodeHtmlEntities(option);
-            button.className = 'option-btn w-full py-3 px-4 text-lg font-bold rounded-lg border-2 border-black bg-white text-black hover:bg-black hover:text-white transition-colors';
-            // Add debug to click event
-            button.addEventListener('click', () => {
-                console.log(`DEBUG: Option button clicked: "${option}"`);
-                checkAnswer(option, questionData.correctAnswer);
+            button.type = 'button';
+            button.classList.add(
+                'option-btn',
+                'w-full',
+                'text-left',
+                'px-5',
+                'py-4',
+                'rounded-xl',
+                'border',
+                'focus:outline-none',
+                'focus:ring-2',
+                'focus:ring-purple-500',
+                'hover:border-purple-500'
+            );
+            
+            // Create a container for option text with letter indicator
+            const optionLabel = document.createElement('div');
+            optionLabel.classList.add('flex', 'items-start');
+            
+            // Create letter indicator (A, B, C, D)
+            const letterIndicator = document.createElement('span');
+            letterIndicator.classList.add('inline-flex', 'items-center', 'justify-center', 'w-7', 'h-7', 'rounded-full', 'bg-purple-500', 'bg-opacity-10', 'text-purple-400', 'text-sm', 'font-bold', 'mr-3', 'mt-0.5', 'flex-shrink-0');
+            letterIndicator.textContent = String.fromCharCode(65 + index); // A, B, C, D
+            
+            // Create text container
+            const textContainer = document.createElement('div');
+            textContainer.classList.add('flex-1');
+            textContainer.textContent = option;
+            
+            // Assemble option
+            optionLabel.appendChild(letterIndicator);
+            optionLabel.appendChild(textContainer);
+            button.appendChild(optionLabel);
+            
+            // Add click event handler
+            button.addEventListener('click', function(e) {
+                // Disable all option buttons
+                document.querySelectorAll('.option-btn').forEach(btn => {
+                    btn.disabled = true;
+                    btn.classList.add('opacity-60', 'cursor-not-allowed');
+                });
+                
+                // Check if answer is correct
+                const isCorrect = option === correctAnswer;
+                
+                // Apply visual feedback to selected option
+                if (isCorrect) {
+                    this.classList.add('correct');
+                    // Also add the pulse effect
+                    this.classList.add('animate-pulse');
+                    setTimeout(() => this.classList.remove('animate-pulse'), 1000);
+                } else {
+                    this.classList.add('incorrect');
+                    
+                    // Highlight the correct answer
+                    document.querySelectorAll('.option-btn').forEach(btn => {
+                        if (btn.textContent.includes(correctAnswer)) {
+                            btn.classList.add('correct');
+                        }
+                    });
+                }
+                
+                // Show feedback
+                showFeedback(isCorrect, correctAnswer);
+                
+                // Update score if correct
+                if (isCorrect) {
+                    score++;
+                    updateScore(score);
+                }
+                
+                // Increment questions answered counter
+                questionsAnswered++;
+                
+                // If we've reached the total questions, show the final score
+                if (questionsAnswered >= totalQuestions) {
+                    // Delay to allow user to see the feedback
+                    setTimeout(() => {
+                        showFinalScore();
+                    }, 1500);
+                    return;
+                }
+                
+                // Otherwise, get the next question after a delay
+                setTimeout(() => {
+                    loadingContainer.classList.remove('hidden');
+                    quizContainer.classList.add('hidden');
+                    
+                    setTimeout(() => {
+                        // Hide feedback
+                        feedbackContainer.classList.add('hidden');
+                        
+                        // Get next question
+                        getNextQuestion();
+                    }, 1000);
+                }, 1500);
             });
+            
             optionsContainer.appendChild(button);
         });
         
-        console.log("DEBUG: Option buttons added, count:", optionsContainer.children.length);
-        console.log("DEBUG: Options container:", optionsContainer.innerHTML);
-        
-        // Hide any previous feedback
-        feedbackContainer.classList.add('hidden');
+        // Show the quiz container and hide loading
+        quizContainer.classList.remove('hidden');
+        loadingContainer.classList.add('hidden');
     }
     
     // New function to update the difficulty indicator
     function updateDifficultyIndicator() {
-        // Get current difficulty based on questions answered
-        let difficulty = 'easy';
-        let color = '#10B981'; // Green for easy
+        // Apply color styling based on the current level
+        let difficulty = currentDifficulty;
+        let levelData = LEVELS[currentLevel];
+
+        // Text for difficulty indicator
+        let difficultyText = document.createElement('div');
+        difficultyText.classList.add('text-sm', 'font-semibold', 'mb-1');
+        difficultyText.textContent = levelData.name;
         
-        if (questionsAnswered < 10) {
-            difficulty = 'Easy';
-            color = '#10B981'; // Green
-        } else if (questionsAnswered < 20) {
-            difficulty = 'Medium';
-            color = '#F59E0B'; // Amber
-        } else {
-            difficulty = 'Hard';
-            color = '#EF4444'; // Red
-        }
+        // Create the badge
+        let badge = document.createElement('span');
+        badge.classList.add('inline-flex', 'items-center', 'px-2.5', 'py-0.5', 'rounded-full', 'text-xs', 'font-medium', 'mr-2');
+        badge.innerHTML = levelData.badge;
         
-        // Update UI to show current question number and difficulty
-        if (currentQuestionSpan) {
-            currentQuestionSpan.textContent = `${questionsAnswered + 1}`;
-        }
+        // Use the Huly-inspired color theme
+        badge.classList.add('bg-purple-500', 'bg-opacity-20', 'text-purple-400');
         
-        if (currentDifficultySpan) {
-            currentDifficultySpan.textContent = difficulty;
-            currentDifficultySpan.style.color = color;
-        }
+        // Clear previous content
+        difficultyContainer.innerHTML = '';
         
-        // Add a small indicator at the top of the quiz
-        const difficultyIndicator = document.createElement('div');
-        difficultyIndicator.className = 'text-center mb-4';
-        difficultyIndicator.innerHTML = `
-            <span class="text-sm font-medium" style="color: ${color}">
-                Question ${questionsAnswered + 1}/30 - ${difficulty} Difficulty
-            </span>
-        `;
+        // Append badge and text
+        let container = document.createElement('div');
+        container.classList.add('flex', 'items-center', 'justify-center', 'mb-2');
+        container.appendChild(badge);
+        container.appendChild(difficultyText);
         
-        // Remove any existing indicator
-        const existingIndicator = document.querySelector('.difficulty-indicator');
-        if (existingIndicator) {
-            existingIndicator.remove();
-        }
-        
-        // Add class for easier removal later
-        difficultyIndicator.classList.add('difficulty-indicator');
-        
-        // Insert at the beginning of the question container
-        if (questionContainer && questionContainer.firstChild) {
-            questionContainer.insertBefore(difficultyIndicator, questionContainer.firstChild);
-        } else if (questionContainer) {
-            questionContainer.appendChild(difficultyIndicator);
-        }
+        difficultyContainer.appendChild(container);
+
+        // Update current difficulty display
+        currentDifficultySpan.textContent = levelData.name;
     }
     
     // Helper function to decode HTML entities
@@ -918,47 +955,57 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show feedback for the answer
     function showFeedback(isCorrect, correctAnswer) {
-        console.log("DEBUG: Showing feedback, isCorrect:", isCorrect);
+        const feedbackDiv = document.getElementById('feedback-container').querySelector('div');
         
-        if (!feedbackContainer || !feedbackText) {
-            console.error("DEBUG: Feedback DOM elements missing:", {
-                feedbackContainer: !!feedbackContainer,
-                feedbackText: !!feedbackText
-            });
-            // Try to continue anyway by getting next question
-            setTimeout(() => getNextQuestion(), 2000);
-            return;
-        }
-        
+        // Set feedback classes based on result, using the new Huly-inspired design
         if (isCorrect) {
-            // For correct answers, don't show any feedback message
-            feedbackContainer.classList.add('hidden');
+            feedbackDiv.classList.add('bg-green-500', 'bg-opacity-10', 'border', 'border-green-500', 'text-white');
+            feedbackDiv.classList.remove('bg-red-500', 'bg-opacity-10', 'border-red-500');
+            
+            // Play success sound
+            const successSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-melodic-bonus-collect-1938.mp3');
+            successSound.volume = 0.5;
+            try {
+                successSound.play();
+            } catch (e) {
+                console.warn('Could not play success sound', e);
+            }
+            
+            // Trigger confetti for correct answers
+            try {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+            } catch (e) {
+                console.warn('Confetti not available', e);
+            }
         } else {
-            // Only show feedback for incorrect answers
-            feedbackContainer.classList.remove('hidden');
-            feedbackContainer.firstElementChild.className = 'p-4 mb-4 text-white bg-black border-2 border-black rounded-lg';
-            feedbackText.innerHTML = `Incorrect. The correct answer is: <strong>${decodeHtmlEntities(correctAnswer)}</strong>`;
+            feedbackDiv.classList.add('bg-red-500', 'bg-opacity-10', 'border', 'border-red-500', 'text-white');
+            feedbackDiv.classList.remove('bg-green-500', 'bg-opacity-10', 'border-green-500');
+            
+            // Play error sound
+            const errorSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3');
+            errorSound.volume = 0.5;
+            try {
+                errorSound.play();
+            } catch (e) {
+                console.warn('Could not play error sound', e);
+            }
         }
         
-        // Disable all option buttons after an answer is selected
-        const optionButtons = document.querySelectorAll('.option-btn');
-        console.log("DEBUG: Disabling option buttons, count:", optionButtons.length);
-        optionButtons.forEach(button => {
-            button.disabled = true;
-            if (decodeHtmlEntities(button.innerHTML) === decodeHtmlEntities(correctAnswer)) {
-                button.className = 'option-btn w-full py-3 px-4 text-lg font-bold rounded-lg border-2 border-black bg-black text-white';
-            } else if (decodeHtmlEntities(button.innerHTML) !== decodeHtmlEntities(correctAnswer) && !isCorrect && button.disabled) {
-                button.className = 'option-btn w-full py-3 px-4 text-lg font-bold rounded-lg border-2 border-black bg-white text-black opacity-50';
-            }
-        });
+        feedbackContainer.classList.remove('hidden');
         
-        // Get next question after a delay - shorter for correct answers
-        console.log("DEBUG: Setting timeout to get next question");
-        const delay = isCorrect ? 900 : 2000; // Shorter delay for correct answers
-        setTimeout(() => {
-            console.log("DEBUG: Timeout triggered, getting next question");
-            getNextQuestion();
-        }, delay);
+        let feedbackMessage = isCorrect 
+            ? '<span class="font-bold text-green-400">Correct!</span> ' 
+            : '<span class="font-bold text-red-400">Incorrect.</span> ';
+        
+        feedbackMessage += isCorrect 
+            ? 'Great job! ' 
+            : `The correct answer is: <span class="font-semibold">${correctAnswer}</span>. `;
+            
+        feedbackText.innerHTML = feedbackMessage;
     }
 
     // Check if the answer is correct
@@ -1082,8 +1129,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         errorContainer.classList.remove('hidden');
-        errorContainer.className = 'p-4 mb-4 text-white bg-black border-2 border-black rounded-lg';
+        errorContainer.classList.add('text-red-400', 'bg-red-500', 'bg-opacity-10', 'border', 'border-red-500');
         errorMessage.textContent = message;
+        
+        // Hide error after 5 seconds
+        setTimeout(() => {
+            errorContainer.classList.add('hidden');
+        }, 5000);
         
         // Hide quiz container when showing error
         if (quizContainer) quizContainer.classList.add('hidden');
