@@ -1,260 +1,85 @@
 <!DOCTYPE html>
-
 <html lang="en">
-    
-<head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    
+<head>
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="designedbyDC - Design, Development, and Investment with AI">
+    <meta name="keywords" content="design, development, AI, investment">
+    <meta name="author" content="designedbyDC">
+    
     <title>designedbyDC</title>
-    <style>
-        body {
-            overflow: auto;
-            background-color: #000;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Share Tech Mono', 'Cascadia Code', Menlo, Monaco, 'Courier New', monospace;
-            color: green;
-            text-align: center;
-            opacity: 0; /* Start hidden for fade-in effect */
-            transition: opacity 1s ease; /* Fade-in transition */
-        }
-
-        /* Loader styles */
-        .loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000; /* Ensure loader is on top */
-        }
-
-        .loader span {
-            color: #00c3ff;
-            font-size: 2rem;
-        }
-
-        h1 {
-            font-size: 6rem;
-            filter: drop-shadow(0px 0px 5px currentColor);
-        }
-
-        h1::after {
-            content: '';
-            display: inline-block;
-            width: .2em;
-            height: .7em;
-            background-color: currentColor;
-            margin-left: .1em;
-            animation: blink 1s linear infinite forwards;
-            vertical-align: baseline;
-        }
-
-        @keyframes blink {
-            0%, 50% { visibility: visible; }
-            51%, 100% { visibility: hidden; }
-        }
-
-        .grid-container {
-            --grid: 10rem;
-            width: 100%;
-            height: 100%;
-            position: fixed;
-            top: 0;
-            left: 0;
-            transform-style: preserve-3d;
-            perspective: 100rem;
-            animation: rotate 100s linear infinite forwards;
-        }
-
-        .plane {
-            --dir: 1;
-            width: 300%;
-            height: 150%;
-            min-height: 70rem;
-            position: absolute;
-            bottom: 0;
-            transform-style: preserve-3d;
-            transform-origin: bottom center;
-            transform: translateX(-50%) rotateX(85deg);
-        }
-
-        .grid {
-            transform-style: preserve-3d;
-            height: 100%;
-            width: 100%;
-            position: absolute;
-        }
-
-        .grid::before, .grid::after {
-            content: '';
-            display: block;
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-        }
-
-        .grid::before {
-            background-image: repeating-linear-gradient(to left, green, green 4px, transparent 4px, transparent var(--grid)), 
-                              repeating-linear-gradient(to bottom, green, green 4px, transparent 4px, transparent var(--grid));
-            animation: move 1s linear infinite forwards;
-        }
-
-        .grid::after {
-            background-image: linear-gradient(to bottom, rgba(0, 0, 0, 255) var(--grid), rgba(0, 0, 0, 0));
-            z-index: 1;
-            transform: translateZ(1px);
-        }
-
-        @keyframes move {
-            from { transform: translateY(0px); }
-            to { transform: translateY(calc(var(--grid) * var(--dir))); }
-        }
-
-        a {
-            color: #00c3ff;
-            text-decoration: none;
-            font-weight: bold;
-            position: relative;
-            z-index: 10;
-        }
-
-        .show-experiments {
-            padding: 15px 30px;
-            font-size: 1.2rem;
-            font-family: 'Share Tech Mono', monospace;
-            background: transparent;
-            color: #00c3ff;
-            border: 2px solid #00c3ff;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            z-index: 10;
-            margin-top: 20px;
-            filter: drop-shadow(0px 0px 5px #00c3ff);
-        }
-
-        .show-experiments:hover {
-            background: #00c3ff22;
-        }
-
-        .experiments-container {
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            background: transparent;
-            padding: 20px 0;
-            z-index: 10;
-            margin-top: 80px; /* Added margin above experiments container */
-        }
-
-        h2 {
-            margin-top: 20px;
-            color: #00c3ff;
-        }
-
-        .experiments-table {
-            margin-top: 0;
-            background: rgba(0, 0, 0, 0.8);
-            backdrop-filter: blur(5px);
-            border-radius: 10px;
-            border: 1px solid #00c3ff22;
-        }
-
-        .experiments-table th,
-        .experiments-table td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #00c3ff44;
-        }
-
-        .experiments-table th {
-            color: #00c3ff;
-            font-size: 1.1rem;
-        }
-
-        .experiments-table td {
-            color: green;
-        }
-
-        .experiments-table a {
-            color: #00c3ff;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-
-        .experiments-table a:hover {
-            filter: drop-shadow(0px 0px 5px #00c3ff);
-        }
-
-        .experiments-section {
-            scroll-margin-top: 50px;
-        }
-
-        /* New class for logo padding */
-        .logo-container {
-            padding-top: 100px; /* Add 50px padding above the logo */
-        }
-        
-        /* Profile container styling */
-        .profile-container {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 10;
-            width: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-    </style>
+    
+    <!-- Favicon -->
     <link rel="apple-touch-icon" sizes="180x180" href="/img/apple-touch-icon.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/img/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/img/favicon-16x16.png">
     <link rel="manifest" href="/img/site.webmanifest">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Google AdSense -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3711910121540204"
      crossorigin="anonymous"></script>
 </head>
-<body style="opacity: 1;">
-    <div class="loader" style="display: none;">
+<body>
+    <!-- Preloader -->
+    <div class="loader">
         <span>Loading...</span>
     </div>
 
+    <!-- Background Grid -->
     <div class="grid-container">
         <div class="plane">
             <div class="grid"></div>
         </div>
     </div>
 
-    <div class="profile-container">
+    <!-- Main Content -->
+    <main class="profile-container">
         <div class="logo-container">
-            <img src="img/logo.png" width="189px" height="103px" alt="designedbydc logo" />
+            <img src="img/logo.png" width="189" height="103" alt="designedbydc logo" />
         </div>
         <p>( Design + Develop + Invest ) <sup>AI</sup></p>
-        <p><a href="https://x.com/NextPercent" target="_blank">Twitter</a> • <a href="https://github.com/designedbyDC" target="_blank">GitHub</a></p>
-    </div>
+        
+        <!-- Social Links -->
+        <div class="social-links">
+            <a href="https://x.com/NextPercent" target="_blank" rel="noopener noreferrer" aria-label="Twitter">Twitter</a> • 
+            <a href="https://github.com/designedbyDC" target="_blank" rel="noopener noreferrer" aria-label="GitHub">GitHub</a>
+        </div>
+        
+        <!-- Projects Button - Uncomment and implement if needed -->
+        <!-- 
+        <button class="show-projects" onclick="smoothScroll('projects')">View Projects</button>
+        
+        <section id="projects" class="projects-section">
+            <h2>Projects</h2>
+            <div class="projects-container">
+                <table class="projects-table">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="#">Project 1</a></td>
+                            <td>Description of project 1</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        -->
+    </main>
 
-    <script>
-        // Function to handle smooth scrolling
-        function smoothScroll() {
-            document.getElementById('experiments').scrollIntoView({ behavior: 'smooth' });
-        }
-
-        // Fade in effect after page load
-        window.onload = function() {
-            document.body.style.opacity = 1; // Fade in the body
-            document.querySelector('.loader').style.display = 'none'; // Hide the loader
-        };
-    </script>
+    <!-- Main JavaScript -->
+    <script src="js/main.js"></script>
+</body>
+</html>
