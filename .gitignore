@@ -41,4 +41,4 @@ Temporary Items
 node_modules/
 
 # Project specific
-travel-assistant/
+# Removed travel-assistant/ from gitignore to include it in the repository
