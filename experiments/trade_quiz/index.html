@@ -26,6 +26,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <!-- YouTube API -->
     <script src="https://www.youtube.com/iframe_api"></script>
+    <!-- Vercel Runtime Config -->
+    <script>
+        window.ENV = {
+            QUIZ_OPENAI_API_KEY: process.env.QUIZ_OPENAI_API_KEY
+        };
+    </script>
+    <!-- Environment Variables -->
+    <script src="env.js"></script>
     <script>
         // Safely load Google Ads
         try {

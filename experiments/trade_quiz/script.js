@@ -74,10 +74,10 @@ document.addEventListener('DOMContentLoaded', function() {
     let questionCache = {}; // Cache for questions from API
     let questionsCompletedInLevel = 0;
     let currentQuestion = null;
-    let currentDifficulty = 'easy';
+    let currentDifficulty = 0; // Now using a numerical difficulty (0-1) instead of categories
     let odometerInstance;
     let questionsAnswered = 0;
-    let totalQuestions = 30;
+    let livesRemaining = CONFIG.maxLives;
     
     // Initialize music player
     initMusicPlayer();
@@ -512,15 +512,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Configuration
     const CONFIG = {
-        // Set to true in production environment
-        isProduction: true, // Changed to true to test API
+        isProduction: window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1',
         openAI: {
-            model: 'gpt-4', // Fixed model name
+            model: 'gpt-3.5-turbo',
             maxTokens: 500,
             temperature: 0.7
         },
-        questionsPerDifficulty: 10,
-        totalQuestions: 30
+        maxLives: 3,
+        difficultyIncreaseFactor: 0.1
     };
 
     // Function to get OpenAI API key
@@ -528,57 +527,45 @@ document.addEventListener('DOMContentLoaded', function() {
         debugOpenAI.logAPICall('getOpenAIApiKey', { isProduction: CONFIG.isProduction });
         
         try {
-            // In production, fetch from environment variable
-            if (process.env.QUIZ_OPENAI_API_KEY) {
-                return process.env.QUIZ_OPENAI_API_KEY;
+            // In local development, use mock questions
+            if (!CONFIG.isProduction) {
+                return '';
             }
             
-            // If no environment variable, try to fetch from .env file
-            const response = await fetch('/.env');
-            if (!response.ok) {
-                throw new Error('Failed to fetch API key from .env file');
+            // Check for Vercel environment variables
+            if (window.__ENV && window.__ENV.QUIZ_OPENAI_API_KEY) {
+                return window.__ENV.QUIZ_OPENAI_API_KEY;
             }
             
-            const text = await response.text();
-            const match = text.match(/QUIZ_OPENAI_API_KEY=(.+)/);
-            if (!match) {
-                throw new Error('API key not found in .env file');
-            }
-            
-            return match[1].trim();
+            throw new Error('API key not available');
         } catch (error) {
-            debugOpenAI.logAPIResponse(null, error);
-            console.error('Error fetching API key:', error);
-            return '';
+            debugOpenAI.logAPIError('Error fetching API key:', error);
+            if (CONFIG.isProduction) {
+                console.warn('Falling back to mock questions in production due to missing API key');
+            }
+            return ''; // Return empty string to trigger mock questions
         }
     }
 
     // Function to fetch questions from OpenAI API
     async function fetchQuestionsFromOpenAI(difficulty) {
-        debugOpenAI.logAPICall('fetchQuestionsFromOpenAI', { difficulty });
+        debugOpenAI.logAPICall('fetchQuestionsFromOpenAI', { difficulty, isProduction: CONFIG.isProduction });
         
         try {
             // Get API key
             const apiKey = await getOpenAIApiKey();
+            
+            // If no API key and in production, try mock questions as fallback
+            if (!apiKey) {
+                if (CONFIG.isProduction) {
+                    console.warn('No API key available in production, falling back to mock questions');
+                }
+                return getQuestionFromMockData(Math.floor(difficulty * 3));
+            }
+            
             debugOpenAI.logAPICall('apiKeyCheck', { hasKey: !!apiKey });
             
-            if (!apiKey) {
-                throw new Error('OpenAI API key not available');
-            }
-            
-            // Construct prompt based on difficulty
-            let prompt = '';
-            switch (difficulty) {
-                case 'easy':
-                    prompt = 'Create 1 basic trading setup question for beginners about stock market trading. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
-                    break;
-                case 'medium':
-                    prompt = 'Create 1 intermediate trading setup question about stock market trading strategies or technical analysis. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
-                    break;
-                case 'hard':
-                    prompt = 'Create 1 advanced trading setup question about complex trading strategies, market psychology, or professional trading setups. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
-                    break;
-            }
+            const prompt = getDifficultyPrompt(difficulty);
             
             debugOpenAI.logAPICall('openai/chat/completions', { 
                 model: CONFIG.openAI.model,
@@ -662,11 +649,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     error: parseError,
                     content: content
                 });
-                return getQuestionFromMockData(difficulty);
+                return getQuestionFromMockData(Math.floor(difficulty * 3));
             }
         } catch (error) {
             debugOpenAI.logAPIResponse(null, error);
-            return getQuestionFromMockData(difficulty);
+            return getQuestionFromMockData(Math.floor(difficulty * 3));
         }
     }
 
@@ -676,6 +663,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Reset variables
         score = 0;
         questionsAnswered = 0;
+        currentDifficulty = 0;
+        livesRemaining = CONFIG.maxLives;
         
         // Initialize score display
         if (scoreOdometer) {
@@ -1048,11 +1037,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // console.log("DEBUG: Answer is correct:", isCorrect);
         
         if (isCorrect) {
-            // Correct answer
-            updateScore(score + 1);
+            // Increase score and difficulty
+            score++;
+            updateScore(score);
+            currentDifficulty = Math.min(1, currentDifficulty + CONFIG.difficultyIncreaseFactor);
+        } else {
+            // Decrease lives
+            livesRemaining--;
+            updateLivesDisplay();
+            
+            // Check if game over
+            if (livesRemaining <= 0) {
+                setTimeout(() => {
+                    showFinalScore();
+                }, 1500);
+                return;
+            }
         }
         
-        // Increment questions answered counter
         questionsAnswered++;
         // console.log("DEBUG: Questions answered incremented to:", questionsAnswered);
         
@@ -1082,21 +1084,23 @@ document.addEventListener('DOMContentLoaded', function() {
         finalScoreContainer.classList.remove('hidden');
         
         // Update final score
-        finalScoreValue.textContent = `${score} of 30`;
+        finalScoreValue.textContent = `${score} questions`;
         // console.log("DEBUG: Final score set to:", finalScoreValue.textContent);
         
-        // Create a more descriptive final message based on score
+        // Create a more descriptive final message based on score and reason for game end
         let finalMessage = '';
-        if (score >= 25) {
-            finalMessage = "Exceptional! You're a master of trading setups across all difficulty levels!";
+        if (livesRemaining === 0) {
+            finalMessage = `Game Over! You ran out of lives after answering ${questionsAnswered} questions. `;
+        }
+        
+        if (score >= 30) {
+            finalMessage += "Exceptional! You're a true trading master!";
         } else if (score >= 20) {
-            finalMessage = "Impressive! You handled the progressive difficulty with great skill!";
-        } else if (score >= 15) {
-            finalMessage = "Well done! You showed good knowledge as the questions got harder!";
+            finalMessage += "Impressive! You showed great trading knowledge!";
         } else if (score >= 10) {
-            finalMessage = "Good effort! You did well on the easier questions and faced the challenge of harder ones.";
+            finalMessage += "Good effort! You're developing solid trading skills.";
         } else {
-            finalMessage = "Thanks for taking the quiz! Trading setups get complex as difficulty increases.";
+            finalMessage += "Keep practicing! Trading is a journey of continuous learning.";
         }
         
         // Update the final message
@@ -1108,7 +1112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         restartButton.classList.remove('hidden');
         shareContainer.classList.remove('hidden');
         
-        // Show confetti for scores above 20
+        // Show confetti for high scores
         if (score > 20) {
             // console.log("DEBUG: Showing confetti for high score");
             confetti({
@@ -1336,6 +1340,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw error;
             });
     };
+
+    // Add lives display to the UI
+    const livesContainer = document.createElement('div');
+    livesContainer.id = 'lives-container';
+    livesContainer.className = 'flex items-center justify-center space-x-2 mb-4';
+    livesContainer.innerHTML = `
+        <span class="text-sm font-semibold text-purple-400">Lives:</span>
+        <div class="flex space-x-1" id="lives-display"></div>
+    `;
+    document.querySelector('#quiz-container').prepend(livesContainer);
+
+    // Function to update lives display
+    function updateLivesDisplay() {
+        const livesDisplay = document.getElementById('lives-display');
+        livesDisplay.innerHTML = Array(livesRemaining).fill('❤️').join(' ');
+    }
+
+    // Function to get difficulty-appropriate prompt
+    function getDifficultyPrompt(difficulty) {
+        // difficulty is now a number from 0 to 1
+        let basePrompt = 'Create 1 trading setup question about';
+        
+        if (difficulty < 0.3) {
+            return basePrompt + ' basic stock market trading concepts. Focus on fundamental patterns and simple setups.';
+        } else if (difficulty < 0.6) {
+            return basePrompt + ' intermediate trading strategies and technical analysis. Include more complex patterns and market dynamics.';
+        } else {
+            return basePrompt + ' advanced trading concepts, complex market psychology, and professional trading setups. Focus on sophisticated strategies and advanced market mechanics.';
+        }
+    }
 });
 
 // YouTube API callback
