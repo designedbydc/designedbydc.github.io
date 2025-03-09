@@ -513,9 +513,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Configuration
     const CONFIG = {
         // Set to true in production environment
-        isProduction: window.location.hostname !== 'localhost' && !window.location.hostname.includes('127.0.0.1'),
+        isProduction: true, // Changed to true to test API
         openAI: {
-            model: 'gpt-4o', // Using the latest GPT-4 model for better quality questions
+            model: 'gpt-4', // Fixed model name
             maxTokens: 500,
             temperature: 0.7
         },
@@ -525,42 +525,45 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to get OpenAI API key
     async function getOpenAIApiKey() {
-        // console.log("DEBUG: Getting OpenAI API key");
-        if (!CONFIG.isProduction) {
-            // console.log("DEBUG: Development environment detected, using mock questions");
-            return ''; // In development, we'll use mock questions
-        }
+        debugOpenAI.logAPICall('getOpenAIApiKey', { isProduction: CONFIG.isProduction });
         
         try {
-            // console.log("DEBUG: Fetching API key from server endpoint");
-            // In production, fetch the API key from a server endpoint
-            // This endpoint should be implemented on your server to securely provide the API key
-            const response = await fetch('/api/openai-key');
-            if (!response.ok) {
-                // console.error("DEBUG: Failed to fetch API key, status:", response.status);
-                throw new Error('Failed to fetch API key');
+            // In production, fetch from environment variable
+            if (process.env.QUIZ_OPENAI_API_KEY) {
+                return process.env.QUIZ_OPENAI_API_KEY;
             }
-            const data = await response.json();
-            // console.log("DEBUG: API key fetched successfully");
-            return data.apiKey || '';
+            
+            // If no environment variable, try to fetch from .env file
+            const response = await fetch('/.env');
+            if (!response.ok) {
+                throw new Error('Failed to fetch API key from .env file');
+            }
+            
+            const text = await response.text();
+            const match = text.match(/QUIZ_OPENAI_API_KEY=(.+)/);
+            if (!match) {
+                throw new Error('API key not found in .env file');
+            }
+            
+            return match[1].trim();
         } catch (error) {
-            // console.error('DEBUG: Error fetching API key:', error);
+            debugOpenAI.logAPIResponse(null, error);
+            console.error('Error fetching API key:', error);
             return '';
         }
     }
 
     // Function to fetch questions from OpenAI API
     async function fetchQuestionsFromOpenAI(difficulty) {
-        // console.log("DEBUG: Fetching questions from OpenAI, difficulty:", difficulty);
+        debugOpenAI.logAPICall('fetchQuestionsFromOpenAI', { difficulty });
+        
         try {
-            // Get API key from server
+            // Get API key
             const apiKey = await getOpenAIApiKey();
-            // console.log("DEBUG: API key availability:", apiKey ? "Available" : "Not available");
+            debugOpenAI.logAPICall('apiKeyCheck', { hasKey: !!apiKey });
             
-            // Don't make actual API calls if API key is not available
             if (!apiKey) {
-                // console.log('DEBUG: OpenAI API key not available. Falling back to mock questions.');
-                return getQuestionFromMockData(difficulty);
+                throw new Error('OpenAI API key not available');
             }
             
             // Construct prompt based on difficulty
@@ -575,9 +578,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 case 'hard':
                     prompt = 'Create 1 advanced trading setup question about complex trading strategies, market psychology, or professional trading setups. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
                     break;
-                default:
-                    prompt = 'Create 1 trading setup question about stock market trading. The question should be multiple choice with 4 options and only one correct answer. Format the response as JSON with fields: question, options (array of 4 strings), and correctAnswer (string matching one of the options).';
             }
+            
+            debugOpenAI.logAPICall('openai/chat/completions', { 
+                model: CONFIG.openAI.model,
+                difficulty,
+                promptLength: prompt.length 
+            });
             
             // Make API request to OpenAI
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -604,10 +611,17 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
+                const errorData = await response.json();
+                debugOpenAI.logAPIResponse(null, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    error: errorData
+                });
+                throw new Error(`API request failed: ${response.status} ${response.statusText}`);
             }
             
             const data = await response.json();
+            debugOpenAI.logAPIResponse(data);
             
             // Extract the content from the response
             const content = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
@@ -629,27 +643,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Parse the JSON
                 const questionData = JSON.parse(jsonStr);
+                debugOpenAI.logAPIResponse({ parsed: questionData });
                 
                 // Validate the question data
                 if (!questionData.question || !Array.isArray(questionData.options) || !questionData.correctAnswer) {
-                    // console.error('Invalid question data format from API:', questionData);
-                    return getQuestionFromMockData(difficulty);
+                    throw new Error('Invalid question data format from API');
                 }
                 
                 // Ensure correctAnswer is one of the options
                 if (!questionData.options.includes(questionData.correctAnswer)) {
-                    // console.error('Correct answer not found in options:', questionData);
-                    return getQuestionFromMockData(difficulty);
+                    throw new Error('Correct answer not found in options');
                 }
                 
                 return questionData;
+                
             } catch (parseError) {
-                // console.error('Error parsing question data from API:', parseError);
-                // console.log('Raw content:', content);
+                debugOpenAI.logAPIResponse(null, {
+                    error: parseError,
+                    content: content
+                });
                 return getQuestionFromMockData(difficulty);
             }
         } catch (error) {
-            // console.error('Error fetching questions from OpenAI:', error);
+            debugOpenAI.logAPIResponse(null, error);
             return getQuestionFromMockData(difficulty);
         }
     }
@@ -755,56 +771,42 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fetch a question from the API or use mock questions
     function fetchQuestion() {
-        // console.log("DEBUG: Entering fetchQuestion function");
+        debugOpenAI.logAPICall('fetchQuestion', { questionsAnswered });
         
         // Get difficulty based on progress
         let difficulty = 'easy';
         let questionPool;
         
         // Progressive difficulty logic
-        // First 10 questions are easy, next 10 are medium, last 10 are hard
         if (questionsAnswered < 10) {
             difficulty = 'easy';
             questionPool = MOCK_QUESTIONS_EASY;
-            // console.log("DEBUG: Using EASY difficulty for question", questionsAnswered + 1);
         } else if (questionsAnswered < 20) {
             difficulty = 'medium';
             questionPool = MOCK_QUESTIONS_MEDIUM;
-            // console.log("DEBUG: Using MEDIUM difficulty for question", questionsAnswered + 1);
         } else {
             difficulty = 'hard';
             questionPool = MOCK_QUESTIONS_HARD;
-            // console.log("DEBUG: Using HARD difficulty for question", questionsAnswered + 1);
         }
         
-        // Update UI to reflect current difficulty (optional)
+        // Update UI to reflect current difficulty
         if (currentDifficultySpan) {
             currentDifficultySpan.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
         }
         
-        // For testing, use mock questions directly
-        const useLocalMockQuestions = true;
+        // Set to false to use OpenAI API
+        const useLocalMockQuestions = false;
         
         if (useLocalMockQuestions) {
-            // console.log(`DEBUG: Using local ${difficulty.toUpperCase()} questions`);
-            
-            // Ensure we have questions in the pool
-            if (!questionPool || questionPool.length === 0) {
-                // console.error(`DEBUG: No ${difficulty} questions available, using general pool`);
-                questionPool = mockQuestions;
-            }
-            
-            // Get random question from the difficulty-specific pool
+            debugOpenAI.logAPICall('mockQuestions', { difficulty });
             const randomIndex = Math.floor(Math.random() * questionPool.length);
             const question = questionPool[randomIndex];
-            // console.log("DEBUG: Selected mock question:", question);
+            debugOpenAI.logAPIResponse({ source: 'mock', question });
             return Promise.resolve(question);
         }
         
-        // If not using local questions, would need to adjust API call to use the current difficulty
-        // For now, just return a mock question based on difficulty
-        const randomIndex = Math.floor(Math.random() * questionPool.length);
-        return Promise.resolve(questionPool[randomIndex]);
+        // Use OpenAI API
+        return fetchQuestionsFromOpenAI(difficulty);
     }
 
     // Display question
