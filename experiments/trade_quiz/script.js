@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DEBUG: DOM Content loaded, starting initialization");
+    // console.log("DEBUG: DOM Content loaded, starting initialization");
     
     // Check key elements
     const elementsToCheck = [
@@ -14,9 +14,34 @@ document.addEventListener('DOMContentLoaded', function() {
         { name: 'quizContainer', element: document.getElementById('quiz-container') }
     ];
     
-    elementsToCheck.forEach(item => {
-        console.log(`DEBUG: Element check - ${item.name}: ${item.element ? 'Found' : 'MISSING'}`);
-    });
+    // elementsToCheck.forEach(item => {
+    //     console.log(`DEBUG: Element check - ${item.name}: ${item.element ? 'Found' : 'MISSING'}`);
+    // });
+
+    // Add OpenAI API debug logs
+    const debugOpenAI = {
+        logAPICall: (endpoint, params) => {
+            console.log('🤖 OpenAI API Call:', {
+                endpoint,
+                params,
+                timestamp: new Date().toISOString()
+            });
+        },
+        logAPIResponse: (response, error = null) => {
+            if (error) {
+                console.error('❌ OpenAI API Error:', {
+                    error,
+                    timestamp: new Date().toISOString()
+                });
+            } else {
+                console.log('✅ OpenAI API Response:', {
+                    status: 'success',
+                    data: response,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+    };
 
     // DOM Elements
     const difficultyContainer = document.getElementById('difficulty-container');
@@ -500,41 +525,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Function to get OpenAI API key
     async function getOpenAIApiKey() {
-        console.log("DEBUG: Getting OpenAI API key");
+        // console.log("DEBUG: Getting OpenAI API key");
         if (!CONFIG.isProduction) {
-            console.log("DEBUG: Development environment detected, using mock questions");
+            // console.log("DEBUG: Development environment detected, using mock questions");
             return ''; // In development, we'll use mock questions
         }
         
         try {
-            console.log("DEBUG: Fetching API key from server endpoint");
+            // console.log("DEBUG: Fetching API key from server endpoint");
             // In production, fetch the API key from a server endpoint
             // This endpoint should be implemented on your server to securely provide the API key
             const response = await fetch('/api/openai-key');
             if (!response.ok) {
-                console.error("DEBUG: Failed to fetch API key, status:", response.status);
+                // console.error("DEBUG: Failed to fetch API key, status:", response.status);
                 throw new Error('Failed to fetch API key');
             }
             const data = await response.json();
-            console.log("DEBUG: API key fetched successfully");
+            // console.log("DEBUG: API key fetched successfully");
             return data.apiKey || '';
         } catch (error) {
-            console.error('DEBUG: Error fetching API key:', error);
+            // console.error('DEBUG: Error fetching API key:', error);
             return '';
         }
     }
 
     // Function to fetch questions from OpenAI API
     async function fetchQuestionsFromOpenAI(difficulty) {
-        console.log("DEBUG: Fetching questions from OpenAI, difficulty:", difficulty);
+        // console.log("DEBUG: Fetching questions from OpenAI, difficulty:", difficulty);
         try {
             // Get API key from server
             const apiKey = await getOpenAIApiKey();
-            console.log("DEBUG: API key availability:", apiKey ? "Available" : "Not available");
+            // console.log("DEBUG: API key availability:", apiKey ? "Available" : "Not available");
             
             // Don't make actual API calls if API key is not available
             if (!apiKey) {
-                console.log('DEBUG: OpenAI API key not available. Falling back to mock questions.');
+                // console.log('DEBUG: OpenAI API key not available. Falling back to mock questions.');
                 return getQuestionFromMockData(difficulty);
             }
             
@@ -607,31 +632,31 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Validate the question data
                 if (!questionData.question || !Array.isArray(questionData.options) || !questionData.correctAnswer) {
-                    console.error('Invalid question data format from API:', questionData);
+                    // console.error('Invalid question data format from API:', questionData);
                     return getQuestionFromMockData(difficulty);
                 }
                 
                 // Ensure correctAnswer is one of the options
                 if (!questionData.options.includes(questionData.correctAnswer)) {
-                    console.error('Correct answer not found in options:', questionData);
+                    // console.error('Correct answer not found in options:', questionData);
                     return getQuestionFromMockData(difficulty);
                 }
                 
                 return questionData;
             } catch (parseError) {
-                console.error('Error parsing question data from API:', parseError);
-                console.log('Raw content:', content);
+                // console.error('Error parsing question data from API:', parseError);
+                // console.log('Raw content:', content);
                 return getQuestionFromMockData(difficulty);
             }
         } catch (error) {
-            console.error('Error fetching questions from OpenAI:', error);
+            // console.error('Error fetching questions from OpenAI:', error);
             return getQuestionFromMockData(difficulty);
         }
     }
 
     // Initialize the quiz
     function initQuiz() {
-        console.log("DEBUG: Initializing quiz");
+        // console.log("DEBUG: Initializing quiz");
         // Reset variables
         score = 0;
         questionsAnswered = 0;
@@ -639,7 +664,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize score display
         if (scoreOdometer) {
             try {
-                console.log("DEBUG: Initializing Odometer for score display");
+                // console.log("DEBUG: Initializing Odometer for score display");
                 odometerInstance = new Odometer({
                     el: scoreOdometer,
                     value: 0,
@@ -647,7 +672,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     theme: 'minimal'
                 });
             } catch (error) {
-                console.error('DEBUG: Error initializing Odometer:', error);
+                // console.error('DEBUG: Error initializing Odometer:', error);
                 scoreOdometer.textContent = '0';
             }
         }
@@ -657,7 +682,7 @@ document.addEventListener('DOMContentLoaded', function() {
         scoreContainer.classList.remove('hidden');
         finalScoreContainer.classList.add('hidden');
         
-        console.log("DEBUG: About to get first question");
+        // console.log("DEBUG: About to get first question");
         // Get first question
         getNextQuestion();
     }
@@ -686,43 +711,43 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Get the next question
     function getNextQuestion() {
-        console.log("DEBUG: Getting next question, questions answered:", questionsAnswered);
+        // console.log("DEBUG: Getting next question, questions answered:", questionsAnswered);
         // Show loading indicator
         loadingContainer.classList.remove('hidden');
         quizContainer.classList.add('hidden');
         
         // Check if we've reached the end of the quiz
         if (questionsAnswered >= totalQuestions) {
-            console.log("DEBUG: Reached total questions limit, showing final score");
+            // console.log("DEBUG: Reached total questions limit, showing final score");
             showFinalScore();
             return;
         }
         
-        console.log("DEBUG: About to fetch new question");
+        // console.log("DEBUG: About to fetch new question");
         // Fetch a new question
         fetchQuestion()
             .then(question => {
-                console.log("DEBUG: Question fetched successfully:", question ? "Yes" : "No");
+                // console.log("DEBUG: Question fetched successfully:", question ? "Yes" : "No");
                 if (question) {
                     displayQuestion(question);
                 } else {
-                    console.error("DEBUG: Failed to load question from API, using mock question");
+                    // console.error("DEBUG: Failed to load question from API, using mock question");
                     
                     // Use a mock question as fallback
                     const randomIndex = Math.floor(Math.random() * mockQuestions.length);
                     const fallbackQuestion = mockQuestions[randomIndex];
-                    console.log("DEBUG: Using fallback question:", fallbackQuestion);
+                    // console.log("DEBUG: Using fallback question:", fallbackQuestion);
                     
                     displayQuestion(fallbackQuestion);
                 }
             })
             .catch(error => {
-                console.error("DEBUG: Error getting next question:", error);
+                // console.error("DEBUG: Error getting next question:", error);
                 
                 // Use a mock question as fallback
                 const randomIndex = Math.floor(Math.random() * mockQuestions.length);
                 const fallbackQuestion = mockQuestions[randomIndex];
-                console.log("DEBUG: Using fallback question after error:", fallbackQuestion);
+                // console.log("DEBUG: Using fallback question after error:", fallbackQuestion);
                 
                 displayQuestion(fallbackQuestion);
             });
@@ -730,7 +755,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Fetch a question from the API or use mock questions
     function fetchQuestion() {
-        console.log("DEBUG: Entering fetchQuestion function");
+        // console.log("DEBUG: Entering fetchQuestion function");
         
         // Get difficulty based on progress
         let difficulty = 'easy';
@@ -741,15 +766,15 @@ document.addEventListener('DOMContentLoaded', function() {
         if (questionsAnswered < 10) {
             difficulty = 'easy';
             questionPool = MOCK_QUESTIONS_EASY;
-            console.log("DEBUG: Using EASY difficulty for question", questionsAnswered + 1);
+            // console.log("DEBUG: Using EASY difficulty for question", questionsAnswered + 1);
         } else if (questionsAnswered < 20) {
             difficulty = 'medium';
             questionPool = MOCK_QUESTIONS_MEDIUM;
-            console.log("DEBUG: Using MEDIUM difficulty for question", questionsAnswered + 1);
+            // console.log("DEBUG: Using MEDIUM difficulty for question", questionsAnswered + 1);
         } else {
             difficulty = 'hard';
             questionPool = MOCK_QUESTIONS_HARD;
-            console.log("DEBUG: Using HARD difficulty for question", questionsAnswered + 1);
+            // console.log("DEBUG: Using HARD difficulty for question", questionsAnswered + 1);
         }
         
         // Update UI to reflect current difficulty (optional)
@@ -761,18 +786,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const useLocalMockQuestions = true;
         
         if (useLocalMockQuestions) {
-            console.log(`DEBUG: Using local ${difficulty.toUpperCase()} questions`);
+            // console.log(`DEBUG: Using local ${difficulty.toUpperCase()} questions`);
             
             // Ensure we have questions in the pool
             if (!questionPool || questionPool.length === 0) {
-                console.error(`DEBUG: No ${difficulty} questions available, using general pool`);
+                // console.error(`DEBUG: No ${difficulty} questions available, using general pool`);
                 questionPool = mockQuestions;
             }
             
             // Get random question from the difficulty-specific pool
             const randomIndex = Math.floor(Math.random() * questionPool.length);
             const question = questionPool[randomIndex];
-            console.log("DEBUG: Selected mock question:", question);
+            // console.log("DEBUG: Selected mock question:", question);
             return Promise.resolve(question);
         }
         
@@ -784,7 +809,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Display question
     function displayQuestion(questionData) {
-        console.log("DEBUG: Displaying question:", questionData);
+        // console.log("DEBUG: Displaying question:", questionData);
         
         // Clear previous options
         optionsContainer.innerHTML = '';
@@ -943,9 +968,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Helper function to decode HTML entities
     function decodeHtmlEntities(text) {
-        console.log("DEBUG: Decoding HTML entities for:", text);
+        // console.log("DEBUG: Decoding HTML entities for:", text);
         if (!text) {
-            console.error("DEBUG: Trying to decode undefined or null text");
+            // console.error("DEBUG: Trying to decode undefined or null text");
             return "";
         }
         const textArea = document.createElement('textarea');
@@ -968,7 +993,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 successSound.play();
             } catch (e) {
-                console.warn('Could not play success sound', e);
+                // console.warn('Could not play success sound', e);
             }
             
             // Trigger confetti for correct answers
@@ -979,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     origin: { y: 0.6 }
                 });
             } catch (e) {
-                console.warn('Confetti not available', e);
+                // console.warn('Confetti not available', e);
             }
         } else {
             feedbackDiv.classList.add('bg-red-500', 'bg-opacity-10', 'border', 'border-red-500', 'text-white');
@@ -991,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 errorSound.play();
             } catch (e) {
-                console.warn('Could not play error sound', e);
+                // console.warn('Could not play error sound', e);
             }
         }
         
@@ -1010,15 +1035,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Check if the answer is correct
     function checkAnswer(selectedAnswer, correctAnswer) {
-        console.log("DEBUG: Checking answer:", selectedAnswer, "against correct:", correctAnswer);
+        // console.log("DEBUG: Checking answer:", selectedAnswer, "against correct:", correctAnswer);
         
         if (!selectedAnswer || !correctAnswer) {
-            console.error("DEBUG: Missing answer data:", { selectedAnswer, correctAnswer });
+            // console.error("DEBUG: Missing answer data:", { selectedAnswer, correctAnswer });
             return;
         }
         
         const isCorrect = decodeHtmlEntities(selectedAnswer) === decodeHtmlEntities(correctAnswer);
-        console.log("DEBUG: Answer is correct:", isCorrect);
+        // console.log("DEBUG: Answer is correct:", isCorrect);
         
         if (isCorrect) {
             // Correct answer
@@ -1027,12 +1052,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Increment questions answered counter
         questionsAnswered++;
-        console.log("DEBUG: Questions answered incremented to:", questionsAnswered);
+        // console.log("DEBUG: Questions answered incremented to:", questionsAnswered);
         
         // Check if we've reached the total questions limit - moved outside the isCorrect block
         // so it works for both correct and incorrect answers
         if (questionsAnswered >= totalQuestions) {
-            console.log("DEBUG: Reached total questions limit, showing final score soon");
+            // console.log("DEBUG: Reached total questions limit, showing final score soon");
             setTimeout(() => {
                 showFinalScore();
             }, isCorrect ? 900 : 2000); // Use appropriate delay based on correctness
@@ -1045,7 +1070,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show final score
     function showFinalScore() {
-        console.log("DEBUG: Showing final score. Score:", score, "Questions answered:", questionsAnswered);
+        // console.log("DEBUG: Showing final score. Score:", score, "Questions answered:", questionsAnswered);
         
         // Hide quiz container
         quizMainContainer.classList.add('hidden');
@@ -1056,7 +1081,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Update final score
         finalScoreValue.textContent = `${score} of 30`;
-        console.log("DEBUG: Final score set to:", finalScoreValue.textContent);
+        // console.log("DEBUG: Final score set to:", finalScoreValue.textContent);
         
         // Create a more descriptive final message based on score
         let finalMessage = '';
@@ -1083,7 +1108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show confetti for scores above 20
         if (score > 20) {
-            console.log("DEBUG: Showing confetti for high score");
+            // console.log("DEBUG: Showing confetti for high score");
             confetti({
                 particleCount: 150,
                 spread: 70,
@@ -1119,12 +1144,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Show error message
     function showError(message) {
-        console.error("DEBUG: Showing error:", message);
+        // console.error("DEBUG: Showing error:", message);
         
         if (!errorContainer || !errorMessage) {
-            console.error("DEBUG: Error DOM elements missing");
+            // console.error("DEBUG: Error DOM elements missing");
             // Display error in console as fallback
-            console.error("CRITICAL ERROR:", message);
+            // console.error("CRITICAL ERROR:", message);
             return;
         }
         
@@ -1164,46 +1189,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Add this function to check if getQuestionFromMockData exists or define it if missing
     function getQuestionFromMockData(difficulty) {
-        console.log("DEBUG: Getting mock question for difficulty:", difficulty);
+        // console.log("DEBUG: Getting mock question for difficulty:", difficulty);
         
         let questionPool;
         switch(difficulty) {
             case 'easy':
-                console.log("DEBUG: Using EASY mock questions");
+                // console.log("DEBUG: Using EASY mock questions");
                 questionPool = MOCK_QUESTIONS_EASY;
                 break;
             case 'medium':
-                console.log("DEBUG: Using MEDIUM mock questions");
+                // console.log("DEBUG: Using MEDIUM mock questions");
                 questionPool = MOCK_QUESTIONS_MEDIUM;
                 break;
             case 'hard':
-                console.log("DEBUG: Using HARD mock questions");
+                // console.log("DEBUG: Using HARD mock questions");
                 questionPool = MOCK_QUESTIONS_HARD;
                 break;
             default:
-                console.log("DEBUG: Using default (all) mock questions");
+                // console.log("DEBUG: Using default (all) mock questions");
                 questionPool = mockQuestions;
         }
         
         if (!questionPool || questionPool.length === 0) {
-            console.error("DEBUG: Empty question pool for difficulty:", difficulty);
+            // console.error("DEBUG: Empty question pool for difficulty:", difficulty);
             return mockQuestions[0]; // Fallback to first question of full pool
         }
         
         const randomIndex = Math.floor(Math.random() * questionPool.length);
-        console.log("DEBUG: Selected mock question at index:", randomIndex);
+        // console.log("DEBUG: Selected mock question at index:", randomIndex);
         return questionPool[randomIndex];
     }
 
     // Make sure restart button has event listener
     restartButton.addEventListener('click', function() {
-        console.log("DEBUG: Restart button clicked");
+        // console.log("DEBUG: Restart button clicked");
         restartQuiz();
     });
 
     // Add debug check for undefined/null during quiz initialization
     window.addEventListener('load', function() {
-        console.log("DEBUG: Window loaded, checking for undefined or missing elements/functions");
+        // console.log("DEBUG: Window loaded, checking for undefined or missing elements/functions");
         
         // Check if key functions exist
         const functionsToCheck = [
@@ -1215,22 +1240,22 @@ document.addEventListener('DOMContentLoaded', function() {
         ];
         
         functionsToCheck.forEach(f => {
-            console.log(`DEBUG: Function check - ${f.name}: ${f.fn !== 'undefined' ? 'Defined' : 'MISSING'}`);
+            // console.log(`DEBUG: Function check - ${f.name}: ${f.fn !== 'undefined' ? 'Defined' : 'MISSING'}`);
         });
         
         // Check if mockQuestions is properly defined
-        console.log(`DEBUG: mockQuestions array length: ${mockQuestions ? mockQuestions.length : 'undefined'}`);
+        // console.log(`DEBUG: mockQuestions array length: ${mockQuestions ? mockQuestions.length : 'undefined'}`);
     });
 
     // Make sure everything is properly initialized
-    console.log("DEBUG: DOM fully loaded event fired");
+    // console.log("DEBUG: DOM fully loaded event fired");
     
     // Try to identify any potential race conditions or timing issues
     setTimeout(() => {
-        console.log("DEBUG: Delayed check for quiz state (after 500ms)");
-        console.log("DEBUG: Current question index:", currentQuestionIndex);
-        console.log("DEBUG: Questions answered:", questionsAnswered);
-        console.log("DEBUG: Score:", score);
+        // console.log("DEBUG: Delayed check for quiz state (after 500ms)");
+        // console.log("DEBUG: Current question index:", currentQuestionIndex);
+        // console.log("DEBUG: Questions answered:", questionsAnswered);
+        // console.log("DEBUG: Score:", score);
         
         // Check visibility of containers
         const containers = {
@@ -1241,11 +1266,11 @@ document.addEventListener('DOMContentLoaded', function() {
             errorContainer: errorContainer ? errorContainer.classList.contains('hidden') : 'not found'
         };
         
-        console.log("DEBUG: Container visibility state:", containers);
+        // console.log("DEBUG: Container visibility state:", containers);
     }, 500);
     
     // Check if key functions exist and variable state
-    console.log("DEBUG: Checking for undefined or missing functions/values");
+    // console.log("DEBUG: Checking for undefined or missing functions/values");
     
     // Check if key functions exist
     const functionsToCheck = [
@@ -1258,39 +1283,39 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
     
     functionsToCheck.forEach(f => {
-        console.log(`DEBUG: Function check - ${f.name}: ${f.fn !== 'undefined' ? 'Defined' : 'MISSING'}`);
+        // console.log(`DEBUG: Function check - ${f.name}: ${f.fn !== 'undefined' ? 'Defined' : 'MISSING'}`);
     });
     
     // Check if mockQuestions is properly defined
-    console.log(`DEBUG: mockQuestions array length: ${mockQuestions ? mockQuestions.length : 'undefined'}`);
-    console.log(`DEBUG: MOCK_QUESTIONS_EASY length: ${typeof MOCK_QUESTIONS_EASY !== 'undefined' ? MOCK_QUESTIONS_EASY.length : 'undefined'}`);
-    console.log(`DEBUG: MOCK_QUESTIONS_MEDIUM length: ${typeof MOCK_QUESTIONS_MEDIUM !== 'undefined' ? MOCK_QUESTIONS_MEDIUM.length : 'undefined'}`);
-    console.log(`DEBUG: MOCK_QUESTIONS_HARD length: ${typeof MOCK_QUESTIONS_HARD !== 'undefined' ? MOCK_QUESTIONS_HARD.length : 'undefined'}`);
-    console.log(`DEBUG: CONFIG: ${typeof CONFIG !== 'undefined' ? 'Defined' : 'undefined'}`);
+    // console.log(`DEBUG: mockQuestions array length: ${mockQuestions ? mockQuestions.length : 'undefined'}`);
+    // console.log(`DEBUG: MOCK_QUESTIONS_EASY length: ${typeof MOCK_QUESTIONS_EASY !== 'undefined' ? MOCK_QUESTIONS_EASY.length : 'undefined'}`);
+    // console.log(`DEBUG: MOCK_QUESTIONS_MEDIUM length: ${typeof MOCK_QUESTIONS_MEDIUM !== 'undefined' ? MOCK_QUESTIONS_MEDIUM.length : 'undefined'}`);
+    // console.log(`DEBUG: MOCK_QUESTIONS_HARD length: ${typeof MOCK_QUESTIONS_HARD !== 'undefined' ? MOCK_QUESTIONS_HARD.length : 'undefined'}`);
+    // console.log(`DEBUG: CONFIG: ${typeof CONFIG !== 'undefined' ? 'Defined' : 'undefined'}`);
     
     // Debug fetch question function for potential bugs
-    console.log("DEBUG: Testing fetchQuestion function");
+    // console.log("DEBUG: Testing fetchQuestion function");
     fetchQuestion()
         .then(question => {
-            console.log("DEBUG: Test fetchQuestion succeeded:", question ? "Valid question" : "Invalid question");
+            // console.log("DEBUG: Test fetchQuestion succeeded:", question ? "Valid question" : "Invalid question");
         })
         .catch(error => {
-            console.error("DEBUG: Test fetchQuestion failed:", error);
+            // console.error("DEBUG: Test fetchQuestion failed:", error);
         });
         
     // Start the quiz
-    console.log("DEBUG: Starting quiz initialization");
+    // console.log("DEBUG: Starting quiz initialization");
     initQuiz();
 
     // Add debug check for any DOM events that might be interfering
     // Add these at the end of the script
-    console.log("DEBUG: Adding global event debugging");
+    // console.log("DEBUG: Adding global event debugging");
 
     // Monitor for potential event-related issues
     const originalAddEventListener = EventTarget.prototype.addEventListener;
     EventTarget.prototype.addEventListener = function(type, listener, options) {
         if (type === 'click') {
-            console.log(`DEBUG: Added click event listener to:`, this);
+            // console.log(`DEBUG: Added click event listener to:`, this);
         }
         return originalAddEventListener.call(this, type, listener, options);
     };
@@ -1298,14 +1323,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // Add debugging for fetch to check for network issues
     const originalFetch = window.fetch;
     window.fetch = function(...args) {
-        console.log(`DEBUG: Fetch request to: ${args[0]}`);
+        // console.log(`DEBUG: Fetch request to: ${args[0]}`);
         return originalFetch.apply(this, args)
             .then(response => {
-                console.log(`DEBUG: Fetch response from ${args[0]}: ${response.status}`);
+                // console.log(`DEBUG: Fetch response from ${args[0]}: ${response.status}`);
                 return response;
             })
             .catch(error => {
-                console.error(`DEBUG: Fetch error for ${args[0]}:`, error);
+                // console.error(`DEBUG: Fetch error for ${args[0]}:`, error);
                 throw error;
             });
     };
