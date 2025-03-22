@@ -6,31 +6,17 @@
 const body = document.body;
 const loader = document.querySelector('.loader');
 
-// Event Listeners
-document.addEventListener('DOMContentLoaded', initializeApp);
-
-/**
- * Initialize application
- */
-function initializeApp() {
-    // Set up loader and fade out
+// Initialize application
+document.addEventListener('DOMContentLoaded', () => {
+    // Fade in the body and fade out loader
     setTimeout(() => {
-        body.style.opacity = 1; // Fade in the body
+        body.style.opacity = 1;
         loader.style.opacity = '0';
         setTimeout(() => {
             loader.style.display = 'none';
         }, 500);
     }, 500);
-
-    // Add scroll listener for future scroll animations
-    window.addEventListener('scroll', handleScroll);
-    
-    // Handle any buttons with smooth scroll functionality
-    const scrollButtons = document.querySelectorAll('[data-scroll-target]');
-    scrollButtons.forEach(btn => {
-        btn.addEventListener('click', handleSmoothScroll);
-    });
-}
+});
 
 /**
  * Smooth scroll to target element

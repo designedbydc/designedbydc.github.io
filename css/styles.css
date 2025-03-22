@@ -1,21 +1,24 @@
 /* 
  * designedbyDC - Main Stylesheet
- * A retro-futuristic design with grid animations
  */
 
-/* =================== 
-   Base Styles
-   =================== */
+/* Base Styles */
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
+:root {
+    --primary-color: #00c3ff;
+    --bg-color: #111;
+    --text-color: #333;
+}
+
 html, body {
     height: 100%;
     width: 100%;
-    background-color: #111;
+    background-color: var(--bg-color);
 }
 
 body {
@@ -24,16 +27,14 @@ body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-    color: #333;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text-color);
     text-align: center;
-    opacity: 0; /* Start hidden for fade-in effect */
-    transition: opacity 1s ease; /* Fade-in transition */
+    opacity: 0;
+    transition: opacity 1s ease;
 }
 
-/* =================== 
-   Typography
-   =================== */
+/* Typography */
 h1 {
     font-size: 6rem;
     filter: drop-shadow(0px 0px 5px currentColor);
@@ -53,11 +54,11 @@ h1::after {
 
 h2 {
     margin-top: 20px;
-    color: #00c3ff;
+    color: var(--primary-color);
 }
 
 a {
-    color: #00c3ff;
+    color: var(--primary-color);
     text-decoration: none;
     font-weight: bold;
     position: relative;
@@ -66,19 +67,17 @@ a {
 }
 
 a:hover {
-    filter: drop-shadow(0px 0px 5px #00c3ff);
+    filter: drop-shadow(0px 0px 5px var(--primary-color));
 }
 
-/* =================== 
-   Loader
-   =================== */
+/* Loader */
 .loader {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: #111;
+    background-color: var(--bg-color);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -87,20 +86,18 @@ a:hover {
 }
 
 .loader span {
-    color: #333;
+    color: var(--text-color);
     font-size: 2rem;
 }
 
-/* =================== 
-   Profile Container
-   =================== */
+/* Profile Container */
 .profile-container {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
-    width: 100%;
+    width: 50%;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -108,123 +105,7 @@ a:hover {
     padding-top: 2rem;
 }
 
-.logo-container {
-    padding-top: 100px;
-    margin-bottom: 1.5rem;
-}
-
-.social-links {
-    margin-top: 1rem;
-}
-
-/* =================== 
-   Projects Section
-   =================== */
-.show-projects {
-    padding: 15px 30px;
-    font-size: 1.2rem;
-    font-family: 'Share Tech Mono', monospace;
-    background: transparent;
-    color: #00c3ff;
-    border: 2px solid #00c3ff;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    z-index: 10;
-    margin-top: 2rem;
-    filter: drop-shadow(0px 0px 5px #00c3ff);
-}
-
-.show-projects:hover {
-    background: rgba(0, 195, 255, 0.13);
-}
-
-.projects-section {
-    scroll-margin-top: 50px;
-}
-
-.projects-container {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    align-items: center;
-    background: transparent;
-    padding: 20px 0;
-    z-index: 10;
-    margin-top: 80px;
-}
-
-.projects-table {
-    margin-top: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(5px);
-    border-radius: 10px;
-    border: 1px solid rgba(0, 195, 255, 0.13);
-    width: 90%;
-    max-width: 800px;
-}
-
-.projects-table th,
-.projects-table td {
-    padding: 15px;
-    text-align: left;
-    border-bottom: 1px solid rgba(0, 195, 255, 0.27);
-}
-
-.projects-table th {
-    color: #00c3ff;
-    font-size: 1.1rem;
-}
-
-.projects-table td {
-    color: green;
-}
-
-/* =================== 
-   Animations
-   =================== */
-@keyframes blink {
-    0%, 50% { visibility: visible; }
-    51%, 100% { visibility: hidden; }
-}
-
-/* =================== 
-   Media Queries
-   =================== */
-@media screen and (max-width: 768px) {
-    h1 {
-        font-size: 4rem;
-    }
-    
-    .logo-container {
-        padding-top: 50px;
-    }
-    
-    .projects-table {
-        width: 95%;
-    }
-}
-
-@media screen and (max-width: 480px) {
-    h1 {
-        font-size: 3rem;
-    }
-    
-    .logo-container {
-        padding-top: 30px;
-    }
-    
-    .projects-table th,
-    .projects-table td {
-        padding: 10px;
-        font-size: 0.9rem;
-    }
-}
-
-/* =================== 
-   Venn Diagram Styles
-   =================== */
+/* Logo and Subtitle */
 .logo-overlay {
     width: 378px;
     height: 206px;
@@ -245,6 +126,7 @@ a:hover {
     letter-spacing: 0.25em;
 }
 
+/* Social Links */
 .squares-container {
     position: relative;
     width: 100%;
@@ -253,8 +135,8 @@ a:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 2rem;
-    padding: 2rem;
+    gap: 1.5rem;
+    padding: 1.5rem;
 }
 
 .social-icon {
@@ -265,13 +147,9 @@ a:hover {
     filter: brightness(0) invert(1);
 }
 
-.square:hover .social-icon {
-    transform: scale(1.1);
-}
-
 .square {
-    width: 250px;
-    height: 250px;
+    width: 200px;
+    height: 200px;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -285,27 +163,34 @@ a:hover {
     border-radius: 16px;
     overflow: hidden;
     font-weight: 500;
+    background: #333;
 }
 
 .square:hover {
     transform: scale(1.05);
     filter: brightness(1.1);
-    border-radius: 16px;
+}
+
+.square:hover .social-icon {
+    transform: scale(1.1);
 }
 
 .design-square {
-    background: #333;
     animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 2s;
 }
 
 .develop-square {
-    background: #333;
     animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 2.5s;
 }
 
 .invest-square {
-    background: #333;
     animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 3s;
+}
+
+/* Animations */
+@keyframes blink {
+    0%, 50% { visibility: visible; }
+    51%, 100% { visibility: hidden; }
 }
 
 @keyframes fadeIn {
@@ -319,43 +204,33 @@ a:hover {
     }
 }
 
-/* Responsive Design for Venn */
-@media (max-width: 1024px) {
-    .squares-container {
-        gap: 1.5rem;
-        padding: 1.5rem;
-    }
+/* Media Queries */
+@media screen and (max-width: 768px) {
+    h1 { font-size: 4rem; }
     
-    .square {
-        width: 200px;
-        height: 200px;
-    }
-}
-
-@media (max-width: 768px) {
     .squares-container {
         gap: 0.75rem;
         padding: 1rem;
     }
-    
     .square {
         width: 100px;
         height: 100px;
     }
-    
     .social-icon {
         width: 32px;
         height: 32px;
     }
-    
     .subtitle {
         font-size: 0.9rem;
         margin-bottom: 2rem;
         letter-spacing: 0.2em;
     }
-
     .logo-overlay {
         width: 280px;
         height: 153px;
     }
-} 
+}
+
+@media screen and (max-width: 480px) {
+    h1 { font-size: 3rem; }
+}
