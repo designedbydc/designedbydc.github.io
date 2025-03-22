@@ -13,13 +13,14 @@ document.addEventListener('DOMContentLoaded', initializeApp);
  * Initialize application
  */
 function initializeApp() {
-    // Set up loader and fade in
+    // Set up loader and fade out
     setTimeout(() => {
         body.style.opacity = 1; // Fade in the body
+        loader.style.opacity = '0';
         setTimeout(() => {
-            loader.style.display = 'none'; // Hide loader after fade in
+            loader.style.display = 'none';
         }, 500);
-    }, 1000);
+    }, 500);
 
     // Add scroll listener for future scroll animations
     window.addEventListener('scroll', handleScroll);

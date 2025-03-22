@@ -15,17 +15,17 @@
 html, body {
     height: 100%;
     width: 100%;
+    background-color: #111;
 }
 
 body {
     overflow: auto;
-    background-color: #000;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-family: 'Share Tech Mono', 'Cascadia Code', Menlo, Monaco, 'Courier New', monospace;
-    color: green;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    color: #333;
     text-align: center;
     opacity: 0; /* Start hidden for fade-in effect */
     transition: opacity 1s ease; /* Fade-in transition */
@@ -37,6 +37,7 @@ body {
 h1 {
     font-size: 6rem;
     filter: drop-shadow(0px 0px 5px currentColor);
+    font-weight: 600;
 }
 
 h1::after {
@@ -77,15 +78,16 @@ a:hover {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
+    background-color: #111;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000; /* Ensure loader is on top */
+    z-index: 1000;
+    transition: opacity 0.5s ease;
 }
 
 .loader span {
-    color: #00c3ff;
+    color: #333;
     font-size: 2rem;
 }
 
@@ -103,6 +105,7 @@ a:hover {
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding-top: 2rem;
 }
 
 .logo-container {
@@ -216,5 +219,143 @@ a:hover {
     .projects-table td {
         padding: 10px;
         font-size: 0.9rem;
+    }
+}
+
+/* =================== 
+   Venn Diagram Styles
+   =================== */
+.logo-overlay {
+    width: 378px;
+    height: 206px;
+    animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    opacity: 0;
+    margin-bottom: 1rem;
+}
+
+.subtitle {
+    font-family: 'Poppins', sans-serif;
+    color: #666;
+    font-size: 1.1rem;
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 1s;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+}
+
+.squares-container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    padding: 2rem;
+}
+
+.social-icon {
+    width: 64px;
+    height: 64px;
+    color: #fff;
+    transition: transform 0.3s ease;
+    filter: brightness(0) invert(1);
+}
+
+.square:hover .social-icon {
+    transform: scale(1.1);
+}
+
+.square {
+    width: 250px;
+    height: 250px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: 'Poppins', sans-serif;
+    color: white;
+    font-size: 1.5rem;
+    text-decoration: none;
+    opacity: 0;
+    border-radius: 16px;
+    overflow: hidden;
+    font-weight: 500;
+}
+
+.square:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+    border-radius: 16px;
+}
+
+.design-square {
+    background: #333;
+    animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 2s;
+}
+
+.develop-square {
+    background: #333;
+    animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 2.5s;
+}
+
+.invest-square {
+    background: #333;
+    animation: fadeIn 1s cubic-bezier(0.4, 0, 0.2, 1) forwards 3s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design for Venn */
+@media (max-width: 1024px) {
+    .squares-container {
+        gap: 1.5rem;
+        padding: 1.5rem;
+    }
+    
+    .square {
+        width: 200px;
+        height: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .squares-container {
+        gap: 0.75rem;
+        padding: 1rem;
+    }
+    
+    .square {
+        width: 100px;
+        height: 100px;
+    }
+    
+    .social-icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .subtitle {
+        font-size: 0.9rem;
+        margin-bottom: 2rem;
+        letter-spacing: 0.2em;
+    }
+
+    .logo-overlay {
+        width: 280px;
+        height: 153px;
     }
 } 
